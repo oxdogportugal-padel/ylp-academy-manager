@@ -5,14 +5,15 @@ const { recommendClasses } = require('../services/matching');
 const router = express.Router();
 
 /**
- * Public intake endpoint: "a new player wants to buy padel classes" — given
- * their level, preferred club and schedule, return the best-fit open
- * classes ranked by level match, time overlap, and remaining capacity.
+ * Intake helper: "a new player wants to buy padel classes" — given their
+ * level, preferred club (which must belong to the caller's academy) and
+ * schedule, return the best-fit open classes ranked by level match, time
+ * overlap, and remaining capacity.
  *
- * This is read-only (no Player/Request/Enrollment is created here) so a
- * prospective player can browse fit before committing. The intake wizard
- * then calls POST /classes/:id/enroll for a chosen class, or POST /requests
- * to join the waitlist when nothing fits well enough.
+ * This is read-only (no Player/Request/Enrollment is created here) so staff
+ * can browse fit with a prospective player before committing. The intake
+ * wizard then calls POST /classes/:id/enroll for a chosen class, or
+ * POST /requests to join the waitlist when nothing fits well enough.
  */
 router.post('/', asyncHandler(async (req, res) => {
   required(req.body, ['clubId', 'level']);

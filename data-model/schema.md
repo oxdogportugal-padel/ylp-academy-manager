@@ -2,9 +2,41 @@
 
 Catalyst Data Store tables. Every table has the implicit `ROWID` (bigint) primary key and `CREATEDTIME`/`MODIFIEDTIME` columns — only the columns you must add are listed.
 
+## Multi-tenancy
+
+The platform hosts **N independent padel academies** (tenants) on one shared Catalyst project. An **Academy** is the tenant boundary — everything else (Clubs, Coaches, Players, Classes, waitlist Requests, Alerts) belongs to exactly one Academy and is only ever visible to that Academy's staff.
+
+Catalyst Data Store has no native row-level security, so isolation is enforced in the API layer:
+
+- Every tenant-owned table carries an `AcademyId` column, stamped on insert and required in every `WHERE` clause the API issues (see `functions/academy-api/src/middleware/auth.js`'s `resolveAcademy`). This is deliberately denormalized onto every table (not just `Clubs`) so a single filter is enough — no joins required to enforce isolation, and no query path can accidentally leak across tenants by skipping a join.
+- Every request that touches tenant data must resolve an `AcademyId` from the caller's membership (`AppUsers`) before it can run — there is no "global" query mode in the API.
+- Row lookups by id (`GET/PUT/DELETE /clubs/:id` etc.) additionally re-check the fetched row's `AcademyId` against the caller's resolved academy and 404 on mismatch, so an admin of Academy A can't reach Academy B's data by guessing a `ROWID` even if IDs are sequential and global to the table.
+
+### Academies
+| Column | Type | Notes |
+|---|---|---|
+| Name | Varchar(255) | required |
+| Slug | Varchar(100) | unique, URL/subdomain-friendly identifier |
+| CreatedByZUID | Varchar(50) | Catalyst user id of the founding admin |
+| PlanStatus | Varchar(20) | `TRIAL` \| `ACTIVE` \| `SUSPENDED` |
+
+### AppUsers (tenant membership)
+Maps a Catalyst Authentication identity (ZUID) to a role **within one Academy**. A single Zoho/Catalyst login can be a member of several academies (e.g. a coach who freelances across two academies, or a consultant admin), so the natural key is `(ZUID, AcademyId)`, not `ZUID` alone.
+
+| Column | Type | Notes |
+|---|---|---|
+| ZUID | Varchar(50) | Catalyst user id |
+| AcademyId | BigInt | FK → Academies.ROWID |
+| Name | Varchar(255) | |
+| Role | Varchar(20) | `ADMIN` \| `COACH` |
+| CoachId | BigInt | optional FK → Coaches.ROWID, when Role = COACH |
+
+Unique index on `(ZUID, AcademyId)`.
+
 ### Clubs
 | Column | Type | Notes |
 |---|---|---|
+| AcademyId | BigInt | FK → Academies.ROWID, required |
 | Name | Varchar(255) | required |
 | NumberOfFields | Integer | required, > 0 |
 | Address | Varchar(255) | optional |
@@ -13,6 +45,7 @@ Catalyst Data Store tables. Every table has the implicit `ROWID` (bigint) primar
 ### Coaches
 | Column | Type | Notes |
 |---|---|---|
+| AcademyId | BigInt | FK → Academies.ROWID, required |
 | Name | Varchar(255) | required |
 | Level | Integer | 1–3 |
 | Phone | Varchar(50) | optional |
@@ -21,12 +54,14 @@ Catalyst Data Store tables. Every table has the implicit `ROWID` (bigint) primar
 ### ClubCoaches (junction, many-to-many)
 | Column | Type | Notes |
 |---|---|---|
+| AcademyId | BigInt | FK → Academies.ROWID, required (both sides always share it) |
 | ClubId | BigInt | FK → Clubs.ROWID |
 | CoachId | BigInt | FK → Coaches.ROWID |
 
 ### Players
 | Column | Type | Notes |
 |---|---|---|
+| AcademyId | BigInt | FK → Academies.ROWID, required |
 | Name | Varchar(255) | required |
 | Level | Decimal(3,1) | 0–10, 0.5 increments |
 | Email | Varchar(255) | optional |
@@ -37,6 +72,7 @@ Catalyst Data Store tables. Every table has the implicit `ROWID` (bigint) primar
 ### Classes
 | Column | Type | Notes |
 |---|---|---|
+| AcademyId | BigInt | FK → Academies.ROWID, required |
 | ClubId | BigInt | FK → Clubs.ROWID, required |
 | CoachId | BigInt | FK → Coaches.ROWID, required |
 | FieldNumber | Integer | 1..Club.NumberOfFields |
@@ -54,6 +90,7 @@ Classes are weekly-recurring (`DayOfWeek` + `StartTime`) between `EffectiveFrom`
 ### ClassEnrollments (junction)
 | Column | Type | Notes |
 |---|---|---|
+| AcademyId | BigInt | FK → Academies.ROWID, required |
 | ClassId | BigInt | FK → Classes.ROWID |
 | PlayerId | BigInt | FK → Players.ROWID |
 | Status | Varchar(20) | `CONFIRMED` \| `CANCELLED` |
@@ -64,6 +101,7 @@ Represents both "no class fit yet" and "player wants a 2nd weekly session and on
 
 | Column | Type | Notes |
 |---|---|---|
+| AcademyId | BigInt | FK → Academies.ROWID, required |
 | PlayerId | BigInt | FK → Players.ROWID |
 | ClubId | BigInt | FK → Clubs.ROWID |
 | Level | Decimal(3,1) | copied from player at request time |
@@ -78,6 +116,7 @@ Represents both "no class fit yet" and "player wants a 2nd weekly session and on
 ### ClassOpeningAlerts
 | Column | Type | Notes |
 |---|---|---|
+| AcademyId | BigInt | FK → Academies.ROWID, required |
 | ClubId | BigInt | FK → Clubs.ROWID |
 | Level | Decimal(3,1) | matched level bucket |
 | SuggestedDayOfWeek | Integer | most common day among matches |
@@ -86,20 +125,12 @@ Represents both "no class fit yet" and "player wants a 2nd weekly session and on
 | MatchingRequestIds | Varchar(500) | CSV of `Requests.ROWID` |
 | Status | Varchar(20) | `OPEN` \| `RESOLVED` \| `DISMISSED` |
 
-### AppUsers
-Maps a Catalyst Authentication identity (ZUID) to an in-app role, since Catalyst IAM itself doesn't model "Administrator vs coach".
-
-| Column | Type | Notes |
-|---|---|---|
-| ZUID | Varchar(50) | Catalyst user id, unique |
-| Name | Varchar(255) | |
-| Role | Varchar(20) | `ADMIN` \| `COACH` |
-| CoachId | BigInt | optional FK → Coaches.ROWID, when Role = COACH |
-
 ---
 
 ## Indexing notes
 
-- `Classes`: composite lookup index on `(ClubId, DayOfWeek, Status)` — the calendar's hottest query path.
-- `Requests`: index on `(ClubId, Status)` — the alert scanner's hottest query path.
+- `AppUsers`: unique index on `(ZUID, AcademyId)` — the tenant-resolution hot path on every authenticated request.
+- `Clubs`, `Coaches`, `Players`: index on `AcademyId` — the "list everything for my academy" query.
+- `Classes`: composite index on `(AcademyId, ClubId, DayOfWeek, Status)` — the calendar's hottest query path.
+- `Requests`: composite index on `(AcademyId, ClubId, Status)` — the alert scanner's hottest query path.
 - `ClassEnrollments`: index on `ClassId` and on `PlayerId`.

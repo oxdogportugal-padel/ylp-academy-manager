@@ -1,18 +1,18 @@
 const express = require('express');
-const { zcql, updateRow, TABLES } = require('../db');
+const { zcql, updateRow, getRow, TABLES } = require('../db');
 const { requireAdmin } = require('../middleware/auth');
 const { required, asyncHandler } = require('../utils/validation');
+const { assertOwned } = require('../utils/tenant');
 const { createClass } = require('../services/classCreation');
 
 const router = express.Router();
 
 router.get('/', requireAdmin, asyncHandler(async (req, res) => {
   const { clubId, status } = req.query;
-  const clauses = [];
+  const clauses = [`AcademyId = ${req.academyId}`];
+  clauses.push(status ? `Status = '${status}'` : "Status = 'OPEN'");
   if (clubId) clauses.push(`ClubId = ${Number(clubId)}`);
-  if (status) clauses.push(`Status = '${status}'`);
-  const where = clauses.length ? `WHERE ${clauses.join(' AND ')}` : "WHERE Status = 'OPEN'";
-  const rows = await zcql(req, `SELECT * FROM ${TABLES.ALERTS} ${where} ORDER BY CREATEDTIME DESC LIMIT 200`);
+  const rows = await zcql(req, `SELECT * FROM ${TABLES.ALERTS} WHERE ${clauses.join(' AND ')} ORDER BY CREATEDTIME DESC LIMIT 200`);
   res.json({ data: rows, error: null });
 }));
 
@@ -20,8 +20,7 @@ router.get('/', requireAdmin, asyncHandler(async (req, res) => {
 // auto-enrolls every Request that alerted it.
 router.post('/:id/convert', requireAdmin, asyncHandler(async (req, res) => {
   required(req.body, ['CoachId', 'FieldNumber']);
-  const alert = await zcql(req, `SELECT * FROM ${TABLES.ALERTS} WHERE ROWID = ${Number(req.params.id)}`);
-  const a = alert[0];
+  const a = assertOwned(await getRow(req, TABLES.ALERTS, req.params.id), req, 'Alert');
 
   const result = await createClass(req, {
     ClubId: a.ClubId,
@@ -39,7 +38,9 @@ router.post('/:id/convert', requireAdmin, asyncHandler(async (req, res) => {
 }));
 
 router.patch('/:id', requireAdmin, asyncHandler(async (req, res) => {
-  const row = await updateRow(req, TABLES.ALERTS, { ROWID: req.params.id, ...req.body });
+  assertOwned(await getRow(req, TABLES.ALERTS, req.params.id), req, 'Alert');
+  const { AcademyId, ...body } = req.body; // eslint-disable-line no-unused-vars
+  const row = await updateRow(req, TABLES.ALERTS, { ROWID: req.params.id, ...body });
   res.json({ data: row, error: null });
 }));
 

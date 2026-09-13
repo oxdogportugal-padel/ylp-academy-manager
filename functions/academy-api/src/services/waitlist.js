@@ -1,5 +1,6 @@
 const { zcql, insertRow, updateRow, TABLES } = require('../db');
 const { levelFits, csvToNums, enrollmentCount } = require('./matching');
+const { withAcademy } = require('../utils/tenant');
 
 const MIN_GROUP_SIZE = 2; // "possible to open a new class with a minimum of 2 players"
 
@@ -13,7 +14,7 @@ function mode(values) {
 async function openPendingRequests(req, clubId) {
   return zcql(
     req,
-    `SELECT * FROM ${TABLES.REQUESTS} WHERE ClubId = ${Number(clubId)} AND (Status = 'PENDING' OR Status = 'PARTIAL')`
+    `SELECT * FROM ${TABLES.REQUESTS} WHERE AcademyId = ${req.academyId} AND ClubId = ${Number(clubId)} AND (Status = 'PENDING' OR Status = 'PARTIAL')`
   );
 }
 
@@ -41,12 +42,12 @@ async function attemptFulfillFromClass(req, classRow) {
     if (durations.length && !durations.includes(Number(classRow.DurationMinutes))) continue;
 
     // eslint-disable-next-line no-await-in-loop
-    await insertRow(req, TABLES.ENROLLMENTS, {
+    await insertRow(req, TABLES.ENROLLMENTS, withAcademy({
       ClassId: classRow.ROWID,
       PlayerId: r.PlayerId,
       Status: 'CONFIRMED',
       RequestId: r.ROWID,
-    });
+    }, req));
 
     const fulfilledSessions = Number(r.FulfilledSessions || 0) + 1;
     const status = fulfilledSessions >= Number(r.SessionsPerWeek) ? 'FULFILLED' : 'PARTIAL';
@@ -76,7 +77,7 @@ async function scanForClassOpenings(req, clubId) {
 
   const existingAlerts = await zcql(
     req,
-    `SELECT * FROM ${TABLES.ALERTS} WHERE ClubId = ${Number(clubId)} AND Status = 'OPEN'`
+    `SELECT * FROM ${TABLES.ALERTS} WHERE AcademyId = ${req.academyId} AND ClubId = ${Number(clubId)} AND Status = 'OPEN'`
   );
 
   const results = [];
@@ -111,7 +112,7 @@ async function scanForClassOpenings(req, clubId) {
         });
       } else {
         // eslint-disable-next-line no-await-in-loop
-        alert = await insertRow(req, TABLES.ALERTS, {
+        alert = await insertRow(req, TABLES.ALERTS, withAcademy({
           ClubId: Number(clubId),
           Level: level,
           SuggestedDayOfWeek: Number(day),
@@ -119,7 +120,7 @@ async function scanForClassOpenings(req, clubId) {
           SuggestedDurationMinutes: suggestedDuration,
           MatchingRequestIds: matchingIds,
           Status: 'OPEN',
-        });
+        }, req));
       }
       results.push(alert);
     }

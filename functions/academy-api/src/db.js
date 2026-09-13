@@ -1,6 +1,7 @@
 const catalyst = require('zcatalyst-sdk-node');
 
 const TABLES = {
+  ACADEMIES: 'Academies',
   CLUBS: 'Clubs',
   COACHES: 'Coaches',
   CLUB_COACHES: 'ClubCoaches',

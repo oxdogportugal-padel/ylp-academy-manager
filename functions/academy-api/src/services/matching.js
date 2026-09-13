@@ -1,4 +1,5 @@
-const { zcql, TABLES } = require('../db');
+const { zcql, getRow, TABLES } = require('../db');
+const { assertOwned } = require('../utils/tenant');
 
 const LEVEL_FLEXIBILITY = 1; // "same level, with some flexibility of 1 level before or after"
 
@@ -34,14 +35,14 @@ function timeOverlapScore(classStart, durationMinutes, prefStart, prefEnd) {
 async function openClassesForClub(req, clubId) {
   return zcql(
     req,
-    `SELECT * FROM ${TABLES.CLASSES} WHERE ClubId = ${Number(clubId)} AND Status != 'CANCELLED' ORDER BY DayOfWeek ASC, StartTime ASC LIMIT 500`
+    `SELECT * FROM ${TABLES.CLASSES} WHERE AcademyId = ${req.academyId} AND ClubId = ${Number(clubId)} AND Status != 'CANCELLED' ORDER BY DayOfWeek ASC, StartTime ASC LIMIT 500`
   );
 }
 
 async function enrollmentCount(req, classId) {
   const rows = await zcql(
     req,
-    `SELECT ROWID FROM ${TABLES.ENROLLMENTS} WHERE ClassId = ${Number(classId)} AND Status = 'CONFIRMED'`
+    `SELECT ROWID FROM ${TABLES.ENROLLMENTS} WHERE AcademyId = ${req.academyId} AND ClassId = ${Number(classId)} AND Status = 'CONFIRMED'`
   );
   return rows.length;
 }
@@ -51,6 +52,7 @@ async function enrollmentCount(req, classId) {
  * preferences: { level, days: [0-6], durations: [60,90,120], timeStart, timeEnd }
  */
 async function recommendClasses(req, clubId, preferences) {
+  assertOwned(await getRow(req, TABLES.CLUBS, clubId), req, 'Club');
   const classes = await openClassesForClub(req, clubId);
   const preferredDays = preferences.days && preferences.days.length ? preferences.days.map(Number) : null;
   const preferredDurations = preferences.durations && preferences.durations.length ? preferences.durations.map(Number) : null;

@@ -1,9 +1,17 @@
+import { useAcademyStore } from '../store/academy';
+
 const BASE = '/server/academy-api/api/v1';
 
 async function request(path, options = {}) {
+  const { academyId } = useAcademyStore.getState();
+
   const res = await fetch(`${BASE}${path}`, {
     credentials: 'include',
-    headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
+    headers: {
+      'Content-Type': 'application/json',
+      ...(academyId ? { 'X-Academy-Id': academyId } : {}),
+      ...(options.headers || {}),
+    },
     ...options,
   });
 

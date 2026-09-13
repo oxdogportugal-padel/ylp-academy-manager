@@ -1,6 +1,17 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from './client';
 
+// ---- Academies (tenants) ----
+export const useMyAcademies = () => useQuery({ queryKey: ['academies', 'mine'], queryFn: () => api.get('/academies/mine') });
+
+export const useCreateAcademy = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data) => api.post('/academies', data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['academies'] }),
+  });
+};
+
 // ---- Clubs ----
 export const useClubs = () => useQuery({ queryKey: ['clubs'], queryFn: () => api.get('/clubs') });
 export const useClub = (id) => useQuery({ queryKey: ['clubs', id], queryFn: () => api.get(`/clubs/${id}`), enabled: !!id });
