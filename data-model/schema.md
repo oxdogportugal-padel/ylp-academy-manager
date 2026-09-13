@@ -122,7 +122,7 @@ Represents both "no class fit yet" and "player wants a 2nd weekly session and on
 | SuggestedDayOfWeek | Integer | most common day among matches |
 | SuggestedTimeStart | Varchar(5) | most common window start among matches |
 | SuggestedDurationMinutes | Integer | most common duration requested |
-| MatchingRequestIds | Varchar(500) | CSV of `Requests.ROWID` |
+| MatchingRequestIds | Varchar(255) | CSV of `Requests.ROWID` — 255 is Catalyst's varchar ceiling, ~12 ids |
 | Status | Varchar(20) | `OPEN` \| `RESOLVED` \| `DISMISSED` |
 
 ---
