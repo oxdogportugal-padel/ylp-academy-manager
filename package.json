@@ -6,5 +6,8 @@
     "client",
     "functions/academy-api",
     "functions/waitlist-sweeper"
-  ]
+  ],
+  "scripts": {
+    "build": "npm run build --workspace=client"
+  }
 }
