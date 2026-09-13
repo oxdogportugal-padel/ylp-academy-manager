@@ -1,0 +1,10 @@
+{
+  "name": "ylp-academy-manager",
+  "private": true,
+  "version": "1.0.0",
+  "workspaces": [
+    "client",
+    "functions/academy-api",
+    "functions/waitlist-sweeper"
+  ]
+}
