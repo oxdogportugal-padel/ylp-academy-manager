@@ -1,0 +1,7 @@
+{
+  "deployment_config": {
+    "stack": "node18",
+    "kind": "basicio",
+    "type": "basicio"
+  }
+}

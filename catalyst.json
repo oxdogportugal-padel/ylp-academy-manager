@@ -1,0 +1,24 @@
+{
+  "project_name": "ylp-academy-manager",
+  "functions": [
+    {
+      "name": "academy-api",
+      "type": "advancedio",
+      "source": "functions/academy-api",
+      "deploy_command": "npm install",
+      "stack": "node18"
+    },
+    {
+      "name": "waitlist-sweeper",
+      "type": "basicio",
+      "source": "functions/waitlist-sweeper",
+      "deploy_command": "npm install",
+      "stack": "node18"
+    }
+  ],
+  "client": {
+    "source": "client",
+    "build_command": "npm install && npm run build",
+    "build_path": "dist"
+  }
+}

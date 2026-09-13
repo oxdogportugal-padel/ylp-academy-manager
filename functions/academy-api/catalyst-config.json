@@ -1,0 +1,8 @@
+{
+  "deployment_config": {
+    "stack": "node18",
+    "kind": "advancedio",
+    "type": "advancedio"
+  },
+  "cache_bucket_config": null
+}
