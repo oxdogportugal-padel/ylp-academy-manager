@@ -99,6 +99,19 @@ table{width:100%;border-collapse:collapse;font-size:14px}
 th{text-align:left;font-weight:500;font-size:11.5px;color:var(--ink2);background:var(--sunken);padding:8px 10px}
 td{padding:8px 10px;border-top:1px solid var(--line);vertical-align:middle}
 .scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+/* phones: wide tables become one card per row, so edit/delete are never off-screen */
+@media(max-width:767px){
+  .card.stackwrap{overflow:visible;background:transparent;border:none;box-shadow:none;padding:0}
+  table.stack thead{display:none}
+  table.stack,table.stack tbody,table.stack tr,table.stack td{display:block;width:100%}
+  table.stack tr{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:6px 12px;box-shadow:var(--shadow)}
+  table.stack tr+tr{margin-top:8px}
+  table.stack td{display:flex;align-items:center;justify-content:space-between;gap:12px;border-top:1px solid var(--line);padding:7px 0;text-align:right}
+  table.stack td:first-child{border-top:none}
+  table.stack td[data-label]::before{content:attr(data-label);flex:none;font-size:11.5px;font-weight:500;color:var(--ink2);text-align:left}
+  table.stack td.th{font-family:'Barlow Semi Condensed',sans-serif;font-weight:700;font-size:17px;justify-content:flex-start;text-align:left;gap:6px}
+  table.stack td.acts{justify-content:flex-end;padding:4px 0 2px}
+}
 .empty{border:1px dashed var(--line);border-radius:12px;padding:26px;text-align:center;color:var(--ink2)}
 /* calendar */
 .cal{min-width:760px}
@@ -1408,19 +1421,19 @@ function viewWaitlist(){
 
   var rows=S.requests.map(function(q){
     var placed=(q.placed||[]).length, done=placed>=q.sessions;
-    return '<tr><td>'+esc(q.name)+'</td><td>'+lvlTag(q.level,22)+'</td>'+
-      '<td class="muted">'+esc((byId(S.venues,q.venueId)||{}).name||"—")+'</td>'+
-      '<td>'+q.sessions+'× / week</td>'+
-      '<td><span class="chip '+(done?"ok":placed?"warn":"")+'">'+(done?"Complete":placed+" of "+q.sessions)+'</span></td>'+
-      '<td class="muted small">'+(q.windows||[]).map(function(w){return DAYS[w.day];}).join(", ")+' · '+((q.windows||[])[0]||{}).from+'–'+((q.windows||[])[0]||{}).to+'</td>'+
-      '<td style="text-align:right;white-space:nowrap"><button class="btn icon" data-act="editRequest" data-id="'+q.id+'">✎</button>'+
+    return '<tr><td class="th">'+esc(q.name)+'</td><td data-label="Level">'+lvlTag(q.level,22)+'</td>'+
+      '<td class="muted" data-label="Club">'+esc((byId(S.venues,q.venueId)||{}).name||"—")+'</td>'+
+      '<td data-label="Wants">'+q.sessions+'× / week</td>'+
+      '<td data-label="Booked"><span class="chip '+(done?"ok":placed?"warn":"")+'">'+(done?"Complete":placed+" of "+q.sessions)+'</span></td>'+
+      '<td class="muted small" data-label="Availability">'+(q.windows||[]).map(function(w){return DAYS[w.day];}).join(", ")+' · '+((q.windows||[])[0]||{}).from+'–'+((q.windows||[])[0]||{}).to+'</td>'+
+      '<td class="acts" style="text-align:right;white-space:nowrap"><button class="btn icon" data-act="editRequest" data-id="'+q.id+'">✎</button>'+
       '<button class="btn icon" data-act="delRequest" data-id="'+q.id+'">🗑</button></td></tr>';
   }).join("");
 
   return alerts+
     '<div class="row mt mb" style="justify-content:space-between"><h3 style="font-size:21px">Waiting list · '+openRequests().length+'</h3>'+
     '<button class="btn sm primary" data-act="newRequest">＋ New request</button></div>'+
-    (S.requests.length?'<div class="card scroll"><table><thead><tr><th>Player</th><th>Level</th><th>Club</th><th>Wants</th><th>Booked</th><th>Availability</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>'
+    (S.requests.length?'<div class="card scroll stackwrap"><table class="stack"><thead><tr><th>Player</th><th>Level</th><th>Club</th><th>Wants</th><th>Booked</th><th>Availability</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>'
       :'<div class="empty">Nobody waiting. Add a request when a player asks for classes you cannot place yet.</div>');
 }
 
@@ -1501,13 +1514,13 @@ function viewManage(){
   }
   h+=crudHead("Classes","newClass","New class");
   var sorted=S.classes.slice().sort(function(a,b){return a.day-b.day||toMin(a.start)-toMin(b.start);});
-  h+= sorted.length? '<div class="card scroll"><table><thead><tr><th>Day</th><th>Time</th><th>Level</th><th>Coach</th><th>Club</th><th>Seats</th><th></th></tr></thead><tbody>'+
+  h+= sorted.length? '<div class="card scroll stackwrap"><table class="stack"><thead><tr><th>Day</th><th>Time</th><th>Level</th><th>Coach</th><th>Club</th><th>Seats</th><th></th></tr></thead><tbody>'+
     sorted.map(function(k){
-      return '<tr><td>'+DAYS[k.day]+'</td><td>'+k.start+'–'+hhmm(endOf(k))+'</td><td>'+lvlTag(k.level,22)+'</td>'+
-        '<td>'+esc((byId(S.coaches,k.coachId)||{}).name||"—")+'</td>'+
-        '<td class="muted">'+esc((byId(S.venues,k.venueId)||{}).name||"—")+'</td>'+
-        '<td>'+(k.playerIds||[]).length+'/'+capOf(k)+'</td>'+
-        '<td style="text-align:right;white-space:nowrap"><button class="btn icon" data-act="openClassDetail" data-id="'+k.id+'">👥</button>'+
+      return '<tr><td class="th">'+DAYS[k.day]+'<span class="only-m">· '+k.start+'–'+hhmm(endOf(k))+'</span></td><td class="only-d" data-label="Time">'+k.start+'–'+hhmm(endOf(k))+'</td><td data-label="Level">'+lvlTag(k.level,22)+'</td>'+
+        '<td data-label="Coach">'+esc((byId(S.coaches,k.coachId)||{}).name||"—")+'</td>'+
+        '<td class="muted" data-label="Club">'+esc((byId(S.venues,k.venueId)||{}).name||"—")+'</td>'+
+        '<td data-label="Seats">'+(k.playerIds||[]).length+'/'+capOf(k)+'</td>'+
+        '<td class="acts" style="text-align:right;white-space:nowrap"><button class="btn icon" data-act="openClassDetail" data-id="'+k.id+'">👥</button>'+
         '<button class="btn icon" data-act="editClass" data-id="'+k.id+'">✎</button>'+
         '<button class="btn icon" data-act="delClass" data-id="'+k.id+'">🗑</button></td></tr>';
     }).join("")+'</tbody></table></div>' : '<div class="empty">No classes yet.</div>';
