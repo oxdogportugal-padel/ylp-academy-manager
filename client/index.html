@@ -1,13 +1,1644 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="theme-color" content="#127242" />
-    <title>Academy Manager</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bandeja — Padel Academy Planner</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 100'%3E%3Crect width='120' height='100' rx='18' fill='%2312222B'/%3E%3Ccircle cx='60' cy='38' r='22' fill='%23E09A2B'/%3E%3Cpath d='M14 44 Q60 90 106 44' fill='none' stroke='%23E09A2B' stroke-width='13' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- Order matters: the SDK bundle must load before init.js, which initialises it. -->
+<script src="https://static.zohocdn.com/catalyst/sdk/js/4.6.1/catalystWebSDK.js"></script>
+<script src="/__catalyst/sdk/init.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Semi+Condensed:wght@600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EBEEE9; --panel:#FFFFFF; --sunken:#F4F6F2; --line:#D7DDD4;
+  --ink:#12222B; --ink2:#53646E; --honey:#E09A2B; --honeyBg:#FBF1E6; --honeyInk:#7A5210;
+  --turf:#4F8A5B; --turfBg:#EAF2EB; --turfInk:#33613F;
+  --alert:#BE5236; --alertBg:#FBECE7; --alertInk:#7A3420;
+  --head:#12222B; --headInk:#FFFFFF; --shadow:0 1px 2px rgba(18,34,43,.08);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0E171D; --panel:#16242C; --sunken:#1B2B34; --line:#283A43;
+    --ink:#E7EEEA; --ink2:#94A6B0; --honeyBg:#33260F; --honeyInk:#F0C378;
+    --turfBg:#1B2E22; --turfInk:#8FC79C; --alertBg:#33201A; --alertInk:#F0A48B;
+    --head:#0A1218; --shadow:0 1px 2px rgba(0,0,0,.4);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0E171D; --panel:#16242C; --sunken:#1B2B34; --line:#283A43;
+  --ink:#E7EEEA; --ink2:#94A6B0; --honeyBg:#33260F; --honeyInk:#F0C378;
+  --turfBg:#1B2E22; --turfInk:#8FC79C; --alertBg:#33201A; --alertInk:#F0A48B;
+  --head:#0A1218; --shadow:0 1px 2px rgba(0,0,0,.4);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:'Barlow',system-ui,-apple-system,Segoe UI,sans-serif;font-size:15px;line-height:1.45;-webkit-text-size-adjust:100%}
+h1,h2,h3,h4{font-family:'Barlow Semi Condensed','Barlow',system-ui,sans-serif;font-weight:700;margin:0}
+button{font:inherit;cursor:pointer}
+input,select,textarea{font:inherit}
+.wrap{max-width:1240px;margin:0 auto;padding:0 16px}
+header.top{background:var(--head);color:var(--headInk)}
+.top .wrap{padding-top:14px;padding-bottom:0}
+.brandrow{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap}
+.eyebrow{font-size:11px;letter-spacing:.06em;text-transform:uppercase;opacity:.55}
+/* The product mark stays quiet: the academy's own name is the headline. */
+.brand{display:flex;align-items:center;gap:7px;opacity:.62;margin-bottom:3px}
+.brand .wm{font-family:'Barlow Semi Condensed',sans-serif;font-weight:700;font-size:13px;letter-spacing:.14em;line-height:1}
+.brand .by{font-size:10.5px;letter-spacing:.04em;opacity:.72;margin-left:1px}
+.hmark{opacity:.55;line-height:0;flex:none}
+.acadname{font-family:'Barlow Semi Condensed',sans-serif;font-weight:700;font-size:30px;line-height:1.1;display:flex;align-items:center;gap:10px}
+.acadname button{background:none;border:none;color:inherit;opacity:.5;padding:2px}
+.acadname button:hover{opacity:1}
+.stats{display:flex;gap:18px;font-size:12px}
+.stat b{display:block;font-family:'Barlow Semi Condensed',sans-serif;font-size:23px;font-weight:700}
+.stat span{opacity:.6}
+nav.tabs{display:flex;gap:6px;margin-top:14px;overflow-x:auto;padding-bottom:12px}
+nav.tabs button{white-space:nowrap;background:transparent;color:rgba(255,255,255,.72);border:1px solid rgba(255,255,255,.2);border-radius:9px;padding:7px 12px;display:inline-flex;align-items:center;gap:7px}
+nav.tabs button.on{background:#fff;color:#12222B;border-color:#fff}
+.badge{background:var(--honey);color:#2A1C04;border-radius:99px;font-size:11px;font-weight:700;padding:1px 6px}
+main{padding:18px 0 60px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow)}
+.pad{padding:16px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.grow{flex:1;min-width:0}
+.muted{color:var(--ink2)}
+.small{font-size:13px}
+.tiny{font-size:11.5px}
+.mt{margin-top:14px}.mb{margin-bottom:12px}
+.btn{display:inline-flex;align-items:center;gap:7px;border-radius:9px;padding:8px 13px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font-weight:500}
+.btn:hover{border-color:var(--ink2)}
+.btn.primary{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.btn.honey{background:var(--honey);color:#2A1C04;border-color:var(--honey)}
+.btn.danger{color:var(--alert)}
+.btn.sm{padding:5px 10px;font-size:13px}
+.btn.icon{padding:5px 7px;border-color:transparent;background:transparent;color:var(--ink2)}
+.btn.icon:hover{color:var(--ink);background:var(--sunken)}
+.btn[disabled]{opacity:.42;cursor:not-allowed}
+label.f{display:block;margin-bottom:10px}
+label.f>span{display:block;font-size:12px;color:var(--ink2);margin-bottom:4px}
+.inp{width:100%;padding:8px 10px;border-radius:9px;border:1px solid var(--line);background:var(--panel);color:var(--ink);outline:none}
+.inp:focus{outline:2px solid var(--honey);outline-offset:1px}
+input[type=range]{width:100%;accent-color:var(--honey)}
+.grid{display:grid;gap:12px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(180px,1fr))}
+.g3{grid-template-columns:repeat(auto-fill,minmax(230px,1fr))}
+.chip{display:inline-flex;align-items:center;gap:6px;border-radius:8px;padding:4px 9px;font-size:12.5px;background:var(--sunken);color:var(--ink2);border:1px solid transparent}
+.chip.ok{background:var(--turfBg);color:var(--turfInk)}
+.chip.warn{background:var(--honeyBg);color:var(--honeyInk)}
+.chip.bad{background:var(--alertBg);color:var(--alertInk)}
+.chip.sel{background:var(--ink);color:var(--bg)}
+.chip.pick{cursor:pointer;border-color:var(--line);background:var(--panel);color:var(--ink)}
+.chip.pick.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.lvl{display:inline-flex;align-items:center;justify-content:center;border-radius:7px;color:#fff;font-family:'Barlow Semi Condensed',sans-serif;font-weight:700;line-height:1}
+.listrow{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:9px;background:var(--sunken)}
+.listrow+.listrow{margin-top:6px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{text-align:left;font-weight:500;font-size:11.5px;color:var(--ink2);background:var(--sunken);padding:8px 10px}
+td{padding:8px 10px;border-top:1px solid var(--line);vertical-align:middle}
+.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.empty{border:1px dashed var(--line);border-radius:12px;padding:26px;text-align:center;color:var(--ink2)}
+/* calendar */
+.cal{min-width:760px}
+.calhead{display:grid;grid-template-columns:52px repeat(7,minmax(0,1fr));border-bottom:1px solid var(--line)}
+.calhead>div{padding:8px 6px;border-left:1px solid var(--line)}
+.calhead>div:first-child{border-left:none}
+.calbody{display:grid;grid-template-columns:52px repeat(7,minmax(0,1fr))}
+.daycol{position:relative;border-left:1px solid var(--line)}
+.gut{position:relative}
+.gutlab{position:absolute;right:7px;font-size:11px;color:var(--ink2)}
+.hline{position:absolute;left:0;right:0;border-top:1px solid var(--line)}
+.hline.half{border-top-color:var(--sunken)}
+.ev{position:absolute;border-radius:9px;color:#fff;padding:3px 6px;overflow:hidden;text-align:left;border:none;box-shadow:0 1px 0 rgba(0,0,0,.14);cursor:grab;touch-action:none}
+.ev.dragging{z-index:6;cursor:grabbing;opacity:.92;box-shadow:0 8px 20px rgba(0,0,0,.34);outline:2px solid var(--honey);outline-offset:1px}
+.dragtip{position:fixed;z-index:98;pointer-events:none;background:var(--ink);color:var(--bg);font-family:'Barlow Semi Condensed',sans-serif;font-weight:700;font-size:13px;letter-spacing:.02em;padding:4px 9px;border-radius:7px;box-shadow:0 3px 10px rgba(0,0,0,.3)}
+.ev b{font-family:'Barlow Semi Condensed',sans-serif;font-size:12.5px;display:block}
+.ev i{font-style:normal;font-size:11px;opacity:.92;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pips{display:flex;gap:3px;margin-top:3px;align-items:center}
+.pip{width:6px;height:6px;border-radius:50%;box-shadow:inset 0 0 0 1px currentColor;opacity:.5}
+.pip.on{background:currentColor;opacity:.95;box-shadow:none}
+.daycard{width:100%;text-align:left;border-radius:11px;padding:10px 12px;color:#fff;border:none;margin-bottom:8px;box-shadow:var(--shadow)}
+.daycard b{font-family:'Barlow Semi Condensed',sans-serif;font-size:16px}
+.daystrip{display:flex;gap:5px;overflow-x:auto;padding-bottom:6px;margin-bottom:10px}
+.daystrip button{flex:1;min-width:48px;border-radius:9px;border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:7px 4px;text-align:center}
+.daystrip button.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.daystrip b{display:block;font-family:'Barlow Semi Condensed',sans-serif;font-size:14px}
+/* modal */
+.scrim{position:fixed;inset:0;background:rgba(10,18,24,.45);display:flex;align-items:flex-end;justify-content:center;z-index:50;padding:0}
+@media(min-width:640px){.scrim{align-items:center;padding:24px}}
+.modal{background:var(--panel);width:100%;max-width:520px;max-height:92vh;overflow:auto;border-radius:14px 14px 0 0;border:1px solid var(--line)}
+@media(min-width:640px){.modal{border-radius:14px}}
+.mhead{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--panel)}
+.mfoot{display:flex;gap:8px;justify-content:flex-end;padding:14px 16px;border-top:1px solid var(--line);position:sticky;bottom:0;background:var(--panel)}
+.drawer{max-width:430px;margin-left:auto;height:100%;border-radius:0;max-height:100vh}
+@media(max-width:639px){.drawer{border-radius:14px 14px 0 0;max-height:92vh;height:auto}}
+.bar{height:6px;border-radius:3px;background:var(--sunken);overflow:hidden}
+.bar>i{display:block;height:100%}
+.note{display:flex;gap:9px;align-items:flex-start;border-radius:10px;padding:10px 12px;font-size:13.5px}
+.note.warn{background:var(--honeyBg);color:var(--honeyInk)}
+.note.bad{background:var(--alertBg);color:var(--alertInk)}
+.note.info{background:var(--sunken);color:var(--ink2)}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:22px;background:var(--ink);color:var(--bg);padding:9px 15px;border-radius:99px;font-size:13.5px;z-index:99;box-shadow:0 4px 14px rgba(0,0,0,.25);display:flex;align-items:center;gap:11px;max-width:calc(100vw - 32px)}
+.toast .tundo{background:transparent;border:1px solid currentColor;color:inherit;border-radius:99px;padding:3px 11px;font-size:12.5px;font-weight:600;flex:none}
+#banner{display:none;background:var(--alertBg);color:var(--alertInk);padding:10px 16px;font-size:13.5px;border-bottom:1px solid var(--alert);position:sticky;top:0;z-index:60}
+#banner.on{display:block}
+#banner button{margin-left:10px;border:1px solid currentColor;background:transparent;color:inherit;border-radius:7px;padding:2px 9px;font-size:12.5px}
+.sub{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.sub button{border-radius:9px;border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:7px 12px}
+.sub button.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.hide{display:none!important}
+.step{flex:none;width:25px;height:25px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;background:var(--panel);border:1px solid var(--line);color:var(--ink2)}
+.step.done{background:var(--turf);border-color:var(--turf);color:#fff}
+textarea.inp{min-height:150px;resize:vertical;line-height:1.5}
+@media(min-width:768px){.only-m{display:none!important}}
+@media(max-width:767px){.only-d{display:none!important}}
+/* ── bottom tab bar: phones get a fixed bar so no tab can be cut off ── */
+.bottomnav{position:fixed;left:0;right:0;bottom:0;z-index:40;display:flex;background:var(--panel);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
+.bottomnav button{flex:1 1 0;min-width:0;background:transparent;border:none;color:var(--ink2);padding:6px 2px;min-height:56px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:10.5px;font-weight:600;position:relative}
+.bottomnav button.on{color:var(--ink)}
+.bottomnav button.on::after{content:"";position:absolute;top:0;left:22%;right:22%;height:3px;border-radius:0 0 3px 3px;background:var(--honey)}
+.bicon{position:relative;display:block;line-height:0}
+.bottomnav svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.bdot{position:absolute;top:-5px;left:11px;background:var(--honey);color:#2A1C04;border-radius:99px;font-size:10px;font-weight:700;font-style:normal;line-height:1;padding:2px 5px;border:1.5px solid var(--panel)}
+@media(min-width:768px){.bottomnav{display:none}}
+@media(max-width:767px){
+  /* the header used to eat half the screen before any content showed */
+  .top .wrap{padding-bottom:12px}
+  .brand{display:none}
+  .brandrow>div:first-child{width:100%}
+  .acadname{font-size:22px;gap:7px}
+  .brandrow{flex-direction:column;align-items:flex-start;gap:0}
+  .stats{gap:15px;margin-top:7px;font-size:11px}
+  .stat b{font-size:18px}
+  main{padding-bottom:calc(74px + env(safe-area-inset-bottom))}
+  .toast{bottom:calc(84px + env(safe-area-inset-bottom))}
+  /* 16px stops iOS Safari zooming the page when a field takes focus */
+  .inp,input,select,textarea{font-size:16px}
+  .btn{min-height:42px;padding:9px 14px}
+  .btn.sm{min-height:36px}
+  .btn.icon{min-height:36px;min-width:36px;justify-content:center}
+  .mfoot{padding-bottom:calc(14px + env(safe-area-inset-bottom))}
+  .mfoot .btn{flex:1;justify-content:center}
+  /* all seven days must fit without a sideways scroll */
+  .daystrip{gap:4px}
+  .daystrip button{min-width:0;padding:7px 2px}
+  /* settings are glance tiles — two-up halves the scrolling */
+  .gset{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body>
+<div id="banner"></div>
+<header class="top">
+  <div class="wrap">
+    <div class="brandrow">
+      <div>
+        <div class="brand">
+          <svg viewBox="0 0 120 100" width="19" height="16" aria-hidden="true" focusable="false"><circle cx="60" cy="38" r="21" fill="currentColor"></circle><path d="M14 44 Q60 90 106 44" fill="none" stroke="currentColor" stroke-width="12" stroke-linecap="round"></path></svg>
+          <span class="wm">BANDEJA</span><span class="by">by YLP Solutions</span>
+        </div>
+        <div class="acadname"><span id="acadName">—</span>
+          <button data-act="editAcademy" title="Edit academy" aria-label="Edit academy name">✎</button>
+          <span class="grow"></span>
+          <span class="hmark only-m"><svg viewBox="0 0 120 100" width="27" height="23" role="img" aria-label="Bandeja" focusable="false"><circle cx="60" cy="38" r="21" fill="currentColor"></circle><path d="M14 44 Q60 90 106 44" fill="none" stroke="currentColor" stroke-width="12" stroke-linecap="round"></path></svg></span>
+        </div>
+      </div>
+      <div class="stats" id="stats"></div>
+    </div>
+    <nav class="tabs only-d" id="tabs"></nav>
+  </div>
+</header>
+<main><div class="wrap" id="view"></div></main>
+<nav class="bottomnav" id="bnav" aria-label="Sections"></nav>
+<div id="modalRoot"></div>
+
+<script>
+(function(){
+"use strict";
+
+/* ─────────── constants ─────────── */
+var DAYS=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+var DAYF=["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
+var RAMP=["#9FBF9B","#7FB292","#5DA489","#3E9588","#2A8590","#26739B","#2C5F9E","#414A92","#5A3C84","#7A386F","#96335A"];
+var DAY_START=8*60, DAY_END=22*60, ROW=22;
+
+var DEFAULT_RULES={
+  levelMin:0, levelMax:10, levelTolerance:1, classCapacity:4,
+  durations:[60,90,120], minPlayersToOpen:2,
+  coachCertification:{1:4,2:7,3:10}, allowUncertifiedCoach:false,
+  newClassDuration:90
+};
+
+/* ─────────── state ─────────── */
+var S={ academy:{name:"My Padel Academy", rules:clone(DEFAULT_RULES)},
+        venues:[], coaches:[], players:[], classes:[], requests:[] };
+var UI={ view:"calendar", sub:"academy", venueId:null, day:0, showFilters:false,
+         filters:{minLvl:null,maxLvl:null,coachId:"",duration:"",onlyFree:false} };
+var storage="off", booted=false;
+
+function clone(o){return JSON.parse(JSON.stringify(o));}
+function uid(p){return p+Math.random().toString(36).slice(2,9);}
+function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
+function rules(){var r=S.academy&&S.academy.rules?S.academy.rules:{};var out=clone(DEFAULT_RULES);for(var k in r)out[k]=r[k];return out;}
+function byId(list,id){for(var i=0;i<list.length;i++)if(list[i].id===id)return list[i];return null;}
+
+/* ─────────── time ─────────── */
+function toMin(t){if(typeof t==="number")return t;var p=String(t).split(":");return (+p[0])*60+(+(p[1]||0));}
+function hhmm(m){var h=Math.floor(m/60);return (h<10?"0":"")+h+":"+((m%60)<10?"0":"")+(m%60);}
+function overl(aS,aD,bS,bD){return aS<bS+bD && bS<aS+aD;}
+function endOf(c){return toMin(c.start)+c.duration;}
+
+/* ─────────── level colour ─────────── */
+function lvlColor(l){var r=rules();var span=Math.max(1,r.levelMax-r.levelMin);var i=Math.round((l-r.levelMin)/span*10);return RAMP[Math.max(0,Math.min(10,i))];}
+function lvlTag(l,size){size=size||24;return '<span class="lvl" style="width:'+size+'px;height:'+size+'px;font-size:'+Math.round(size*0.55)+'px;background:'+lvlColor(l)+'">'+fmtLvl(l)+'</span>';}
+function fmtLvl(l){return (Math.round(l*10)/10).toString().replace(/\.0$/,"");}
+
+/* ─────────── rules engine ─────────── */
+function coachMax(co){var r=rules();if(!co)return r.levelMax;var v=r.coachCertification[co.certLevel];return v===undefined?r.levelMax:v;}
+function capOf(c){return c.capacity||rules().classCapacity;}
+function courtsInUse(venueId,day,s,dur,ignore){
+  return S.classes.filter(function(c){return c.venueId===venueId&&c.day===day&&c.id!==ignore&&overl(toMin(c.start),c.duration,s,dur);}).length;
+}
+function coachFree(coachId,day,s,dur,ignore){
+  return !S.classes.some(function(c){return c.coachId===coachId&&c.day===day&&c.id!==ignore&&overl(toMin(c.start),c.duration,s,dur);});
+}
+function canSchedule(k){
+  var out=[],r=rules(),s=toMin(k.start);
+  var v=byId(S.venues,k.venueId), co=byId(S.coaches,k.coachId);
+  if(!v) out.push("Pick a club.");
+  if(!co) out.push("Pick a coach.");
+  if(r.durations.indexOf(k.duration)<0) out.push("This academy runs "+r.durations.join(", ")+" minute classes.");
+  if(k.level<r.levelMin||k.level>r.levelMax) out.push("Level must be between "+r.levelMin+" and "+r.levelMax+".");
+  if(v && courtsInUse(k.venueId,k.day,s,k.duration,k.id)>=v.courts) out.push("All "+v.courts+" courts at "+v.name+" are booked then.");
+  if(co){
+    if(co.venueIds&&co.venueIds.length&&co.venueIds.indexOf(k.venueId)<0) out.push(co.name+" does not work at this club.");
+    if(!coachFree(k.coachId,k.day,s,k.duration,k.id)) out.push(co.name+" already teaches at that time.");
+    if(k.level>coachMax(co)) out.push(co.name+" teaches up to level "+coachMax(co)+".");
+  }
+  return out;
+}
+function fit(cls,req){
+  var r=rules();
+  if(cls.venueId!==req.venueId) return null;
+  var free=capOf(cls)-(cls.playerIds||[]).length;
+  if(free<=0) return null;
+  var gap=Math.abs(cls.level-req.level);
+  if(gap>r.levelTolerance) return null;
+  var co=byId(S.coaches,cls.coachId);
+  var certified=req.level<=coachMax(co);
+  if(!certified&&!r.allowUncertifiedCoach) return null;
+
+  var reasons=[],s=toMin(cls.start),e=s+cls.duration;
+  var sameDay=(req.windows||[]).filter(function(w){return w.day===cls.day;});
+  var inWin=sameDay.some(function(w){return toMin(w.from)<=s&&toMin(w.to)>=e;});
+
+  var lvlPart=1-gap/(r.levelTolerance+1);
+  reasons.push({t:gap===0?"Same level ("+fmtLvl(cls.level)+")":"One level "+(cls.level>req.level?"up":"down")+", inside tolerance",k:"ok"});
+
+  var timePart=0;
+  if(inWin){timePart=1;reasons.push({t:"Inside a preferred window",k:"ok"});}
+  else if(sameDay.length){timePart=.45;reasons.push({t:"Right day, outside the hours",k:"warn"});}
+  else reasons.push({t:"Not a preferred day",k:"warn"});
+
+  var cohesion=.6, mates=(cls.playerIds||[]).map(function(i){return byId(S.players,i);}).filter(Boolean);
+  if(mates.length){
+    var avg=mates.reduce(function(a,p){return a+p.level;},0)/mates.length;
+    var d=Math.abs(avg-req.level);
+    cohesion=Math.max(0,1-d/(r.levelTolerance+1));
+    if(d<=.5) reasons.push({t:"Group plays at the same pace",k:"ok"});
+  } else reasons.push({t:"New class, still empty",k:"ok"});
+
+  var seatPart=free>=2?1:.6;
+  if(free===1) reasons.push({t:"Last seat",k:"warn"});
+
+  var score=Math.round((lvlPart*45+timePart*30+cohesion*15+seatPart*10));
+  if(!certified){score=Math.max(0,score-25);reasons.push({t:(co?co.name:"Coach")+" teaches up to level "+coachMax(co),k:"bad"});}
+  return {cls:cls,score:score,reasons:reasons,free:free};
+}
+function rank(req){
+  return S.classes.map(function(c){return fit(c,req);}).filter(Boolean)
+    .sort(function(a,b){return b.score-a.score||toMin(a.cls.start)-toMin(b.cls.start);});
+}
+function openRequests(){return S.requests.filter(function(r){return (r.placed||[]).length<r.sessions;});}
+function formable(){
+  var r=rules(),out=[],pool0=openRequests();
+  S.venues.forEach(function(v){
+    var pool=pool0.filter(function(x){return x.venueId===v.id;}).sort(function(a,b){return a.level-b.level;});
+    var used={};
+    pool.forEach(function(seed){
+      if(used[seed.id])return;
+      var group=pool.filter(function(x){return !used[x.id]&&Math.abs(x.level-seed.level)<=r.levelTolerance;}).slice(0,r.classCapacity);
+      if(group.length<r.minPlayersToOpen)return;
+      var slot=findSlot(group,v);
+      if(!slot)return;
+      slot.members.forEach(function(m){used[m.id]=true;});
+      out.push({venue:v,day:slot.day,start:slot.start,duration:slot.duration,level:slot.level,coachId:slot.coachId,members:slot.members});
+    });
+  });
+  return out;
+}
+function findSlot(group,v){
+  var r=rules();
+  var durs=[r.newClassDuration].concat(r.durations.filter(function(d){return d!==r.newClassDuration;}));
+  for(var day=0;day<7;day++){
+    var mem=group.filter(function(x){return (x.windows||[]).some(function(w){return w.day===day;});});
+    if(mem.length<r.minPlayersToOpen)continue;
+    var from=Math.max.apply(null,mem.map(function(x){return Math.min.apply(null,x.windows.filter(function(w){return w.day===day;}).map(function(w){return toMin(w.from);}));}));
+    var to=Math.min.apply(null,mem.map(function(x){return Math.max.apply(null,x.windows.filter(function(w){return w.day===day;}).map(function(w){return toMin(w.to);}));}));
+    for(var di=0;di<durs.length;di++){
+      var dur=durs[di];
+      for(var s=from;s+dur<=to;s+=30){
+        if(courtsInUse(v.id,day,s,dur)>=v.courts)continue;
+        var lvl=Math.round(mem.reduce(function(a,x){return a+x.level;},0)/mem.length);
+        var co=S.coaches.filter(function(c){return (!c.venueIds||!c.venueIds.length||c.venueIds.indexOf(v.id)>=0)&&lvl<=coachMax(c)&&coachFree(c.id,day,s,dur);})[0];
+        if(!co)continue;
+        return {day:day,start:hhmm(s),duration:dur,level:lvl,coachId:co.id,members:mem};
+      }
+    }
+  }
+  return null;
+}
+
+/* ─────────── storage: the API function ───────────
+   The browser no longer touches Data Store. Every read and write goes to one
+   Advanced I/O function, which reads the caller's identity from the Catalyst
+   session and derives the academy itself. There is no academy id and no slug
+   in anything this page sends — so there is nothing here to tamper with. */
+
+var FUNCTION_URL = "https://ylp-academy-manager-20105401867.development.catalystserverless.eu/server/api/execute";
+
+var ACADEMY = null;            /* { id, name, rules, plan, maxClubs, maxUsers } */
+var ROLE = null;
+var sdk = null;
+var COLLS=["venues","coaches","players","classes","requests"];
+
+function sid(v){ return v==null ? null : String(v); }
+function num(v){ var n=Number(v); return isNaN(n)?0:n; }
+
+/* init.js loads asynchronously, so poll rather than assume. */
+function waitForSdk(timeoutMs){
+  var deadline=Date.now()+(timeoutMs||10000);
+  return new Promise(function(resolve){
+    (function poll(){
+      var c=window.catalyst;
+      if(c && c.auth && c.auth.isUserAuthenticated) return resolve(c);
+      if(Date.now()>deadline) return resolve(null);
+      setTimeout(poll,150);
+    })();
+  });
+}
+
+/* Slate and the function sit on different domains, so the call needs an
+   absolute URL and an explicit token — a relative path would resolve to Slate
+   and a cookie would not travel. */
+function api(path, payload){
+  if(!sdk) return Promise.reject(new Error("The Catalyst SDK is not loaded."));
+  return sdk.auth.generateAuthToken().then(function(t){
+    var token=(t&&(t.access_token||(t.content&&t.content.token)))||"";
+    var url=FUNCTION_URL, opts={ headers:{ "Authorization":token, "Content-Type":"application/json" } };
+    if(payload){ opts.method="POST"; opts.body=JSON.stringify(Object.assign({path:path},payload)); }
+    else { opts.method="GET"; url+="?path="+encodeURIComponent(path); }
+    return fetch(url,opts).then(function(res){
+      return res.text().then(function(txt){
+        var body={}; try{ body=txt?JSON.parse(txt):{}; }catch(e){ body={error:txt.slice(0,200)}; }
+        if(!res.ok){
+          var e=new Error(body.message||body.error||("HTTP "+res.status));
+          e.code=body.error; e.status=res.status; throw e;
+        }
+        return body;
+      });
+    });
+  });
+}
+
+function banner(msg){
+  var el=document.getElementById("banner");
+  if(!el) return;
+  if(!msg){ el.className=""; el.innerHTML=""; return; }
+  el.className="on";
+  el.innerHTML='<strong>Not saved.</strong> '+esc(msg)+
+    ' <button data-act="reloadNow">Reload and see what was actually saved</button>';
+}
+function failed(what,e){
+  storage="error";
+  var msg=(e&&e.message)||"unknown error";
+  banner("Could not "+what+": "+msg+" What you see on screen is not in the database.");
+  toast("Save failed"); render();
+}
+
+/* ── read ── */
+function loadAll(){
+  if(!sdk) return Promise.resolve();
+  return api("data").then(function(d){
+    ACADEMY=d.academy; ROLE=d.role;
+    S.academy={ name:d.academy.name, rules:d.academy.rules||{} };
+    S.venues=d.venues||[]; S.coaches=d.coaches||[]; S.players=d.players||[];
+    S.classes=d.classes||[]; S.requests=d.requests||[];
+    if(!UI.venueId&&S.venues.length) UI.venueId=S.venues[0].id;
+    storage="on"; banner(null); render();
+  });
+}
+
+/* ── write ──
+   The server assigns ids, so a create must finish before anything references
+   it; every one of these returns a promise and the callers that chain creates
+   await them. */
+function isNew(id){ return !id || !/^\d+$/.test(String(id)); }
+
+function put(coll,obj){
+  var list=S[coll],i=-1;
+  for(var k=0;k<list.length;k++) if(list[k].id===obj.id) i=k;
+  if(i>=0) list[i]=obj; else list.push(obj);
+  render();
+  if(!sdk){ banner("The Catalyst SDK is not loaded, so nothing can be saved."); return Promise.resolve(obj); }
+  return api("save",{collection:coll,record:obj}).then(function(r){
+    if(r && r.id){ obj.id=sid(r.id); render(); }
+    return obj;
+  }).catch(function(e){
+    /* The optimistic row is a lie once the write is refused, so resync first —
+       then raise the banner, because a successful load clears it. */
+    return loadAll().catch(function(){}).then(function(){ failed("save",e); return obj; });
+  });
+}
+
+function drop(coll,id){
+  S[coll]=S[coll].filter(function(x){return x.id!==id;});
+  render();
+  if(!sdk||isNew(id)) return Promise.resolve();
+  return api("delete",{collection:coll,id:id}).catch(function(e){
+    return loadAll().catch(function(){}).then(function(){ failed("delete",e); });
+  });
+}
+
+function saveAcademy(next){
+  S.academy=next;
+  if(ACADEMY){ ACADEMY.name=next.name; ACADEMY.rules=next.rules||{}; }
+  render();
+  if(!sdk) return Promise.resolve();
+  return api("academy",{name:next.name,rules:next.rules||{}}).catch(function(e){
+    return loadAll().catch(function(){}).then(function(){ failed("save",e); });
+  });
+}
+
+/* ── auth gate + boot ── */
+function showLogin(){
+  storage="signedout"; booted=true;
+  /* Signed out there is no academy to name, so the product brand has the screen
+     to itself — the only place in the app where it is loud. */
+  var hd=document.querySelector("header.top"), bn=document.getElementById("bnav");
+  if(hd) hd.style.display="none";
+  if(bn) bn.style.display="none";
+  document.body.style.background="var(--head)";
+  document.getElementById("view").innerHTML=
+    '<div style="max-width:420px;margin:0 auto;padding:46px 0 40px;display:flex;flex-direction:column;align-items:center;gap:26px">'+
+      '<div style="display:flex;flex-direction:column;align-items:center;gap:11px;color:var(--honey)">'+
+        '<svg viewBox="0 0 120 100" width="78" height="65" role="img" aria-label="Bandeja" focusable="false">'+
+          '<circle cx="60" cy="38" r="21" fill="currentColor"></circle>'+
+          '<path d="M14 44 Q60 90 106 44" fill="none" stroke="currentColor" stroke-width="12" stroke-linecap="round"></path></svg>'+
+        '<div style="font-family:\'Barlow Semi Condensed\',sans-serif;font-weight:700;font-size:42px;line-height:1;letter-spacing:.09em;text-indent:.09em;color:#EBEEE9">BANDEJA</div>'+
+        '<div style="font-size:12.5px;font-weight:500;letter-spacing:.04em;color:#94A6B0">by YLP Solutions</div>'+
+      '</div>'+
+      '<div class="card pad" style="width:100%">'+
+        '<h3 style="font-size:22px">Sign in</h3>'+
+        '<p class="muted small">Your academy is chosen by your account, so there is nothing else to enter.</p>'+
+        '<div id="login-container" style="min-height:320px;margin-top:10px"></div>'+
+      '</div>'+
+      '<p class="tiny" style="margin:0;color:#53646E">Padel academy management</p>'+
+    '</div>';
+  try{ sdk.auth.signIn("login-container",{ login_redirect: window.location.origin + "/" }); }
+  catch(e){
+    document.getElementById("login-container").innerHTML=
+      '<div class="note bad">Sign-in widget failed to load. If the console still has '+
+      'Authentication Type set to Hosted, switch it to Embedded.</div>';
+  }
+}
+function showMessage(title,msg){
+  storage="blocked"; booted=true;
+  document.getElementById("view").innerHTML=
+    '<div class="empty"><h3 style="font-size:22px">'+esc(title)+'</h3>'+
+    '<p class="small">'+esc(msg)+'</p>'+
+    '<div class="mt"><button class="btn" data-act="signOut">Sign out</button></div></div>';
+}
+
+function boot(){
+  render();
+  storage="loading"; render();
+  waitForSdk().then(function(c){
+    if(!c){ storage="nosdk"; booted=true; render(); return; }
+    sdk=c; booted=true;
+    return sdk.auth.isUserAuthenticated().then(function(){
+      return loadAll().catch(function(e){
+        if(e.status===401) return showLogin();
+        if(e.code==="no-academy") return showMessage("No academy yet",
+          "This account is not attached to any academy. Ask your administrator to add you.");
+        if(e.code==="suspended") return showMessage("Academy suspended",
+          "This academy is suspended. Please contact your administrator.");
+        storage="error"; banner("Could not load: "+((e&&e.message)||"unknown error")); render();
+      });
+    }).catch(function(){ showLogin(); });
+  });
+  setInterval(function(){ if(!document.hidden&&storage==="on") loadAll().catch(function(){}); },30000);
+  window.addEventListener("focus",function(){ if(storage==="on") loadAll().catch(function(){}); });
+}
+
+function signOut(){ if(sdk) sdk.auth.signOut(window.location.origin); }
+
+/* ─────────── derived ─────────── */
+function venue(){return byId(S.venues,UI.venueId)||S.venues[0]||null;}
+function visibleClasses(){
+  var f=UI.filters,v=venue();
+  if(!v) return [];
+  return S.classes.filter(function(c){
+    if(c.venueId!==v.id) return false;
+    if(f.minLvl!=null&&c.level<f.minLvl) return false;
+    if(f.maxLvl!=null&&c.level>f.maxLvl) return false;
+    if(f.coachId&&c.coachId!==f.coachId) return false;
+    if(f.duration&&c.duration!==+f.duration) return false;
+    if(f.onlyFree&&(c.playerIds||[]).length>=capOf(c)) return false;
+    return true;
+  });
+}
+function filtersOn(){var f=UI.filters;return !!(f.coachId||f.duration||f.onlyFree||f.minLvl!=null||f.maxLvl!=null);}
+
+/* ─────────── toast ─────────── */
+var toastT=null, toastUndoFn=null;
+function toast(msg,undoFn){
+  var el=document.getElementById("toastEl");
+  if(!el){el=document.createElement("div");el.id="toastEl";el.className="toast";document.body.appendChild(el);}
+  toastUndoFn=undoFn||null;
+  el.innerHTML="";
+  var t=document.createElement("span"); t.textContent=msg; el.appendChild(t);
+  if(undoFn){
+    var b=document.createElement("button");
+    b.className="tundo"; b.type="button"; b.textContent="Undo";
+    b.onclick=function(){ var f=toastUndoFn; toastUndoFn=null; el.style.display="none"; if(f) f(); };
+    el.appendChild(b);
+  }
+  el.style.display="block";
+  clearTimeout(toastT);
+  toastT=setTimeout(function(){el.style.display="none";toastUndoFn=null;}, undoFn?6000:2600);
+}
+
+/* ─────────── modal ─────────── */
+var modalSave=null;
+function closeModal(){document.getElementById("modalRoot").innerHTML="";modalSave=null;MOVE=null;}
+function openModal(title,bodyHtml,footHtml,onSave){
+  modalSave=onSave||null;
+  document.getElementById("modalRoot").innerHTML=
+    '<div class="scrim" data-act="scrim"><div class="modal" id="modalBox">'+
+    '<div class="mhead"><h3>'+esc(title)+'</h3><button class="btn icon" data-act="closeModal">✕</button></div>'+
+    '<div class="pad" id="modalBody">'+bodyHtml+'</div>'+
+    '<div class="mfoot">'+footHtml+'</div></div></div>';
+}
+function mval(id){var el=document.getElementById(id);return el?el.value:"";}
+function mnum(id){var v=parseFloat(mval(id));return isNaN(v)?0:v;}
+function mchecked(name){
+  return Array.prototype.slice.call(document.querySelectorAll('[data-multi="'+name+'"].on')).map(function(e){return e.dataset.val;});
+}
+
+/* form field builders */
+function fText(id,label,val,ph){return '<label class="f"><span>'+esc(label)+'</span><input class="inp" id="'+id+'" value="'+esc(val||"")+'" placeholder="'+esc(ph||"")+'"></label>';}
+function fNum(id,label,val,min,max,step){return '<label class="f"><span>'+esc(label)+'</span><input class="inp" type="number" id="'+id+'" value="'+(val==null?"":val)+'" min="'+(min==null?"":min)+'" max="'+(max==null?"":max)+'" step="'+(step||1)+'"></label>';}
+function fTime(id,label,val){return '<label class="f"><span>'+esc(label)+'</span><input class="inp" type="time" id="'+id+'" value="'+esc(val||"18:00")+'"></label>';}
+function fSel(id,label,val,opts){
+  var o=opts.map(function(x){return '<option value="'+esc(x.v)+'"'+(String(x.v)===String(val)?" selected":"")+'>'+esc(x.t)+'</option>';}).join("");
+  return '<label class="f"><span>'+esc(label)+'</span><select class="inp" id="'+id+'">'+o+'</select></label>';
+}
+function fLevel(id,label,val){
+  var r=rules();
+  return '<label class="f"><span>'+esc(label)+' — <b id="'+id+'Out">'+fmtLvl(val)+'</b></span>'+
+    '<input type="range" id="'+id+'" min="'+r.levelMin+'" max="'+r.levelMax+'" step="0.5" value="'+val+'" oninput="document.getElementById(\''+id+'Out\').textContent=this.value"></label>';
+}
+function fMulti(name,label,values,opts){
+  var chips=opts.map(function(x){
+    var on=values.indexOf(x.v)>=0;
+    return '<button type="button" class="chip pick'+(on?" on":"")+'" data-multi="'+name+'" data-val="'+esc(x.v)+'" data-act="toggleMulti">'+esc(x.t)+'</button>';
+  }).join(" ");
+  return '<div class="f"><span class="tiny muted" style="display:block;margin-bottom:5px">'+esc(label)+'</span><div class="row">'+chips+'</div></div>';
+}
+function venueOpts(){return S.venues.map(function(v){return {v:v.id,t:v.name};});}
+function coachOpts(vid){return S.coaches.filter(function(c){return !vid||!c.venueIds||!c.venueIds.length||c.venueIds.indexOf(vid)>=0;}).map(function(c){return {v:c.id,t:c.name+" (L"+c.certLevel+")"};});}
+function dayOpts(){return DAYF.map(function(d,i){return {v:i,t:d};});}
+function durOpts(){return rules().durations.map(function(d){return {v:d,t:d+" min"};});}
+
+/* ─────────── ACTIONS ─────────── */
+var A={};
+
+A.scrim=function(id,el,ev){ if(ev&&ev.target&&ev.target.classList.contains("scrim")) closeModal(); };
+A.closeModal=closeModal;
+A.saveModal=function(){ if(modalSave) modalSave(); };
+A.toggleMulti=function(id,el){ el.classList.toggle("on"); };
+A.tab=function(v){ UI.view=v; render(); };
+A.sub=function(v){ UI.sub=v; render(); };
+A.pickVenue=function(id){ UI.venueId=id; render(); };
+A.day=function(d){ UI.day=+d; render(); };
+A.toggleFilters=function(){ UI.showFilters=!UI.showFilters; render(); };
+A.clearFilters=function(){ UI.filters={minLvl:null,maxLvl:null,coachId:"",duration:"",onlyFree:false}; render(); };
+A.toggleFree=function(){ UI.filters.onlyFree=!UI.filters.onlyFree; render(); };
+
+/* academy */
+A.editAcademy=function(){
+  var r=rules();
+  openModal("Academy",
+    fText("acName","Academy name",S.academy.name)+
+    '<div class="note info mb">These rules drive every recommendation. Change them and the matching follows.</div>'+
+    '<div class="grid g2">'+
+      fNum("acLvlMin","Lowest level",r.levelMin,0,20,1)+
+      fNum("acLvlMax","Highest level",r.levelMax,1,20,1)+
+      fNum("acTol","Level tolerance (±)",r.levelTolerance,0,5,1)+
+      fNum("acCap","Players per class",r.classCapacity,1,12,1)+
+      fNum("acMin","Minimum to open a class",r.minPlayersToOpen,1,12,1)+
+      fText("acDur","Class lengths (minutes)",r.durations.join(", "))+
+      fNum("acC1","Coach L1 teaches up to",r.coachCertification[1],0,20,1)+
+      fNum("acC2","Coach L2 teaches up to",r.coachCertification[2],0,20,1)+
+      fNum("acC3","Coach L3 teaches up to",r.coachCertification[3],0,20,1)+
+    '</div>',
+    '<button class="btn" data-act="closeModal">Cancel</button><button class="btn primary" data-act="saveModal">Save</button>',
+    function(){
+      var durs=mval("acDur").split(/[,\s]+/).map(function(x){return parseInt(x,10);}).filter(function(x){return x>0;});
+      if(!durs.length){toast("Give at least one class length.");return;}
+      var min=mnum("acLvlMin"),max=mnum("acLvlMax");
+      if(max<=min){toast("Highest level must be above the lowest.");return;}
+      var cap=mnum("acCap"),mp=mnum("acMin");
+      if(mp>cap){toast("Minimum to open cannot exceed class size.");return;}
+      saveAcademy({name:mval("acName")||"Academy",
+        rules:{levelMin:min,levelMax:max,levelTolerance:mnum("acTol"),classCapacity:cap,
+          durations:durs,minPlayersToOpen:mp,newClassDuration:durs.indexOf(90)>=0?90:durs[0],
+          coachCertification:{1:mnum("acC1"),2:mnum("acC2"),3:mnum("acC3")},
+          allowUncertifiedCoach:false}});
+      closeModal();
+    });
+};
+
+/* venues */
+A.reloadNow=function(){ location.reload(); };
+A.newVenue=function(){
+  var max=ACADEMY?ACADEMY.maxClubs:99;
+  if(S.venues.length>=max){
+    return openModal("Club limit reached",
+      '<div class="note warn">This academy’s plan includes '+max+' club'+(max===1?"":"s")+
+      ', and '+S.venues.length+' '+(S.venues.length===1?"is":"are")+' already set up. '+
+      'Raise the limit in the setup console, or remove a club first.</div>',
+      '<button class="btn primary" data-act="closeModal">Close</button>',null);
+  }
+  venueForm({id:uid("v"),name:"",courts:2});
+};
+A.editVenue=function(id){ venueForm(clone(byId(S.venues,id))); };
+function venueForm(v){
+  openModal(v.name?"Edit club":"New club",
+    fText("vName","Club name",v.name,"e.g. Matosinhos")+
+    fNum("vCourts","Courts available to the academy",v.courts,1,30,1),
+    '<button class="btn" data-act="closeModal">Cancel</button><button class="btn primary" data-act="saveModal">Save</button>',
+    function(){
+      if(!mval("vName").trim()){toast("The club needs a name.");return;}
+      v.name=mval("vName").trim(); v.courts=Math.max(1,mnum("vCourts"));
+      put("venues",v); if(!UI.venueId)UI.venueId=v.id; closeModal();
+    });
+}
+A.delVenue=function(id){
+  var v=byId(S.venues,id),n=S.classes.filter(function(c){return c.venueId===id;}).length;
+  confirmBox("Delete "+v.name+"?", n?("Its "+n+" class(es) will be deleted too."):"",function(){
+    S.classes.filter(function(c){return c.venueId===id;}).forEach(function(c){drop("classes",c.id);});
+    drop("venues",id); if(UI.venueId===id)UI.venueId=(S.venues[0]||{}).id||null; closeModal();
+  });
+};
+
+/* coaches */
+A.newCoach=function(){ coachForm({id:uid("co"),name:"",certLevel:1,venueIds:[]}); };
+A.editCoach=function(id){ coachForm(clone(byId(S.coaches,id))); };
+function coachForm(c){
+  openModal(c.name?"Edit coach":"New coach",
+    fText("cName","Coach name",c.name)+
+    fSel("cLevel","Certification",c.certLevel,[{v:1,t:"Level 1 — up to "+rules().coachCertification[1]},{v:2,t:"Level 2 — up to "+rules().coachCertification[2]},{v:3,t:"Level 3 — up to "+rules().coachCertification[3]}])+
+    (S.venues.length?fMulti("coachVenues","Works at",c.venueIds||[],venueOpts()):'<div class="note warn">Create a club first.</div>'),
+    '<button class="btn" data-act="closeModal">Cancel</button><button class="btn primary" data-act="saveModal">Save</button>',
+    function(){
+      if(!mval("cName").trim()){toast("The coach needs a name.");return;}
+      c.name=mval("cName").trim(); c.certLevel=+mval("cLevel"); c.venueIds=mchecked("coachVenues");
+      put("coaches",c); closeModal();
+    });
+}
+A.delCoach=function(id){
+  var c=byId(S.coaches,id),n=S.classes.filter(function(k){return k.coachId===id;}).length;
+  confirmBox("Delete "+c.name+"?", n?("They teach "+n+" class(es), which will be deleted too."):"",function(){
+    S.classes.filter(function(k){return k.coachId===id;}).forEach(function(k){drop("classes",k.id);});
+    drop("coaches",id); closeModal();
+  });
+};
+
+/* players */
+A.newPlayer=function(){ playerForm({id:uid("p"),name:"",level:Math.round((rules().levelMin+rules().levelMax)/2),contact:"",notes:""}); };
+A.editPlayer=function(id){ playerForm(clone(byId(S.players,id))); };
+function playerForm(p){
+  openModal(p.name?"Edit player":"New player",
+    fText("pName","Player name",p.name)+
+    fLevel("pLevel","Level",p.level)+
+    fText("pContact","Contact (optional)",p.contact,"email or phone")+
+    fText("pNotes","Notes (optional)",p.notes),
+    '<button class="btn" data-act="closeModal">Cancel</button><button class="btn primary" data-act="saveModal">Save</button>',
+    function(){
+      if(!mval("pName").trim()){toast("The player needs a name.");return;}
+      p.name=mval("pName").trim(); p.level=mnum("pLevel"); p.contact=mval("pContact"); p.notes=mval("pNotes");
+      put("players",p); closeModal();
+    });
+}
+A.delPlayer=function(id){
+  var p=byId(S.players,id);
+  confirmBox("Delete "+p.name+"?","They will be removed from every class.",function(){
+    S.classes.forEach(function(c){
+      if((c.playerIds||[]).indexOf(id)>=0){ c.playerIds=c.playerIds.filter(function(x){return x!==id;}); put("classes",c); }
+    });
+    drop("players",id); closeModal();
+  });
+};
+
+/* classes */
+A.newClass=function(){
+  var v=venue(); if(!v){toast("Create a club first.");return;}
+  var r=rules();
+  classForm({id:uid("k"),venueId:v.id,coachId:(coachOpts(v.id)[0]||{}).v||"",day:UI.day||0,start:"19:00",
+    duration:r.durations.indexOf(90)>=0?90:r.durations[0],level:Math.round((r.levelMin+r.levelMax)/2),capacity:null,playerIds:[]});
+};
+A.editClass=function(id){ MOVE=null; classForm(clone(byId(S.classes,id))); };
+function classForm(k){
+  var r=rules();
+  openModal(k.playerIds&&byId(S.classes,k.id)?"Edit class":"New class",
+    '<div class="grid g2">'+
+      fSel("kVenue","Club",k.venueId,venueOpts())+
+      fSel("kCoach","Coach",k.coachId,coachOpts(null))+
+      fSel("kDay","Day",k.day,dayOpts())+
+      fTime("kStart","Start",k.start)+
+      fSel("kDur","Length",k.duration,durOpts())+
+      fNum("kCap","Seats (blank = academy default "+r.classCapacity+")",k.capacity,1,12,1)+
+    '</div>'+fLevel("kLevel","Class level",k.level)+
+    '<div id="kConflicts"></div>',
+    '<button class="btn" data-act="closeModal">Cancel</button><button class="btn primary" data-act="saveModal">Save</button>',
+    function(){
+      var next={id:k.id,venueId:mval("kVenue"),coachId:mval("kCoach"),day:+mval("kDay"),start:mval("kStart"),
+        duration:+mval("kDur"),level:mnum("kLevel"),capacity:mval("kCap")?mnum("kCap"):null,playerIds:k.playerIds||[]};
+      var bad=canSchedule(next);
+      var box=document.getElementById("kConflicts");
+      if(bad.length && !box.dataset.forced){
+        box.dataset.forced="1";
+        box.innerHTML='<div class="note bad mt">⚠ '+bad.map(esc).join("<br>")+'<br><br>Press Save again to schedule it anyway.</div>';
+        return;
+      }
+      put("classes",next); UI.venueId=next.venueId; closeModal();
+    });
+}
+A.delClass=function(id){
+  var k=byId(S.classes,id);
+  confirmBox("Cancel this class?",DAYF[k.day]+" "+k.start+", "+(k.playerIds||[]).length+" player(s) will lose their seat.",function(){
+    drop("classes",id); closeModal();
+  });
+};
+A.openClassDetail=function(id){ classDetail(id); };
+function classDetail(id){
+  var k=byId(S.classes,id); if(!k)return;
+  var co=byId(S.coaches,k.coachId), v=byId(S.venues,k.venueId);
+  var roster=(k.playerIds||[]).map(function(i){return byId(S.players,i);}).filter(Boolean);
+  var free=capOf(k)-roster.length, r=rules();
+  var body=
+    '<div class="row" style="justify-content:space-between"><div>'+
+      '<h3 style="font-size:26px">'+k.start+'–'+hhmm(endOf(k))+'</h3>'+
+      '<div class="muted small">'+DAYF[k.day]+' · '+k.duration+' min · '+esc(v?v.name:"—")+' · '+esc(co?co.name:"—")+'</div>'+
+    '</div>'+lvlTag(k.level,38)+'</div>'+
+    '<div class="row mt" style="justify-content:space-between"><b>Players</b><span class="muted small">'+roster.length+' of '+capOf(k)+'</span></div>'+
+    '<div class="mt">'+
+      roster.map(function(p){return '<div class="listrow">'+lvlTag(p.level,22)+'<span class="grow">'+esc(p.name)+'</span>'+
+        '<button class="btn icon" data-act="unenrol" data-id="'+k.id+'" data-p="'+p.id+'" title="Remove">✕</button></div>';}).join("")+
+      (free>0?'<div class="listrow" style="background:transparent;border:1px dashed var(--line);color:var(--ink2)">'+free+' open seat'+(free>1?"s":"")+'</div>':"")+
+    '</div>'+
+    (free>0?'<div class="mt"><button class="btn sm" data-act="addToClass" data-id="'+k.id+'">＋ Add a player</button></div>':"")+
+    '<div class="note info mt">Accepts levels '+fmtLvl(Math.max(r.levelMin,k.level-r.levelTolerance))+'–'+fmtLvl(Math.min(r.levelMax,k.level+r.levelTolerance))+'.</div>'+
+    (MOVE&&MOVE.id===k.id ? movePanel(k)
+      : '<div class="mt"><button class="btn sm" data-act="moveClass" data-id="'+k.id+'">↔ Move to…</button></div>');
+  openModal("Class",body,
+    '<button class="btn danger" data-act="delClass" data-id="'+k.id+'">Cancel class</button>'+
+    '<button class="btn" data-act="editClass" data-id="'+k.id+'">Edit</button>'+
+    '<button class="btn primary" data-act="closeModal">Done</button>',null);
+}
+
+/* ── move a class ──
+   Rather than let someone drop a class into an impossible slot and then refuse
+   it, only offer the slots that already work: a free court, the coach not
+   teaching elsewhere, everything else unchanged. */
+var MOVE=null;
+/* An academy runs on a handful of house times, not on every half hour. Offering
+   all 26 is a wall of chips; offering the five they actually use is a choice. */
+function houseTimes(k){
+  var set={}, out=[];
+  S.classes.forEach(function(c){ if(c.venueId===k.venueId) set[c.start]=1; });
+  set[k.start]=1;
+  for(var t in set) if(set.hasOwnProperty(t)) out.push(t);
+  return out.sort(function(a,b){return toMin(a)-toMin(b);});
+}
+function allTimes(k){
+  var out=[];
+  for(var m=DAY_START;m+k.duration<=DAY_END;m+=30) out.push(hhmm(m));
+  return out;
+}
+function freeStarts(k,day,all){
+  var out=[], times=all?allTimes(k):houseTimes(k);
+  times.forEach(function(t){
+    if(toMin(t)+k.duration>DAY_END) return;
+    if(day===k.day && t===k.start) return;
+    var cand={id:k.id,venueId:k.venueId,coachId:k.coachId,day:day,start:t,
+      duration:k.duration,level:k.level,capacity:k.capacity,playerIds:k.playerIds};
+    if(canSchedule(cand).length===0) out.push(t);
+  });
+  return out;
+}
+function movePanel(k){
+  var day=(MOVE.day==null?k.day:MOVE.day), all=!!MOVE.all, co=byId(S.coaches,k.coachId);
+  var counts=[],i;
+  for(i=0;i<7;i++) counts.push(freeStarts(k,i,all).length);
+  var slots=freeStarts(k,day,all);
+  return '<div class="card pad mt" id="movePanel" style="background:var(--sunken)">'+
+    '<div class="row" style="justify-content:space-between"><b>Move this class</b>'+
+      '<button class="btn icon" data-act="moveCancel" aria-label="Close move">✕</button></div>'+
+    '<p class="tiny muted" style="margin:2px 0 0">Only times with a free court'+(co?' and '+esc(co.name)+' free':"")+
+      '. Same length, level and coach.</p>'+
+    '<div class="row mt" style="gap:5px">'+
+      DAYS.map(function(d,n){
+        return '<button class="chip pick'+(n===day?" on":"")+'" data-act="moveDay" data-id="'+n+'"'+(counts[n]?"":" disabled")+
+          ' aria-label="'+DAYF[n]+', '+counts[n]+' free">'+d+' <b>'+counts[n]+'</b></button>';
+      }).join("")+
+    '</div>'+
+    (slots.length
+      ? '<div class="row mt" style="gap:6px">'+slots.map(function(t){
+          return '<button class="chip pick" data-act="moveTo" data-id="'+k.id+'" data-t="'+t+'">'+t+'</button>';
+        }).join("")+'</div>'
+      : '<div class="note warn mt">Nothing free on '+DAYF[day]+
+        (all?'. Try another day, or use Edit to change the coach or club.':' at your usual hours.')+'</div>')+
+    '<div class="row mt"><button class="btn sm" data-act="moveAll">'+
+      (all?'Only our usual hours':'Show every half hour')+'</button></div>';
+}
+function showMovePanel(id){
+  classDetail(id);
+  /* The modal footer is sticky, so scrolling the panel to the container's
+     bottom hides it underneath. Clear the footer's height as well. */
+  var el=document.getElementById("movePanel"), box=document.getElementById("modalBox");
+  if(!el||!box) return;
+  var foot=box.querySelector(".mfoot"), pad=(foot?foot.offsetHeight:0)+12;
+  var over=el.getBoundingClientRect().bottom-(box.getBoundingClientRect().bottom-pad);
+  if(over>0) box.scrollTop+=over;
+}
+A.moveClass=function(id){ MOVE={id:id,day:null,all:false}; showMovePanel(id); };
+A.moveCancel=function(){ var id=MOVE&&MOVE.id; MOVE=null; if(id) classDetail(id); };
+A.moveDay=function(d){ if(MOVE){ MOVE.day=+d; showMovePanel(MOVE.id); } };
+A.moveAll=function(){ if(MOVE){ MOVE.all=!MOVE.all; showMovePanel(MOVE.id); } };
+A.moveTo=function(id,el){
+  var k=clone(byId(S.classes,id)); if(!k) return;
+  var from={day:k.day,start:k.start};
+  k.day=(MOVE&&MOVE.day!=null)?MOVE.day:k.day;
+  k.start=el.dataset.t;
+  MOVE=null; closeModal();
+  rescheduleTo(k,from);
+};
+/* Shared by the picker and by dragging on the week grid. */
+function rescheduleTo(k,from){
+  put("classes",k);
+  UI.day=k.day; render();
+  toast("Moved to "+DAYF[k.day]+" "+k.start+".",function(){
+    var back=clone(byId(S.classes,k.id)); if(!back) return;
+    back.day=from.day; back.start=from.start;
+    put("classes",back); UI.day=from.day; render();
+    toast("Moved back to "+DAYF[from.day]+" "+from.start+".");
+  });
+}
+A.unenrol=function(id,el){
+  var k=clone(byId(S.classes,id)); k.playerIds=(k.playerIds||[]).filter(function(x){return x!==el.dataset.p;});
+  put("classes",k); classDetail(id);
+};
+A.addToClass=function(id){
+  var k=byId(S.classes,id),r=rules();
+  var cands=S.players.filter(function(p){
+    return (k.playerIds||[]).indexOf(p.id)<0 && Math.abs(p.level-k.level)<=r.levelTolerance;
+  }).sort(function(a,b){return Math.abs(a.level-k.level)-Math.abs(b.level-k.level);});
+  openModal("Add a player",
+    (cands.length? cands.map(function(p){return '<div class="listrow">'+lvlTag(p.level,22)+'<span class="grow">'+esc(p.name)+'</span>'+
+      '<button class="btn sm honey" data-act="enrol" data-id="'+k.id+'" data-p="'+p.id+'">Add</button></div>';}).join("")
+      : '<div class="empty">No player within '+r.levelTolerance+' level of this class. Create one in Manage → Players.</div>'),
+    '<button class="btn" data-act="closeModal">Close</button>',null);
+};
+A.enrol=function(id,el){
+  var k=clone(byId(S.classes,id));
+  k.playerIds=(k.playerIds||[]).concat([el.dataset.p]);
+  if(k.playerIds.length>capOf(k)){toast("Class is full.");return;}
+  put("classes",k); classDetail(id);
+};
+
+/* requests */
+A.newRequest=function(){ requestForm({id:uid("r"),name:"",level:Math.round((rules().levelMin+rules().levelMax)/2),
+  venueId:(venue()||{}).id||"",sessions:1,windows:[{day:1,from:"18:00",to:"21:00"}],placed:[]}); };
+A.editRequest=function(id){ requestForm(clone(byId(S.requests,id))); };
+function requestForm(q){
+  var days=(q.windows||[]).map(function(w){return String(w.day);});
+  var w0=(q.windows||[])[0]||{from:"18:00",to:"21:00"};
+  openModal(q.name?"Edit request":"New request",
+    fText("qName","Player name",q.name)+
+    fLevel("qLevel","Level",q.level)+
+    '<div class="grid g2">'+
+      fSel("qVenue","Club",q.venueId,venueOpts())+
+      fSel("qSessions","Classes per week",q.sessions,[{v:1,t:"1×"},{v:2,t:"2×"},{v:3,t:"3×"}])+
+    '</div>'+
+    fMulti("qDays","Days that work",days,DAYS.map(function(d,i){return {v:String(i),t:d};}))+
+    '<div class="grid g2">'+fTime("qFrom","Not before",w0.from)+fTime("qTo","Not after",w0.to)+'</div>',
+    '<button class="btn" data-act="closeModal">Cancel</button><button class="btn primary" data-act="saveModal">Save</button>',
+    function(){
+      var ds=mchecked("qDays");
+      if(!mval("qName").trim()){toast("The request needs a name.");return;}
+      if(!ds.length){toast("Pick at least one day.");return;}
+      if(toMin(mval("qTo"))<=toMin(mval("qFrom"))){toast("The end of the window must be after its start.");return;}
+      q.name=mval("qName").trim(); q.level=mnum("qLevel"); q.venueId=mval("qVenue"); q.sessions=+mval("qSessions");
+      q.windows=ds.map(function(d){return {day:+d,from:mval("qFrom"),to:mval("qTo")};});
+      put("requests",q); closeModal();
+    });
+}
+A.delRequest=function(id){ drop("requests",id); };
+
+/* place a player */
+var PP={name:"",level:null,venueId:null,sessions:1,days:["1","3"],from:"18:00",to:"21:00",results:null,booked:[]};
+A.ppSearch=function(){
+  PP.name=mval("ppName").trim(); PP.level=mnum("ppLevel"); PP.venueId=mval("ppVenue");
+  PP.sessions=+mval("ppSessions"); PP.days=mchecked("ppDays"); PP.from=mval("ppFrom"); PP.to=mval("ppTo");
+  if(!PP.name){toast("Who is joining?");return;}
+  if(!PP.days.length){toast("Pick at least one day.");return;}
+  PP.booked=[];
+  PP.results=rank({level:PP.level,venueId:PP.venueId,windows:PP.days.map(function(d){return {day:+d,from:PP.from,to:PP.to};})});
+  render();
+};
+A.ppReset=function(){ PP.results=null; PP.booked=[]; render(); };
+A.ppWait=function(){
+  put("requests",{id:uid("r"),name:PP.name,level:PP.level,venueId:PP.venueId,sessions:PP.sessions,
+    windows:PP.days.map(function(d){return {day:+d,from:PP.from,to:PP.to};}),
+    placed:PP.booked.map(function(){return "booked";})});
+  toast("Added to the waiting list."); PP.results=null; PP.booked=[]; UI.view="waitlist"; render();
+};
+
+/* demo + reset */
+function hasRealData(){ return !!(S.venues.length||S.coaches.length||S.players.length||S.classes.length||S.requests.length); }
+
+A.loadDemo=function(){
+  if(hasRealData()){ toast("Sample data only goes into an empty academy."); return; }
+  confirmBox("Load sample data?","This adds a club, coaches, players and a week of classes so you can see the shape of it. Invented names only.",function(){
+    seedDemo(); closeModal(); toast("Sample week loaded.");
+  });
+};
+
+/* ── paste a roster ──
+   Academies keep their players in a WhatsApp message or a spreadsheet column.
+   One line per player, an optional level after a comma, tab or semicolon. */
+function parseRoster(text){
+  var r=rules(), mid=Math.round((r.levelMin+r.levelMax)*0.5*2)/2;
+  var out={rows:[],bad:[],dupes:[]};
+  var seen={};
+  S.players.forEach(function(p){ seen[p.name.trim().toLowerCase()]=true; });
+  String(text||"").split(/\r?\n/).forEach(function(line,i){
+    var raw=line.trim();
+    if(!raw) return;
+    var parts=raw.split(/\s*[,;\t]\s*|\s{2,}/);
+    var name=(parts[0]||"").trim();
+    var lvlTxt=(parts[1]||"").trim().replace(",",".");
+    if(!name){ out.bad.push({n:i+1,why:"no name",raw:raw}); return; }
+    var lvl=mid;
+    if(lvlTxt!==""){
+      var v=parseFloat(lvlTxt);
+      if(isNaN(v)){ out.bad.push({n:i+1,why:'"'+lvlTxt+'" is not a level',raw:raw}); return; }
+      if(v<r.levelMin||v>r.levelMax){ out.bad.push({n:i+1,why:"level "+v+" is outside "+r.levelMin+"–"+r.levelMax,raw:raw}); return; }
+      lvl=Math.round(v*2)/2;
+    }
+    var key=name.toLowerCase();
+    if(seen[key]){ out.dupes.push(name); return; }
+    seen[key]=true;
+    out.rows.push({name:name,level:lvl});
+  });
+  return out;
+}
+function rosterPreview(){
+  var box=document.getElementById("impOut"); if(!box) return;
+  var p=parseRoster(mval("impText"));
+  if(!p.rows.length&&!p.bad.length&&!p.dupes.length){ box.className="note info mt"; box.textContent="Nothing pasted yet."; return; }
+  var bits=[];
+  if(p.rows.length) bits.push("<b>"+p.rows.length+" player"+(p.rows.length===1?"":"s")+" ready</b> — "+
+    p.rows.slice(0,4).map(function(x){return esc(x.name)+" ("+fmtLvl(x.level)+")";}).join(", ")+(p.rows.length>4?" …":""));
+  if(p.dupes.length) bits.push(p.dupes.length+" already on the list, skipped: "+p.dupes.slice(0,4).map(esc).join(", "));
+  if(p.bad.length) bits.push("Skipping "+p.bad.length+" line"+(p.bad.length===1?"":"s")+": "+
+    p.bad.slice(0,3).map(function(b){return "line "+b.n+" ("+esc(b.why)+")";}).join(", "));
+  box.className="note "+(p.bad.length?"warn":p.rows.length?"info":"warn")+" mt";
+  box.innerHTML='<div>'+bits.join("<br>")+'</div>';
+}
+A.importPlayers=function(){
+  var r=rules(), mid=Math.round((r.levelMin+r.levelMax)*0.5*2)/2;
+  openModal("Paste a list of players",
+    '<p class="muted small">One player per line. Put the level after a comma — without one it defaults to '+
+    fmtLvl(mid)+' and you can correct it later.</p>'+
+    '<textarea class="inp" id="impText" placeholder="Mariana S., 4&#10;Tiago R., 2.5&#10;Ana P."></textarea>'+
+    '<div class="note info mt" id="impOut">Nothing pasted yet.</div>',
+    '<button class="btn" data-act="closeModal">Cancel</button><button class="btn primary" data-act="saveModal">Add players</button>',
+    async function(){
+      var p=parseRoster(mval("impText"));
+      if(!p.rows.length){ toast("No players to add."); return; }
+      closeModal();
+      toast("Adding "+p.rows.length+" player"+(p.rows.length===1?"":"s")+"…");
+      for(var i=0;i<p.rows.length;i++)
+        await put("players",{id:uid("p"),name:p.rows[i].name,level:p.rows[i].level,contact:"",notes:""});
+      UI.view="manage"; UI.sub="players"; render();
+      toast(p.rows.length+" player"+(p.rows.length===1?"":"s")+" added.");
+    });
+};
+
+/* ── feedback ──
+   Trial academies will not open a support ticket; they will tell us in the
+   moment or not at all, so the form is one tap from wherever they are. */
+A.feedback=function(){
+  openModal("Send feedback",
+    '<p class="muted small">What was confusing, missing or broken? This goes straight to the people building it.</p>'+
+    '<textarea class="inp" id="fbText" placeholder="e.g. I could not work out how to say a coach is away on Tuesdays."></textarea>',
+    '<button class="btn" data-act="closeModal">Cancel</button><button class="btn primary" data-act="saveModal">Send</button>',
+    function(){
+      var msg=mval("fbText").trim();
+      if(!msg){ toast("Write a line or two first."); return; }
+      if(!sdk){ toast("Not connected, so this cannot be sent."); return; }
+      closeModal();
+      api("feedback",{message:msg,screen:UI.view,
+        context:JSON.stringify({sub:UI.sub,clubs:S.venues.length,coaches:S.coaches.length,
+          players:S.players.length,classes:S.classes.length,waiting:S.requests.length})})
+      .then(function(){ toast("Sent — thank you."); })
+      .catch(function(){ toast("Could not send that. Please try again."); });
+    });
+};
+A.signOut=function(){ signOut(); };
+A.wipe=function(){
+  confirmBox("Delete everything?","Every club, coach, player, class and request is removed. This cannot be undone.",function(){
+    COLLS.forEach(function(c){ S[c].slice().forEach(function(x){ drop(c,x.id); }); });
+    closeModal(); toast("Cleared.");
+  });
+};
+function confirmBox(title,msg,onYes){
+  openModal(title,(msg?'<div class="note warn">'+esc(msg)+'</div>':'<div class="muted">This cannot be undone.</div>'),
+    '<button class="btn" data-act="closeModal">Cancel</button><button class="btn primary" data-act="saveModal">Confirm</button>',onYes);
+}
+
+/* Creates now get their id from the server, so anything that references a
+   freshly created row has to await it. */
+async function seedDemo(){
+  /* Keep whatever rules the academy already set — the sample week is data, not a reset. */
+  await saveAcademy({name:S.academy.name||"Sunrise Padel Academy",rules:clone(rules())});
+  var v1=await put("venues",{id:uid("v"),name:"Riverside Courts",courts:3});
+  var v2=await put("venues",{id:uid("v"),name:"North Club",courts:2});
+  UI.venueId=v1.id;
+
+  var coachSpec=[["Alex Reed",3,[v1.id,v2.id]],["Nina Hart",2,[v1.id]],["Sam Okoro",1,[v1.id,v2.id]]];
+  var co=[];
+  for(var i=0;i<coachSpec.length;i++){
+    co.push(await put("coaches",{id:uid("co"),name:coachSpec[i][0],certLevel:coachSpec[i][1],venueIds:coachSpec[i][2]}));
+  }
+
+  var names=["A. Silva","B. Costa","C. Duarte","D. Melo","E. Faria","F. Nunes","G. Pinto","H. Cruz","I. Martins","J. Neves","K. Lopes","L. Barros"];
+  var lvls=[1,1,3,3,3,5,5,6,6,7,2,4];
+  var ps=[];
+  for(var j=0;j<names.length;j++){
+    ps.push(await put("players",{id:uid("p"),name:names[j],level:lvls[j],contact:"",notes:""}));
+  }
+  var P=function(n){return ps[n].id;};
+
+  var classSpec=[
+    [v1.id,co[2].id,0,"10:00",60,1,[P(0),P(1)]],
+    [v1.id,co[1].id,0,"18:30",90,3,[P(2),P(3),P(4)]],
+    [v1.id,co[0].id,0,"19:00",90,6,[P(7),P(8)]],
+    [v1.id,co[1].id,2,"18:30",90,3,[P(2),P(3)]],
+    [v1.id,co[0].id,2,"20:00",60,5,[P(5),P(6)]],
+    [v1.id,co[0].id,3,"19:00",90,6,[P(7),P(8),P(9)]],
+    [v1.id,co[2].id,4,"18:00",60,2,[P(10)]],
+    [v2.id,co[0].id,1,"19:00",90,7,[P(9)]],
+    [v2.id,co[2].id,3,"18:00",60,4,[P(11)]]
+  ];
+  for(var k=0;k<classSpec.length;k++){
+    var c=classSpec[k];
+    await put("classes",{id:uid("k"),venueId:c[0],coachId:c[1],day:c[2],start:c[3],
+      duration:c[4],level:c[5],capacity:null,field:null,playerIds:c[6]});
+  }
+
+  var reqSpec=[
+    ["M. Carvalho",2,v1.id,2,[{day:1,from:"18:00",to:"21:00"},{day:3,from:"18:00",to:"21:00"}]],
+    ["N. Ribeiro",2,v1.id,1,[{day:1,from:"18:00",to:"20:30"}]],
+    ["O. Santos",9,v1.id,1,[{day:4,from:"19:00",to:"21:00"}]]
+  ];
+  for(var r=0;r<reqSpec.length;r++){
+    var q=reqSpec[r];
+    await put("requests",{id:uid("r"),name:q[0],level:q[1],venueId:q[2],sessions:q[3],windows:q[4],placed:[]});
+  }
+  await loadAll();
+}
+
+A.openFormable=async function(_,el){
+  var list=formable(), a=list[+el.dataset.i]; if(!a)return;
+  var ids=[];
+  for(var i=0;i<a.members.length;i++){
+    var m=a.members[i];
+    var existing=S.players.filter(function(x){return x.name===m.name;})[0];
+    var p=existing||await put("players",{id:uid("p"),name:m.name,level:m.level,contact:"",notes:""});
+    ids.push(p.id);
+  }
+  await put("classes",{id:uid("k"),venueId:a.venue.id,coachId:a.coachId,day:a.day,start:a.start,
+    duration:a.duration,level:a.level,capacity:null,field:null,playerIds:ids});
+  for(var j=0;j<a.members.length;j++){
+    var q=byId(S.requests,a.members[j].id); if(!q) continue;
+    var nq=clone(q); nq.placed=(nq.placed||[]).concat(["opened"]);
+    await put("requests",nq);
+  }
+  UI.venueId=a.venue.id; UI.day=a.day; UI.view="calendar";
+  toast("Class opened."); render();
+};
+
+A.ppBook=async function(id){
+  var existing=S.players.filter(function(x){return x.name.toLowerCase()===PP.name.toLowerCase();})[0];
+  var p=existing||await put("players",{id:uid("p"),name:PP.name,level:PP.level,contact:"",notes:""});
+  var k=clone(byId(S.classes,id));
+  if((k.playerIds||[]).indexOf(p.id)<0) k.playerIds=(k.playerIds||[]).concat([p.id]);
+  await put("classes",k);
+  PP.booked=PP.booked.concat([id]);
+  PP.results=rank({level:PP.level,venueId:PP.venueId,windows:PP.days.map(function(d){return {day:+d,from:PP.from,to:PP.to};})});
+  render();
+};
+
+/* ─────────── render ─────────── */
+function render(){
+  document.getElementById("acadName").textContent=S.academy.name||"Academy";
+  renderStats(); renderTabs();
+  var v=document.getElementById("view");
+  if(UI.view==="calendar") v.innerHTML=viewCalendar();
+  else if(UI.view==="place") v.innerHTML=viewPlace();
+  else if(UI.view==="waitlist") v.innerHTML=viewWaitlist();
+  else v.innerHTML=viewManage();
+}
+function renderStats(){
+  var v=venue(), n=formable().length;
+  var peak=0;
+  if(v){ for(var d=0;d<7;d++) for(var m=DAY_START;m<DAY_END;m+=30) peak=Math.max(peak,courtsInUse(v.id,d,m,30)); }
+  var seats=visibleClasses().reduce(function(a,c){return a+(capOf(c)-(c.playerIds||[]).length);},0);
+  document.getElementById("stats").innerHTML=
+    '<div class="stat"><b>'+peak+'<span style="opacity:.5;font-size:15px">/'+(v?v.courts:0)+'</span></b><span>peak courts</span></div>'+
+    '<div class="stat"><b>'+seats+'</b><span>open seats</span></div>'+
+    '<div class="stat"><b style="'+(n?"color:var(--honey)":"")+'">'+n+'</b><span>classes to open</span></div>';
+}
+/* id, desktop label, phone label, icon path */
+var TABS=[
+  ["calendar","Calendar","Calendar",
+    '<rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/>'],
+  ["place","Place a player","Place",
+    '<circle cx="9.5" cy="8" r="3.4"/><path d="M3.2 20c0-3.3 2.8-5.6 6.3-5.6"/><path d="M17 13.4v6.2M13.9 16.5h6.2"/>'],
+  ["waitlist","Waiting list","Waiting",
+    '<circle cx="12" cy="12" r="8.6"/><path d="M12 7.4V12l3.4 2"/>'],
+  ["manage","Manage","Manage",
+    '<path d="M4 7h9M18.5 7H20M4 17h3.5M12.5 17H20"/><circle cx="15.6" cy="7" r="2.3"/><circle cx="10" cy="17" r="2.3"/>']
+];
+function renderTabs(){
+  var n=formable().length;
+  document.getElementById("tabs").innerHTML=TABS.map(function(x){
+    return '<button class="'+(UI.view===x[0]?"on":"")+'" data-act="tab" data-id="'+x[0]+'">'+x[1]+
+      (x[0]==="waitlist"&&n?' <span class="badge">'+n+'</span>':"")+'</button>';
+  }).join("");
+  document.getElementById("bnav").innerHTML=TABS.map(function(x){
+    var on=UI.view===x[0];
+    return '<button class="'+(on?"on":"")+'" data-act="tab" data-id="'+x[0]+
+      '" aria-current="'+(on?"page":"false")+'" aria-label="'+x[1]+'">'+
+      '<span class="bicon"><svg viewBox="0 0 24 24" aria-hidden="true">'+x[3]+'</svg>'+
+      (x[0]==="waitlist"&&n?'<i class="bdot">'+(n>9?"9+":n)+'</i>':"")+'</span>'+
+      '<span>'+x[2]+'</span></button>';
+  }).join("");
+}
+
+function venuePicker(){
+  if(S.venues.length<2) return "";
+  return '<div class="row mb">'+S.venues.map(function(v){
+    return '<button class="chip pick'+(v.id===UI.venueId?" on":"")+'" data-act="pickVenue" data-id="'+v.id+'">'+esc(v.name)+'</button>';
+  }).join("")+'</div>';
+}
+
+function viewCalendar(){
+  if(!S.venues.length) return emptyStart();
+  var cls=visibleClasses();
+  var h=venuePicker()+
+    '<div class="row mb">'+
+      '<button class="btn sm" data-act="toggleFilters">Filters'+(filtersOn()?" · on":"")+'</button>'+
+      (filtersOn()?'<button class="btn sm icon" data-act="clearFilters">clear</button>':"")+
+      '<div class="grow"></div>'+
+      '<button class="btn sm primary" data-act="newClass">＋ New class</button>'+
+    '</div>'+
+    (UI.showFilters?filterPanel():"")+
+    '<div class="card scroll only-d">'+weekGrid(cls)+'</div>'+
+    '<div class="only-m">'+dayList(cls)+'</div>'+
+    '<div class="note info mt">Colour is the level, height is the length, dots are the seats. Side-by-side cards are simultaneous classes on different courts.</div>';
+  return h;
+}
+function filterPanel(){
+  var r=rules(),f=UI.filters;
+  return '<div class="card pad mb"><div class="grid g2">'+
+    '<label class="f"><span>Level from '+(f.minLvl==null?r.levelMin:f.minLvl)+'</span><input type="range" min="'+r.levelMin+'" max="'+r.levelMax+'" value="'+(f.minLvl==null?r.levelMin:f.minLvl)+'" data-bind="minLvl"></label>'+
+    '<label class="f"><span>Level to '+(f.maxLvl==null?r.levelMax:f.maxLvl)+'</span><input type="range" min="'+r.levelMin+'" max="'+r.levelMax+'" value="'+(f.maxLvl==null?r.levelMax:f.maxLvl)+'" data-bind="maxLvl"></label>'+
+    '<label class="f"><span>Coach</span><select class="inp" data-bind="coachId"><option value="">Everyone</option>'+
+      S.coaches.map(function(c){return '<option value="'+c.id+'"'+(f.coachId===c.id?" selected":"")+'>'+esc(c.name)+'</option>';}).join("")+'</select></label>'+
+    '<label class="f"><span>Length</span><select class="inp" data-bind="duration"><option value="">Any</option>'+
+      r.durations.map(function(d){return '<option value="'+d+'"'+(f.duration==d?" selected":"")+'>'+d+' min</option>';}).join("")+'</select></label>'+
+    '<label class="f"><span>Availability</span><button class="btn" style="width:100%'+(f.onlyFree?";background:var(--ink);color:var(--bg)":"")+'" data-act="toggleFree">'+(f.onlyFree?"Only classes with seats":"All classes")+'</button></label>'+
+  '</div></div>';
+}
+function laneOut(list){
+  var out=list.map(function(c){var o={};for(var k in c)o[k]=c[k];return o;}).sort(function(a,b){return toMin(a.start)-toMin(b.start);});
+  var lanes=[];
+  out.forEach(function(c){
+    var li=-1;
+    for(var i=0;i<lanes.length;i++){
+      var ok=lanes[i].every(function(o){return !overl(toMin(o.start),o.duration,toMin(c.start),c.duration);});
+      if(ok){li=i;break;}
+    }
+    if(li<0){lanes.push([c]);li=lanes.length-1;} else lanes[li].push(c);
+    c._lane=li;
+  });
+  var groups=[];
+  out.forEach(function(c){
+    var g=null;
+    for(var i=0;i<groups.length;i++) if(groups[i].some(function(o){return overl(toMin(o.start),o.duration,toMin(c.start),c.duration);})) {g=groups[i];break;}
+    if(g)g.push(c); else groups.push([c]);
+  });
+  out.forEach(function(c){
+    for(var i=0;i<groups.length;i++) if(groups[i].indexOf(c)>=0){
+      c._lanes=Math.max.apply(null,groups[i].map(function(o){return o._lane;}))+1;
+    }
+  });
+  return out;
+}
+function pips(k){
+  var n=capOf(k),f=(k.playerIds||[]).length,s="";
+  for(var i=0;i<n;i++) s+='<span class="pip'+(i<f?" on":"")+'"></span>';
+  return '<div class="pips">'+s+(n-f>0?'<span style="font-size:10px;margin-left:3px;opacity:.9">'+(n-f)+' free</span>':"")+'</div>';
+}
+function weekGrid(cls){
+  var rows=(DAY_END-DAY_START)/30;
+  var head='<div class="calhead"><div></div>'+DAYS.map(function(d,i){
+    return '<div><div style="font-family:\'Barlow Semi Condensed\',sans-serif;font-weight:700">'+d+'</div><div class="tiny muted">'+cls.filter(function(c){return c.day===i;}).length+'</div></div>';
+  }).join("")+'</div>';
+  var gut='<div class="gut" style="height:'+rows*ROW+'px">';
+  for(var i=0;i<rows;i+=2) gut+='<div class="gutlab" style="top:'+(i*ROW-7)+'px">'+hhmm(DAY_START+i*30)+'</div>';
+  gut+='</div>';
+  var cols="";
+  for(var d=0;d<7;d++){
+    var items=laneOut(cls.filter(function(c){return c.day===d;}));
+    var col='<div class="daycol" style="height:'+rows*ROW+'px">';
+    for(var i2=0;i2<rows;i2++) col+='<div class="hline'+(i2%2?" half":"")+'" style="top:'+(i2*ROW)+'px"></div>';
+    items.forEach(function(c){
+      var co=byId(S.coaches,c.coachId);
+      var top=((toMin(c.start)-DAY_START)/30)*ROW, h=(c.duration/30)*ROW;
+      var w=100/c._lanes;
+      col+='<button class="ev" data-act="openClassDetail" data-id="'+c.id+'" style="top:'+(top+1)+'px;height:'+(h-3)+'px;left:calc('+(c._lane*w)+'% + 2px);width:calc('+w+'% - 4px);background:'+lvlColor(c.level)+'">'+
+        '<b>'+c.start+'</b><i>L'+fmtLvl(c.level)+' · '+esc(co?co.name.split(" ")[0]:"—")+'</i>'+pips(c)+'</button>';
+    });
+    cols+=col+'</div>';
+  }
+  return '<div class="cal">'+head+'<div class="calbody">'+gut+cols+'</div></div>';
+}
+function dayList(cls){
+  var strip='<div class="daystrip">'+DAYS.map(function(d,i){
+    return '<button class="'+(i===UI.day?"on":"")+'" data-act="day" data-id="'+i+'"><b>'+d+'</b><span class="tiny">'+cls.filter(function(c){return c.day===i;}).length+'</span></button>';
+  }).join("")+'</div>';
+  var items=cls.filter(function(c){return c.day===UI.day;}).sort(function(a,b){return toMin(a.start)-toMin(b.start);});
+  if(!items.length) return strip+'<div class="empty">No classes on '+DAYF[UI.day]+'. Courts are free all day.</div>';
+  return strip+items.map(function(c){
+    var co=byId(S.coaches,c.coachId);
+    return '<button class="daycard" data-act="openClassDetail" data-id="'+c.id+'" style="background:'+lvlColor(c.level)+'">'+
+      '<div class="row" style="justify-content:space-between"><b>'+c.start+'–'+hhmm(endOf(c))+'</b><span class="tiny">'+c.duration+' min</span></div>'+
+      '<div class="tiny">Level '+fmtLvl(c.level)+' · '+esc(co?co.name:"—")+'</div>'+pips(c)+'</button>';
+  }).join("");
+}
+/* ── setup checklist ──
+   A new academy opens on an empty calendar and nothing says what to do first.
+   These are the four things that have to exist before the planner can plan. */
+function setupSteps(){
+  return [
+    {t:"Add your first club", d:"Its name and how many courts you actually control.",
+     ok:S.venues.length>0,  ready:true, act:"newVenue", btn:"Add club"},
+    {t:"Add a coach", d:"Their certification level caps the classes they can take.",
+     ok:S.coaches.length>0, ready:S.venues.length>0, act:"newCoach", btn:"Add coach"},
+    {t:"Add your players", d:"Name and level. You can paste a whole list at once.",
+     ok:S.players.length>0, ready:true, act:"importPlayers", btn:"Paste a list"},
+    {t:"Create your first class", d:"Day, time, length, level and coach.",
+     ok:S.classes.length>0, ready:S.venues.length>0&&S.coaches.length>0, act:"newClass", btn:"Add class"}
+  ];
+}
+function setupDone(){ return setupSteps().every(function(s){return s.ok;}); }
+function setupChecklist(){
+  var st=setupSteps(), done=st.filter(function(s){return s.ok;}).length;
+  if(done===st.length) return "";
+  var rows=st.map(function(s,i){
+    return '<div class="listrow" style="align-items:center">'+
+      '<span class="step'+(s.ok?" done":"")+'">'+(s.ok?"✓":(i+1))+'</span>'+
+      '<span class="grow"'+(s.ok?' style="opacity:.5"':'')+'><b>'+esc(s.t)+'</b>'+
+      (s.ok?"":'<div class="tiny muted">'+esc(s.d)+'</div>')+'</span>'+
+      (s.ok?"":'<button class="btn sm'+(s.ready?" primary":"")+'" data-act="'+s.act+'"'+(s.ready?"":" disabled")+'>'+esc(s.btn)+'</button>')+
+      '</div>';
+  }).join("");
+  return '<div class="card pad mb">'+
+    '<div class="row mb" style="justify-content:space-between"><h3 style="font-size:20px">Set up your academy</h3>'+
+    '<span class="muted small">'+done+' of '+st.length+'</span></div>'+
+    '<div class="bar mb"><i style="width:'+Math.round(done/st.length*100)+'%;background:var(--turf)"></i></div>'+
+    rows+'</div>';
+}
+function emptyStart(){
+  return setupChecklist()+
+    '<div class="empty"><p class="small" style="margin:0">Would you rather look around first? '+
+    '<button class="btn sm" data-act="loadDemo">Load a sample week</button></p></div>';
+}
+
+function viewPlace(){
+  if(!S.venues.length) return emptyStart();
+  var r=rules();
+  var form='<div class="card pad mb"><h3 style="font-size:21px">Who is joining?</h3>'+
+    '<p class="muted small mb">Level and availability decide the match. Everything else is bookkeeping.</p>'+
+    '<div class="grid g2">'+
+      fText("ppName","Player name",PP.name,"e.g. Mariana")+
+      fSel("ppVenue","Club",PP.venueId||UI.venueId,venueOpts())+
+      fSel("ppSessions","Classes per week",PP.sessions,[{v:1,t:"1×"},{v:2,t:"2×"},{v:3,t:"3×"}])+
+    '</div>'+
+    fLevel("ppLevel","Level",PP.level==null?Math.round((r.levelMin+r.levelMax)/2):PP.level)+
+    fMulti("ppDays","Days that work",PP.days,DAYS.map(function(d,i){return {v:String(i),t:d};}))+
+    '<div class="grid g2">'+fTime("ppFrom","Not before",PP.from)+fTime("ppTo","Not after",PP.to)+'</div>'+
+    '<div class="row mt"><button class="btn primary" data-act="ppSearch">Find matching classes</button>'+
+    (PP.results?'<button class="btn" data-act="ppReset">Start over</button>':"")+'</div></div>';
+  if(!PP.results) return form;
+
+  var gap=PP.sessions-PP.booked.length;
+  var head='<div class="row mb" style="justify-content:space-between"><h3 style="font-size:21px">'+
+    (PP.results.length? PP.results.length+' classes fit '+esc(PP.name) : 'Nothing open for '+esc(PP.name)+' yet')+
+    '</h3><span class="muted small">'+PP.booked.length+' of '+PP.sessions+' booked</span></div>';
+  var list=PP.results.map(function(m){
+    var co=byId(S.coaches,m.cls.coachId), taken=PP.booked.indexOf(m.cls.id)>=0;
+    return '<div class="card pad mb">'+
+      '<div class="row">'+lvlTag(m.cls.level,34)+
+        '<div class="grow"><div style="font-family:\'Barlow Semi Condensed\',sans-serif;font-weight:700;font-size:17px">'+DAYF[m.cls.day]+' '+m.cls.start+'–'+hhmm(endOf(m.cls))+'</div>'+
+        '<div class="muted small">'+esc(co?co.name:"—")+' · '+(m.cls.playerIds||[]).length+'/'+capOf(m.cls)+' players</div></div>'+
+        '<div style="width:86px"><div class="bar"><i style="width:'+m.score+'%;background:'+(m.score>75?"var(--turf)":m.score>50?"var(--honey)":"var(--ink2)")+'"></i></div><div class="tiny muted" style="margin-top:3px">'+m.score+'% fit</div></div>'+
+        '<button class="btn sm '+(taken?"":"honey")+'" data-act="ppBook" data-id="'+m.cls.id+'"'+(taken||PP.booked.length>=PP.sessions?" disabled":"")+'>'+(taken?"✓ Booked":"Book")+'</button>'+
+      '</div>'+
+      '<div class="row mt">'+m.reasons.map(function(x){return '<span class="chip '+(x.k==="ok"?"ok":x.k==="bad"?"bad":"warn")+'">'+esc(x.t)+'</span>';}).join("")+'</div></div>';
+  }).join("");
+  var tail="";
+  if(gap>0) tail='<div class="note warn mt"><span>⚠</span><div><b>'+gap+' of '+PP.sessions+' weekly sessions still unmatched.</b> '+
+    'Keep the rest on the waiting list — it stays pending until a seat opens or enough players gather to start a new class.'+
+    '<div class="mt"><button class="btn sm" data-act="ppWait">Add to waiting list</button></div></div></div>';
+  return form+head+(list||'<div class="card pad mb"><p class="muted small" style="margin:0">No class within '+r.levelTolerance+' level has a free seat in that window.</p></div>')+tail;
+}
+
+function viewWaitlist(){
+  var al=formable();
+  var alerts='<h3 style="font-size:21px">Classes waiting to happen</h3>'+
+    '<p class="muted small mb">Two or more players at a compatible level, a shared window, a free court and an available coach.</p>'+
+    (al.length? al.map(function(a,i){
+      var co=byId(S.coaches,a.coachId);
+      return '<div class="card pad mb" style="border-color:var(--honey)">'+
+        '<div class="row"><div class="grow"><div style="font-family:\'Barlow Semi Condensed\',sans-serif;font-weight:700;font-size:18px">Level '+fmtLvl(a.level)+' · '+DAYF[a.day]+' '+a.start+' · '+a.duration+' min</div>'+
+        '<div class="muted small">'+esc(a.venue.name)+' · '+esc(co?co.name:"—")+' available · court free</div></div>'+
+        '<button class="btn sm honey" data-act="openFormable" data-i="'+i+'">＋ Open this class</button></div>'+
+        '<div class="row mt">'+a.members.map(function(m){return '<span class="chip">'+lvlTag(m.level,18)+' '+esc(m.name)+'</span>';}).join("")+'</div></div>';
+    }).join("") : '<div class="empty">Nothing to open right now. Alerts appear here as the waiting list grows.</div>');
+
+  var rows=S.requests.map(function(q){
+    var placed=(q.placed||[]).length, done=placed>=q.sessions;
+    return '<tr><td>'+esc(q.name)+'</td><td>'+lvlTag(q.level,22)+'</td>'+
+      '<td class="muted">'+esc((byId(S.venues,q.venueId)||{}).name||"—")+'</td>'+
+      '<td>'+q.sessions+'× / week</td>'+
+      '<td><span class="chip '+(done?"ok":placed?"warn":"")+'">'+(done?"Complete":placed+" of "+q.sessions)+'</span></td>'+
+      '<td class="muted small">'+(q.windows||[]).map(function(w){return DAYS[w.day];}).join(", ")+' · '+((q.windows||[])[0]||{}).from+'–'+((q.windows||[])[0]||{}).to+'</td>'+
+      '<td style="text-align:right;white-space:nowrap"><button class="btn icon" data-act="editRequest" data-id="'+q.id+'">✎</button>'+
+      '<button class="btn icon" data-act="delRequest" data-id="'+q.id+'">🗑</button></td></tr>';
+  }).join("");
+
+  return alerts+
+    '<div class="row mt mb" style="justify-content:space-between"><h3 style="font-size:21px">Waiting list · '+openRequests().length+'</h3>'+
+    '<button class="btn sm primary" data-act="newRequest">＋ New request</button></div>'+
+    (S.requests.length?'<div class="card scroll"><table><thead><tr><th>Player</th><th>Level</th><th>Club</th><th>Wants</th><th>Booked</th><th>Availability</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>'
+      :'<div class="empty">Nobody waiting. Add a request when a player asks for classes you cannot place yet.</div>');
+}
+
+function viewManage(){
+  var subs=[["academy","Academy"],["venues","Clubs"],["coaches","Coaches"],["players","Players"],["classes","Classes"]];
+  var h='<div class="sub">'+subs.map(function(s){return '<button class="'+(UI.sub===s[0]?"on":"")+'" data-act="sub" data-id="'+s[0]+'">'+s[1]+'</button>';}).join("")+'</div>';
+  var r=rules();
+
+  if(UI.sub==="academy"){
+    h+=setupChecklist();
+    h+='<div class="card pad">'+
+      '<div class="row" style="justify-content:space-between"><div><h3 style="font-size:21px">'+esc(S.academy.name)+'</h3>'+
+      '<div class="muted small">'+S.venues.length+' club(s) · '+S.coaches.length+' coach(es) · '+S.players.length+' player(s) · '+S.classes.length+' class(es)</div></div>'+
+      '<button class="btn" data-act="editAcademy">Edit</button></div>'+
+      '<div class="grid g3 gset mt">'+
+        card("Level scale",r.levelMin+" – "+r.levelMax)+
+        card("Level tolerance","± "+r.levelTolerance)+
+        card("Players per class",r.classCapacity)+
+        card("Class lengths",r.durations.join(" / ")+" min")+
+        card("Minimum to open",r.minPlayersToOpen+" players")+
+        card("Coach L1 / L2 / L3","up to "+r.coachCertification[1]+" / "+r.coachCertification[2]+" / "+r.coachCertification[3])+
+      '</div>'+
+      '<div class="row mt">'+
+      /* Sample data is for an empty academy only — mixing invented players into
+         real ones is nearly impossible to unpick afterwards. */
+      (hasRealData()
+        ? '<button class="btn" disabled title="Only available on an empty academy">Load sample data</button>'
+        : '<button class="btn" data-act="loadDemo">Load sample data</button>')+
+      '<button class="btn" data-act="feedback">Send feedback</button>'+
+      '<button class="btn" data-act="signOut">Sign out</button>'+
+      '<button class="btn danger" data-act="wipe">Delete all data</button></div>'+
+      (hasRealData()?'<div class="tiny muted mt">Sample data can only be loaded into an empty academy, so it never mixes with your own.</div>':"")+
+      '<div class="note info mt">'+storageNote()+'</div>'+
+      '<div class="row mt" style="gap:7px;align-items:center;opacity:.55">'+
+        '<svg viewBox="0 0 120 100" width="17" height="14" aria-hidden="true" focusable="false"><circle cx="60" cy="38" r="21" fill="currentColor"></circle><path d="M14 44 Q60 90 106 44" fill="none" stroke="currentColor" stroke-width="12" stroke-linecap="round"></path></svg>'+
+        '<span class="tiny">Bandeja · by YLP Solutions</span></div>'+
+    '</div>';
+    return h;
+  }
+  if(UI.sub==="venues"){
+    h+=crudHead("Clubs","newVenue","New club");
+    h+= S.venues.length? S.venues.map(function(v){
+      return '<div class="listrow"><span class="grow"><b>'+esc(v.name)+'</b></span>'+
+        '<span class="muted small">'+v.courts+' courts</span>'+
+        '<span class="muted small">'+S.classes.filter(function(c){return c.venueId===v.id;}).length+' classes</span>'+
+        '<button class="btn icon" data-act="editVenue" data-id="'+v.id+'">✎</button>'+
+        '<button class="btn icon" data-act="delVenue" data-id="'+v.id+'">🗑</button></div>';
+    }).join("") : '<div class="empty">No clubs yet.</div>';
+    return h;
+  }
+  if(UI.sub==="coaches"){
+    h+=crudHead("Coaches","newCoach","New coach");
+    h+= S.coaches.length? S.coaches.map(function(c){
+      return '<div class="listrow"><span class="grow"><b>'+esc(c.name)+'</b></span>'+
+        '<span class="muted small">L'+c.certLevel+' · up to '+coachMax(c)+'</span>'+
+        '<span class="muted small">'+((c.venueIds||[]).map(function(i){return (byId(S.venues,i)||{}).name;}).filter(Boolean).join(", ")||"any club")+'</span>'+
+        '<button class="btn icon" data-act="editCoach" data-id="'+c.id+'">✎</button>'+
+        '<button class="btn icon" data-act="delCoach" data-id="'+c.id+'">🗑</button></div>';
+    }).join("") : '<div class="empty">No coaches yet.</div>';
+    return h;
+  }
+  if(UI.sub==="players"){
+    h+='<div class="row mb" style="justify-content:space-between">'+
+      '<h3 style="font-size:21px">Players · '+S.players.length+'</h3>'+
+      '<span class="row" style="gap:6px"><button class="btn sm" data-act="importPlayers">Paste a list</button>'+
+      '<button class="btn sm primary" data-act="newPlayer">＋ New player</button></span></div>';
+    /* Filtering happens in the DOM rather than through render(), so the field
+       keeps focus while you type — which on a phone keyboard matters a lot. */
+    if(S.players.length>6)
+      h+='<input class="inp mb" id="pq" type="search" placeholder="Search players" autocomplete="off">';
+    h+= S.players.length? '<div class="grid g3" id="plist">'+S.players.slice().sort(function(a,b){return a.level-b.level;}).map(function(p){
+      return '<div class="listrow" data-pname="'+esc(p.name.toLowerCase())+'">'+lvlTag(p.level,24)+'<span class="grow">'+esc(p.name)+'</span>'+
+        '<span class="tiny muted">'+S.classes.filter(function(c){return (c.playerIds||[]).indexOf(p.id)>=0;}).length+'×</span>'+
+        '<button class="btn icon" data-act="editPlayer" data-id="'+p.id+'">✎</button>'+
+        '<button class="btn icon" data-act="delPlayer" data-id="'+p.id+'">🗑</button></div>';
+    }).join("")+'</div><div class="empty hide" id="pnone">Nobody matches that.</div>' : '<div class="empty">No players yet.</div>';
+    return h;
+  }
+  h+=crudHead("Classes","newClass","New class");
+  var sorted=S.classes.slice().sort(function(a,b){return a.day-b.day||toMin(a.start)-toMin(b.start);});
+  h+= sorted.length? '<div class="card scroll"><table><thead><tr><th>Day</th><th>Time</th><th>Level</th><th>Coach</th><th>Club</th><th>Seats</th><th></th></tr></thead><tbody>'+
+    sorted.map(function(k){
+      return '<tr><td>'+DAYS[k.day]+'</td><td>'+k.start+'–'+hhmm(endOf(k))+'</td><td>'+lvlTag(k.level,22)+'</td>'+
+        '<td>'+esc((byId(S.coaches,k.coachId)||{}).name||"—")+'</td>'+
+        '<td class="muted">'+esc((byId(S.venues,k.venueId)||{}).name||"—")+'</td>'+
+        '<td>'+(k.playerIds||[]).length+'/'+capOf(k)+'</td>'+
+        '<td style="text-align:right;white-space:nowrap"><button class="btn icon" data-act="openClassDetail" data-id="'+k.id+'">👥</button>'+
+        '<button class="btn icon" data-act="editClass" data-id="'+k.id+'">✎</button>'+
+        '<button class="btn icon" data-act="delClass" data-id="'+k.id+'">🗑</button></td></tr>';
+    }).join("")+'</tbody></table></div>' : '<div class="empty">No classes yet.</div>';
+  return h;
+}
+function card(t,v){return '<div class="listrow" style="display:block"><div class="tiny muted">'+esc(t)+'</div><div style="font-family:\'Barlow Semi Condensed\',sans-serif;font-weight:700;font-size:18px">'+esc(v)+'</div></div>';}
+function crudHead(title,act,label){
+  return '<div class="row mb" style="justify-content:space-between"><h3 style="font-size:21px">'+title+'</h3>'+
+    '<button class="btn sm primary" data-act="'+act+'">＋ '+label+'</button></div>';
+}
+function storageNote(){
+  if(storage==="on") return "Saved through the academy API as "+esc(ACADEMY?ACADEMY.name:"this academy")+
+    ". Your academy is determined by your login, not by the link.";
+  if(storage==="loading") return "Loading…";
+  if(storage==="signedout") return "Signed out.";
+  if(storage==="blocked") return "This account cannot open an academy right now.";
+  if(storage==="nosdk") return "The Catalyst SDK did not load, so nothing is being saved. This page has to be opened from its Slate URL.";
+  if(storage==="error") return "Could not reach the academy API, so recent changes may not be saved.";
+  return "Connecting…";
+}
+
+/* ── drag to reschedule, on the week grid ──
+   Phones never see this: the grid is desktop-only, and the Move panel is the
+   answer there. Snapping is to the same half hour the grid draws. */
+var DRAG=null, dragGuard=false;
+function dayCols(){ return Array.prototype.slice.call(document.querySelectorAll(".calbody .daycol")); }
+function dragTarget(ev){
+  var k=byId(S.classes,DRAG.id), cols=dayCols();
+  if(!k||!cols.length) return null;
+  var day=DRAG.from.day;
+  for(var i=0;i<cols.length;i++){
+    var r=cols[i].getBoundingClientRect();
+    if(ev.clientX>=r.left&&ev.clientX<r.right){ day=i; break; }
+  }
+  var cr=cols[day].getBoundingClientRect();
+  var span=k.duration/30, last=(DAY_END-DAY_START)/30-span;
+  var slot=Math.round((ev.clientY-DRAG.grabY-cr.top)/ROW);
+  if(slot<0) slot=0; if(slot>last) slot=last;
+  return {day:day,slot:slot,start:hhmm(DAY_START+slot*30)};
+}
+function dragTip(show,text,x,y){
+  var el=document.getElementById("dragTip");
+  if(!show){ if(el) el.remove(); return; }
+  if(!el){ el=document.createElement("div"); el.id="dragTip"; el.className="dragtip"; document.body.appendChild(el); }
+  el.textContent=text; el.style.left=x+"px"; el.style.top=y+"px";
+}
+document.addEventListener("pointerdown",function(ev){
+  var el=ev.target.closest&&ev.target.closest(".ev");
+  if(!el||ev.button) return;
+  var k=byId(S.classes,el.dataset.id); if(!k) return;
+  DRAG={id:k.id,el:el,x0:ev.clientX,y0:ev.clientY,
+    grabY:ev.clientY-el.getBoundingClientRect().top,moved:false,
+    from:{day:k.day,start:k.start},to:null};
+  try{ el.setPointerCapture(ev.pointerId); }catch(e){}
+});
+document.addEventListener("pointermove",function(ev){
+  if(!DRAG) return;
+  if(!DRAG.moved){
+    if(Math.abs(ev.clientX-DRAG.x0)<5&&Math.abs(ev.clientY-DRAG.y0)<5) return;
+    DRAG.moved=true; DRAG.el.classList.add("dragging");
+  }
+  var t=dragTarget(ev); if(!t) return;
+  DRAG.to=t;
+  var cols=dayCols();
+  var dx=cols[t.day].getBoundingClientRect().left-cols[DRAG.from.day].getBoundingClientRect().left;
+  var dy=(t.slot-(toMin(DRAG.from.start)-DAY_START)/30)*ROW;
+  DRAG.el.style.transform="translate("+dx+"px,"+dy+"px)";
+  dragTip(true,DAYS[t.day]+" "+t.start,ev.clientX+14,ev.clientY+16);
+});
+document.addEventListener("pointerup",function(ev){
+  if(!DRAG) return;
+  var d=DRAG; DRAG=null; dragTip(false);
+  d.el.classList.remove("dragging");
+  if(!d.moved) return;                 /* a plain click: let it open the class */
+  dragGuard=true; setTimeout(function(){dragGuard=false;},0);
+  var revert=function(){ d.el.style.transform=""; };
+  var t=d.to;
+  if(!t||(t.day===d.from.day&&t.start===d.from.start)) return revert();
+  var k=clone(byId(S.classes,d.id)); if(!k) return revert();
+  k.day=t.day; k.start=t.start;
+  var bad=canSchedule(k);
+  if(bad.length){ revert(); toast(bad[0]); return; }
+  rescheduleTo(k,d.from);
+});
+document.addEventListener("pointercancel",function(){
+  if(DRAG){ DRAG.el.classList.remove("dragging"); DRAG.el.style.transform=""; DRAG=null; dragTip(false); }
+});
+
+/* ─────────── events ─────────── */
+document.addEventListener("click",function(ev){
+  if(dragGuard) return;
+  var el=ev.target.closest("[data-act]");
+  if(!el) return;
+  var fn=A[el.dataset.act];
+  if(fn){ ev.preventDefault(); fn(el.dataset.id,el,ev); }
+});
+/* Typing must not trigger render() — that would blur the field mid-word. */
+document.addEventListener("input",function(ev){
+  if(ev.target.id==="impText"){ rosterPreview(); return; }
+  if(ev.target.id==="pq"){
+    var q=ev.target.value.trim().toLowerCase(), shown=0;
+    Array.prototype.forEach.call(document.querySelectorAll("[data-pname]"),function(e){
+      var hit=!q||e.dataset.pname.indexOf(q)>=0;
+      e.style.display=hit?"":"none"; if(hit) shown++;
+    });
+    var none=document.getElementById("pnone");
+    if(none) none.classList.toggle("hide",shown>0);
+  }
+});
+document.addEventListener("change",function(ev){
+  var vsel=ev.target.closest("#kVenue");
+  if(vsel){
+    var sel=document.getElementById("kCoach");
+    if(sel){
+      var opts=coachOpts(vsel.value);
+      sel.innerHTML=opts.map(function(o){return '<option value="'+o.v+'">'+esc(o.t)+'</option>';}).join("");
+    }
+    return;
+  }
+  var el=ev.target.closest("[data-bind]");
+  if(!el) return;
+  var k=el.dataset.bind;
+  UI.filters[k]= (k==="minLvl"||k==="maxLvl") ? +el.value : el.value;
+  if(UI.filters.minLvl!=null&&UI.filters.maxLvl!=null&&UI.filters.minLvl>UI.filters.maxLvl){
+    if(k==="minLvl") UI.filters.maxLvl=UI.filters.minLvl; else UI.filters.minLvl=UI.filters.maxLvl;
+  }
+  render();
+});
+
+boot();
+})();
+</script>
+</body>
 </html>

@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bandeja — Academy Setup</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 100'%3E%3Crect width='120' height='100' rx='18' fill='%2312222B'/%3E%3Ccircle cx='60' cy='38' r='22' fill='%23E09A2B'/%3E%3Cpath d='M14 44 Q60 90 106 44' fill='none' stroke='%23E09A2B' stroke-width='13' stroke-linecap='round'/%3E%3C/svg%3E">
+<!-- Order matters: the SDK bundle must load before init.js, which initialises it. -->
+<script src="https://static.zohocdn.com/catalyst/sdk/js/4.6.1/catalystWebSDK.js"></script>
+<script src="/__catalyst/sdk/init.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Semi+Condensed:wght@600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EBEEE9; --panel:#FFFFFF; --sunken:#F4F6F2; --line:#D7DDD4;
+  --ink:#12222B; --ink2:#53646E; --honey:#E09A2B; --honeyBg:#FBF1E6; --honeyInk:#7A5210;
+  --turf:#4F8A5B; --turfBg:#EAF2EB; --turfInk:#33613F;
+  --alert:#BE5236; --alertBg:#FBECE7; --alertInk:#7A3420;
+  --head:#1D2F23; --shadow:0 1px 2px rgba(18,34,43,.08);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0E171D; --panel:#16242C; --sunken:#1B2B34; --line:#283A43;
+    --ink:#E7EEEA; --ink2:#94A6B0; --honeyBg:#33260F; --honeyInk:#F0C378;
+    --turfBg:#1B2E22; --turfInk:#8FC79C; --alertBg:#33201A; --alertInk:#F0A48B;
+    --head:#0A1218; --shadow:0 1px 2px rgba(0,0,0,.4);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0E171D; --panel:#16242C; --sunken:#1B2B34; --line:#283A43;
+  --ink:#E7EEEA; --ink2:#94A6B0; --honeyBg:#33260F; --honeyInk:#F0C378;
+  --turfBg:#1B2E22; --turfInk:#8FC79C; --alertBg:#33201A; --alertInk:#F0A48B;
+  --head:#0A1218; --shadow:0 1px 2px rgba(0,0,0,.4);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:'Barlow',system-ui,sans-serif;font-size:15px;line-height:1.45;-webkit-text-size-adjust:100%}
+h1,h2,h3,h4{font-family:'Barlow Semi Condensed','Barlow',system-ui,sans-serif;font-weight:700;margin:0}
+button{font:inherit;cursor:pointer}
+.wrap{max-width:1080px;margin:0 auto;padding:0 16px}
+header.top{background:var(--head);color:#fff;padding:16px 0}
+.top .row{display:flex;justify-content:space-between;align-items:flex-end;gap:14px;flex-wrap:wrap}
+.eyebrow{font-size:11px;letter-spacing:.06em;text-transform:uppercase;opacity:.55}
+.title{font-family:'Barlow Semi Condensed',sans-serif;font-weight:700;font-size:28px;line-height:1.1}
+main{padding:20px 0 70px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow)}
+.pad{padding:16px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.grow{flex:1;min-width:0}
+.muted{color:var(--ink2)}
+.small{font-size:13px}
+.tiny{font-size:11.5px}
+.mt{margin-top:14px}.mb{margin-bottom:12px}
+label.f{display:block;margin-bottom:10px}
+label.f>span{display:block;font-size:12px;color:var(--ink2);margin-bottom:4px}
+.inp{width:100%;padding:8px 10px;border-radius:9px;border:1px solid var(--line);background:var(--panel);color:var(--ink);outline:none}
+.inp:focus{outline:2px solid var(--honey);outline-offset:1px}
+.grid{display:grid;gap:12px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}
+.btn{display:inline-flex;align-items:center;gap:7px;border-radius:9px;padding:8px 13px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font-weight:500}
+.btn:hover{border-color:var(--ink2)}
+.btn.primary{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.btn.honey{background:var(--honey);color:#2A1C04;border-color:var(--honey)}
+.btn.danger{color:var(--alert)}
+.btn.sm{padding:5px 10px;font-size:13px}
+.btn.icon{padding:5px 7px;border-color:transparent;background:transparent;color:var(--ink2)}
+.btn.icon:hover{color:var(--ink);background:var(--sunken)}
+.btn[disabled]{opacity:.42;cursor:not-allowed}
+.chip{display:inline-flex;align-items:center;gap:6px;border-radius:8px;padding:3px 9px;font-size:12.5px;background:var(--sunken);color:var(--ink2)}
+.chip.ok{background:var(--turfBg);color:var(--turfInk)}
+.chip.warn{background:var(--honeyBg);color:var(--honeyInk)}
+.chip.bad{background:var(--alertBg);color:var(--alertInk)}
+.meter{height:6px;border-radius:3px;background:var(--sunken);overflow:hidden;margin-top:5px}
+.meter>i{display:block;height:100%}
+.listrow{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:9px;background:var(--sunken)}
+.listrow+.listrow{margin-top:6px}
+.empty{border:1px dashed var(--line);border-radius:12px;padding:26px;text-align:center;color:var(--ink2)}
+.note{display:flex;gap:9px;align-items:flex-start;border-radius:10px;padding:10px 12px;font-size:13.5px}
+.note.warn{background:var(--honeyBg);color:var(--honeyInk)}
+.note.bad{background:var(--alertBg);color:var(--alertInk)}
+.note.info{background:var(--sunken);color:var(--ink2)}
+.scrim{position:fixed;inset:0;background:rgba(10,18,24,.45);display:flex;align-items:flex-end;justify-content:center;z-index:50}
+@media(min-width:640px){.scrim{align-items:center;padding:24px}}
+.modal{background:var(--panel);width:100%;max-width:540px;max-height:92vh;overflow:auto;border-radius:14px 14px 0 0;border:1px solid var(--line)}
+@media(min-width:640px){.modal{border-radius:14px}}
+.mhead{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--panel)}
+.mfoot{display:flex;gap:8px;justify-content:flex-end;padding:14px 16px;border-top:1px solid var(--line);position:sticky;bottom:0;background:var(--panel)}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:22px;background:var(--ink);color:var(--bg);padding:9px 15px;border-radius:99px;font-size:13.5px;z-index:99;box-shadow:0 4px 14px rgba(0,0,0,.25)}
+#banner{display:none;background:var(--alertBg);color:var(--alertInk);padding:10px 16px;font-size:13.5px;border-bottom:1px solid var(--alert)}
+#banner.on{display:block}
+a{color:inherit}
+</style>
+</head>
+<body>
+<div id="banner"></div>
+<header class="top"><div class="wrap">
+  <div class="row">
+    <div>
+      <div class="eyebrow" style="display:flex;align-items:center;gap:7px">
+        <svg viewBox="0 0 120 100" width="18" height="15" aria-hidden="true" focusable="false"><circle cx="60" cy="38" r="21" fill="currentColor"></circle><path d="M14 44 Q60 90 106 44" fill="none" stroke="currentColor" stroke-width="12" stroke-linecap="round"></path></svg>
+        <span style="font-family:'Barlow Semi Condensed',sans-serif;font-weight:700;letter-spacing:.14em;font-size:12px">BANDEJA</span>
+        <span style="opacity:.7">operator console</span>
+      </div>
+      <div class="title">Academy setup</div>
+    </div>
+    <div class="row" id="topRight"></div>
+  </div>
+</div></header>
+<main><div class="wrap" id="view"></div></main>
+<div id="modalRoot"></div>
+
+<script>
+(function(){
+"use strict";
+
+/* This console talks only to the API function. Operator status is decided by
+   the server from the PlatformAdmins table — there is no client-side list to
+   edit, and a non-operator calling an admin endpoint is refused by Catalyst,
+   not merely hidden by CSS. */
+var FUNCTION_URL = "https://ylp-academy-manager-20105401867.development.catalystserverless.eu/server/api/execute";
+
+var S={ academies:[], users:[] };
+var sdk=null, me=null, state="loading";
+
+function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
+function sid(v){return v==null?null:String(v);}
+function num(v){var n=Number(v);return isNaN(n)?0:n;}
+function byId(list,id){for(var i=0;i<list.length;i++)if(list[i].id===id)return list[i];return null;}
+
+function waitForSdk(ms){
+  var deadline=Date.now()+(ms||10000);
+  return new Promise(function(res){
+    (function poll(){
+      var c=window.catalyst;
+      if(c&&c.auth&&c.auth.isUserAuthenticated) return res(c);
+      if(Date.now()>deadline) return res(null);
+      setTimeout(poll,150);
+    })();
+  });
+}
+
+function api(path,payload){
+  if(!sdk) return Promise.reject(new Error("The Catalyst SDK is not loaded."));
+  return sdk.auth.generateAuthToken().then(function(t){
+    var token=(t&&(t.access_token||(t.content&&t.content.token)))||"";
+    var url=FUNCTION_URL, opts={ headers:{ "Authorization":token, "Content-Type":"application/json" } };
+    if(payload){ opts.method="POST"; opts.body=JSON.stringify(Object.assign({path:path},payload)); }
+    else { opts.method="GET"; url+="?path="+encodeURIComponent(path); }
+    return fetch(url,opts).then(function(res){
+      return res.text().then(function(txt){
+        var body={}; try{ body=txt?JSON.parse(txt):{}; }catch(e){ body={error:txt.slice(0,200)}; }
+        if(!res.ok){ var e=new Error(body.message||body.error||("HTTP "+res.status));
+                     e.code=body.error; e.status=res.status; throw e; }
+        return body;
+      });
+    });
+  });
+}
+
+/* ── failure is loud here ─────────────────────────────── */
+function banner(msg){
+  var el=document.getElementById("banner");
+  if(!msg){ el.className=""; el.textContent=""; return; }
+  el.className="on"; el.textContent=msg;
+}
+function failed(what,e){
+  var m=(e&&(e.message||(e.content&&e.content.message)))||"unknown error";
+  var hint=/permission|privilege|403|not allowed/i.test(m)
+    ? " App User needs Insert, Update and Delete on the Academies and AcademyUsers tables — Console → Data Store → table → Scopes and Permissions."
+    : "";
+  /* Refresh first, then raise the banner: load() clears banners on success,
+     so setting it beforehand would wipe the very message we need to show. */
+  return load().then(function(){
+    banner("Could not "+what+" — "+m+". Nothing was saved."+hint);
+    toast("Save failed");
+  });
+}
+var tT=null;
+function toast(m){
+  var el=document.getElementById("toastEl");
+  if(!el){el=document.createElement("div");el.id="toastEl";el.className="toast";document.body.appendChild(el);}
+  el.textContent=m; el.style.display="block";
+  clearTimeout(tT); tT=setTimeout(function(){el.style.display="none";},2800);
+}
+
+/* ── load ─────────────────────────────────────────────── */
+function load(){
+  return api("admin/academies").then(function(d){
+    S.academies=d.academies||[]; S.users=d.users||[];
+    state="ready"; banner(null); render();
+  }).catch(function(e){
+    if(e.status===403){ state="denied"; render(); return; }
+    state="error"; banner("Could not read the data — "+((e&&e.message)||"unknown error")); render();
+  });
+}
+function usersOf(id){return S.users.filter(function(u){return u.academyId===id&&u.status!=="removed";});}
+function clubsOf(a){return a.clubsUsed||0;}
+
+/* ── modal ────────────────────────────────────────────── */
+var onSave=null;
+function closeModal(){document.getElementById("modalRoot").innerHTML="";onSave=null;}
+function openModal(title,body,foot,save){
+  onSave=save||null;
+  document.getElementById("modalRoot").innerHTML=
+    '<div class="scrim" data-act="scrim"><div class="modal">'+
+    '<div class="mhead"><h3>'+esc(title)+'</h3><button class="btn icon" data-act="closeModal">✕</button></div>'+
+    '<div class="pad">'+body+'</div><div class="mfoot">'+foot+'</div></div></div>';
+}
+function v(id){var el=document.getElementById(id);return el?el.value.trim():"";}
+function n(id){var x=parseInt(v(id),10);return isNaN(x)?0:x;}
+
+/* ── actions ──────────────────────────────────────────── */
+var A={};
+A.scrim=function(id,el,ev){ if(ev&&ev.target&&ev.target.classList.contains("scrim")) closeModal(); };
+A.closeModal=closeModal;
+A.saveModal=function(){ if(onSave) onSave(); };
+A.signOut=function(){ if(sdk) sdk.auth.signOut(window.location.origin); };
+A.reload=function(){ banner(null); load(); };
+
+A.newAcademy=function(){ academyForm({id:null,name:"",slug:"",plan:"TRIAL",maxClubs:1,maxUsers:3,contact:"",notes:""}); };
+A.editAcademy=function(id){ academyForm(JSON.parse(JSON.stringify(byId(S.academies,id)))); };
+
+function academyForm(a){
+  var isNew=!a.id;
+  openModal(isNew?"New academy":"Edit academy",
+    '<label class="f"><span>Academy name</span><input class="inp" id="aName" value="'+esc(a.name)+'" placeholder="e.g. The Hyve"></label>'+
+    (isNew
+      ? '<label class="f"><span>Owner email — this is who receives the invitation</span>'+
+        '<input class="inp" id="aOwner" placeholder="owner@club.pt"></label>'+
+        '<label class="f"><span>Owner name</span><input class="inp" id="aOwnerName" placeholder="Ana Silva"></label>'
+      : '<div class="note info mb">Owner: '+esc(a.ownerEmail||"—")+'. Add or change people under Users.</div>')+
+    '<div class="grid g2">'+
+      '<label class="f"><span>Clubs included</span><input class="inp" type="number" min="1" id="aMaxClubs" value="'+a.maxClubs+'"></label>'+
+      '<label class="f"><span>Users included</span><input class="inp" type="number" min="1" id="aMaxUsers" value="'+a.maxUsers+'"></label>'+
+      '<label class="f"><span>Plan</span><select class="inp" id="aPlan">'+
+        ["TRIAL","ACTIVE","SUSPENDED"].map(function(p){return '<option'+(a.plan===p?" selected":"")+'>'+p+'</option>';}).join("")+
+      '</select></label>'+
+      '<label class="f"><span>Billing contact</span><input class="inp" id="aContact" value="'+esc(a.contact)+'" placeholder="email"></label>'+
+    '</div>'+
+    '<label class="f"><span>Notes</span><input class="inp" id="aNotes" value="'+esc(a.notes)+'"></label>'+
+    (isNew
+      ? '<div class="note warn">Creating this sends the owner a Catalyst invitation by email. They set their own password and land straight in their academy.</div>'
+      : '<div class="note info">A suspended academy keeps its data but nobody can open it. Lowering a limit below current usage deletes nothing — the planner just refuses new ones.</div>'),
+    '<button class="btn" data-act="closeModal">Cancel</button><button class="btn primary" data-act="saveModal">Save</button>',
+    function(){
+      var name=v("aName"); if(!name) return toast("The academy needs a name.");
+      var payload={ id:a.id||null, name:name, plan:v("aPlan"),
+        maxClubs:Math.max(1,n("aMaxClubs")), maxUsers:Math.max(1,n("aMaxUsers")),
+        contact:v("aContact"), notes:v("aNotes") };
+      if(isNew){
+        payload.ownerEmail=v("aOwner").toLowerCase();
+        payload.ownerName=v("aOwnerName");
+        if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(payload.ownerEmail))
+          return toast("A valid owner email is required — that is who gets the invitation.");
+      }
+      closeModal();
+      api("admin/academy",{academy:payload})
+        .then(function(r){
+          toast(isNew ? (r.invited ? "Academy created, invitation sent to "+r.owner
+                                   : "Academy created ("+(r.reason||"owner already had an account")+")")
+                      : "Academy updated.");
+          return load();
+        })
+        .catch(function(e){ failed("save the academy",e); });
+    });
+}
+
+A.delAcademy=function(id){
+  var a=byId(S.academies,id), clubs=clubsOf(a), us=usersOf(id).length;
+  openModal(clubs?("Cannot delete "+a.name):("Delete "+a.name+"?"),
+    clubs
+      ? '<div class="note bad">This academy still has '+clubs+' club(s), and the classes, players and requests under them. Suspend it instead, or clear its clubs first.</div>'
+      : '<div class="note warn">No clubs attached. This removes the academy and its '+us+' user record(s). It cannot be undone, and it does not delete their Catalyst logins.</div>',
+    clubs
+      ? '<button class="btn" data-act="closeModal">Close</button>'
+      : '<button class="btn" data-act="closeModal">Cancel</button><button class="btn primary" data-act="saveModal">Delete</button>',
+    clubs?null:function(){
+      closeModal();
+      api("admin/academy/delete",{id:id})
+        .then(function(){ toast("Academy deleted."); return load(); })
+        .catch(function(e){ failed("delete the academy",e); });
+    });
+};
+
+A.users=function(id){ usersModal(id); };
+function usersModal(id){
+  var a=byId(S.academies,id), list=usersOf(id), full=list.length>=a.maxUsers;
+  openModal("Users — "+a.name,
+    '<div class="row mb" style="justify-content:space-between">'+
+      '<span class="muted small">'+list.length+' of '+a.maxUsers+' included</span>'+
+      (full?'<span class="chip warn">Seat limit reached</span>':'')+
+    '</div>'+
+    (list.length?list.map(function(u){
+      return '<div class="listrow">'+
+        '<div class="grow"><div>'+esc(u.email)+'</div>'+
+        '<div class="tiny muted">'+esc(u.name||"—")+' · '+esc(u.role)+'</div></div>'+
+        '<span class="chip '+(u.status==="active"?"ok":"warn")+'">'+esc(u.status)+'</span>'+
+        '<button class="btn icon" data-act="editUser" data-id="'+u.id+'" data-a="'+id+'">✎</button>'+
+        '<button class="btn icon" data-act="delUser" data-id="'+u.id+'" data-a="'+id+'">🗑</button></div>';
+    }).join(""):'<div class="empty">Nobody added yet.</div>')+
+    '<div class="mt"><button class="btn sm primary" data-act="newUser" data-id="'+id+'"'+(full?" disabled":"")+'>＋ Add user</button></div>'+
+    '<div class="note info mt">Adding someone here records that they belong to this academy. They still need a Catalyst app-user account with the same email before they can sign in.</div>',
+    '<button class="btn" data-act="closeModal">Done</button>',null);
+}
+
+A.newUser=function(id){ userForm({id:null,academyId:id,email:"",name:"",role:"coordinator",status:"invited"}); };
+A.editUser=function(uid,el){ userForm(JSON.parse(JSON.stringify(byId(S.users,uid)))); };
+
+function userForm(u){
+  var a=byId(S.academies,u.academyId);
+  openModal(u.id?"Edit user":"Add user to "+a.name,
+    '<label class="f"><span>Email — they get an invitation at this address</span><input class="inp" id="uEmail" value="'+esc(u.email)+'"></label>'+
+    '<label class="f"><span>Name</span><input class="inp" id="uName" value="'+esc(u.name)+'"></label>'+
+    '<div class="grid g2">'+
+      '<label class="f"><span>Role</span><select class="inp" id="uRole">'+
+        ["owner","coordinator","coach","viewer"].map(function(r){return '<option'+(u.role===r?" selected":"")+'>'+r+'</option>';}).join("")+
+      '</select></label>'+
+      (u.id?'<label class="f"><span>Status</span><select class="inp" id="uStatus">'+
+        ["invited","active","removed"].map(function(r){return '<option'+(u.status===r?" selected":"")+'>'+r+'</option>';}).join("")+
+      '</select></label>':'')+
+    '</div>'+
+    (u.id?'':'<div class="note warn">Saving sends them a Catalyst invitation. They set their own password, and their academy is decided by this record — never by the link they open.</div>'),
+    '<button class="btn" data-act="closeModal">Cancel</button><button class="btn primary" data-act="saveModal">Save</button>',
+    function(){
+      var email=v("uEmail").toLowerCase();
+      if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return toast("That does not look like an email address.");
+      var payload={ id:u.id||null, academyId:u.academyId, email:email, name:v("uName"), role:v("uRole") };
+      if(u.id) payload.status=v("uStatus");
+      closeModal();
+      api("admin/user",{user:payload})
+        .then(function(r){
+          toast(u.id ? "Saved." : (r.invited ? "Invitation sent to "+email
+                                             : "Added ("+(r.reason||"already had an account")+")"));
+          return load();
+        })
+        .then(function(){ usersModal(u.academyId); })
+        .catch(function(e){ failed("save the user",e); });
+    });
+}
+
+A.delUser=function(uid,el){
+  var aid=el.dataset.a;
+  api("admin/user/delete",{id:uid})
+    .then(function(){ toast("Removed."); return load(); })
+    .then(function(){ usersModal(aid); })
+    .catch(function(e){ failed("remove the user",e); });
+};
+
+/* ── render ───────────────────────────────────────────── */
+function meter(used,max,label){
+  var pct=max?Math.min(100,Math.round(used/max*100)):0;
+  var col=used>max?"var(--alert)":used===max?"var(--honey)":"var(--turf)";
+  return '<div style="min-width:120px"><div class="tiny muted">'+label+' '+used+' / '+max+'</div>'+
+         '<div class="meter"><i style="width:'+pct+'%;background:'+col+'"></i></div></div>';
+}
+
+function render(){
+  var top=document.getElementById("topRight");
+  top.innerHTML = me
+    ? '<span class="small" style="opacity:.75">'+esc(me)+'</span>'+
+      '<button class="btn sm" data-act="reload">Refresh</button>'+
+      '<button class="btn sm" data-act="signOut">Sign out</button>'
+    : '';
+
+  var el=document.getElementById("view");
+
+  if(state==="loading") { el.innerHTML='<div class="empty">Loading…</div>'; return; }
+  if(state==="nosdk"){
+    el.innerHTML='<div class="empty"><h3>Not served by Catalyst</h3>'+
+      '<p class="small">This page has to be opened from the Slate URL. Opening the file directly gives you the interface with nothing behind it.</p></div>'; return;
+  }
+  if(state==="signedout"){
+    el.innerHTML='<div class="card pad" style="max-width:420px;margin:40px auto">'+
+      '<h3 style="font-size:22px">Sign in</h3><p class="muted small">Operator access only.</p>'+
+      '<div id="login-container" style="min-height:320px;margin-top:10px"></div></div>';
+    try{ sdk.auth.signIn("login-container",{login_redirect:window.location.origin+"/admin.html"}); }
+    catch(e){ document.getElementById("login-container").innerHTML=
+      '<div class="note bad">Sign-in widget failed to load. If the console still has Authentication Type set to Hosted, switch it to Embedded.</div>'; }
+    return;
+  }
+  if(state==="denied"){
+    el.innerHTML='<div class="empty"><h3>Not an operator</h3>'+
+      '<p class="small">'+esc(me||"This account")+' is not on the operator list for this console.</p>'+
+      '<div class="mt"><button class="btn" data-act="signOut">Sign out</button></div></div>'; return;
+  }
+
+  var rows=S.academies.map(function(a){
+    var clubs=clubsOf(a), us=usersOf(a.id).length;
+    var planChip=a.plan==="ACTIVE"?"ok":a.plan==="SUSPENDED"?"bad":"warn";
+    return '<div class="card pad mb">'+
+      '<div class="row" style="justify-content:space-between">'+
+        '<div class="grow"><h3 style="font-size:20px">'+esc(a.name)+'</h3>'+
+          '<div class="tiny muted">'+esc(a.slug)+(a.contact?' · '+esc(a.contact):'')+'</div></div>'+
+        '<span class="chip '+planChip+'">'+esc(a.plan)+'</span>'+
+      '</div>'+
+      '<div class="row mt">'+meter(clubs,a.maxClubs,"Clubs")+meter(us,a.maxUsers,"Users")+
+        '<div class="grow"></div>'+
+        '<a class="btn sm" href="./index.html?a='+encodeURIComponent(a.slug)+'" target="_blank">Open planner</a>'+
+        '<button class="btn sm" data-act="users" data-id="'+a.id+'">Users</button>'+
+        '<button class="btn sm" data-act="editAcademy" data-id="'+a.id+'">Edit</button>'+
+        '<button class="btn sm danger" data-act="delAcademy" data-id="'+a.id+'">Delete</button>'+
+      '</div>'+
+      (clubs>a.maxClubs||us>a.maxUsers
+        ? '<div class="note warn mt">Over the included limit. Nothing is blocked retroactively — the planner just refuses new ones.</div>' : '')+
+    '</div>';
+  }).join("");
+
+  el.innerHTML=
+    '<div class="row mb" style="justify-content:space-between">'+
+      '<div><h2 style="font-size:22px">Academies · '+S.academies.length+'</h2>'+
+      '<div class="muted small">Each one is a tenant: its own clubs, coaches, players and classes.</div></div>'+
+      '<button class="btn primary" data-act="newAcademy">＋ New academy</button>'+
+    '</div>'+
+    (S.academies.length?rows:'<div class="empty">No academies yet. Create the first one.</div>')+
+    '<div class="note info mt">Limits here are commercial guardrails enforced in the planner’s interface. They are not a security boundary: because Data Store permissions are per-table rather than per-row, any signed-in user can still reach another academy’s rows directly until the tenant scoping moves into a server-side function.</div>';
+}
+
+/* ── events ───────────────────────────────────────────── */
+document.addEventListener("click",function(ev){
+  var el=ev.target.closest("[data-act]");
+  if(!el) return;
+  var fn=A[el.dataset.act];
+  if(fn){ ev.preventDefault(); fn(el.dataset.id,el,ev); }
+});
+
+/* ── boot ───────────────────────────────────────────── */
+waitForSdk().then(function(c){
+  if(!c){ state="nosdk"; render(); return; }
+  sdk=c;
+  return sdk.auth.isUserAuthenticated().then(function(){
+    return api("session").then(function(sess){
+      me=sess.email||"";
+      if(!sess.isOperator){ state="denied"; render(); return; }
+      return load();
+    });
+  }).catch(function(e){
+    if(e && e.status===403){ state="denied"; render(); return; }
+    state="signedout"; render();
+  });
+});
+})();
+</script>
+</body>
+</html>

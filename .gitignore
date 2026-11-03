@@ -1,8 +1,4 @@
 node_modules/
-dist/
-build/
-.catalystrc
-.env
-.env.local
+tests/out/
+.catalyst/
 *.log
-.DS_Store

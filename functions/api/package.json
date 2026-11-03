@@ -1,0 +1,9 @@
+{
+  "name": "api",
+  "version": "1.0.0",
+  "description": "Padel Academy Planner API — tenant scoping, seat limits and invitations",
+  "main": "index.js",
+  "dependencies": {
+    "zcatalyst-sdk-node": "^1.12.0"
+  }
+}
