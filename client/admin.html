@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Bandeja — Academy Setup</title>
+<title>Bandeja — Operator console</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 100'%3E%3Crect width='120' height='100' rx='18' fill='%2312222B'/%3E%3Ccircle cx='60' cy='38' r='22' fill='%23E09A2B'/%3E%3Cpath d='M14 44 Q60 90 106 44' fill='none' stroke='%23E09A2B' stroke-width='13' stroke-linecap='round'/%3E%3C/svg%3E">
 <!-- Order matters: the SDK bundle must load before init.js, which initialises it. -->
 <script src="https://static.zohocdn.com/catalyst/sdk/js/4.6.1/catalystWebSDK.js"></script>
@@ -17,7 +17,7 @@
   --ink:#12222B; --ink2:#53646E; --honey:#E09A2B; --honeyBg:#FBF1E6; --honeyInk:#7A5210;
   --turf:#4F8A5B; --turfBg:#EAF2EB; --turfInk:#33613F;
   --alert:#BE5236; --alertBg:#FBECE7; --alertInk:#7A3420;
-  --head:#1D2F23; --shadow:0 1px 2px rgba(18,34,43,.08);
+  --head:#12222B; --shadow:0 1px 2px rgba(18,34,43,.08);
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
@@ -90,19 +90,42 @@ label.f>span{display:block;font-size:12px;color:var(--ink2);margin-bottom:4px}
 #banner{display:none;background:var(--alertBg);color:var(--alertInk);padding:10px 16px;font-size:13.5px;border-bottom:1px solid var(--alert)}
 #banner.on{display:block}
 a{color:inherit}
+.brand{display:flex;align-items:center;gap:7px;opacity:.62;margin-bottom:4px}
+.brand .wm{font-family:'Barlow Semi Condensed',sans-serif;font-weight:700;font-size:13px;letter-spacing:.14em;line-height:1}
+.brand .by{font-size:10.5px;letter-spacing:.04em;opacity:.72}
+.top .btn{background:transparent;color:#fff;border-color:rgba(255,255,255,.25)}
+.top .btn:hover{border-color:#fff}
+/* Nothing of the console shows until the API has confirmed an operator. Until
+   then it is the brand on its own, and anyone else is sent to the shared
+   sign-in on the planner. */
+body.gated{background:var(--head)}
+body.gated header.top, body.gated main{display:none}
+#gate{display:none}
+body.gated #gate{display:flex;min-height:100vh;align-items:center;justify-content:center;flex-direction:column;gap:22px;color:var(--honey)}
+.gword{font-family:'Barlow Semi Condensed',sans-serif;font-weight:700;font-size:34px;letter-spacing:.09em;text-indent:.09em;color:#EBEEE9}
+.gdots{display:flex;gap:7px}
+.gdots i{width:8px;height:8px;border-radius:50%;background:var(--honey);opacity:.25;animation:gp 1.1s infinite ease-in-out}
+.gdots i:nth-child(2){animation-delay:.18s}.gdots i:nth-child(3){animation-delay:.36s}
+@keyframes gp{0%,80%,100%{opacity:.25}40%{opacity:1}}
+@media (prefers-reduced-motion: reduce){.gdots i{animation:none;opacity:.7}}
+.langchip{font-family:'Barlow Semi Condensed',sans-serif;font-weight:700;letter-spacing:.06em}
 </style>
 </head>
-<body>
+<body class="gated">
+<div id="gate" aria-live="polite">
+  <svg viewBox="0 0 120 100" width="64" height="53" role="img" aria-label="Bandeja" focusable="false"><circle cx="60" cy="38" r="21" fill="currentColor"></circle><path d="M14 44 Q60 90 106 44" fill="none" stroke="currentColor" stroke-width="12" stroke-linecap="round"></path></svg>
+  <div class="gword">BANDEJA</div>
+  <div class="gdots"><i></i><i></i><i></i></div>
+</div>
 <div id="banner"></div>
 <header class="top"><div class="wrap">
   <div class="row">
     <div>
-      <div class="eyebrow" style="display:flex;align-items:center;gap:7px">
-        <svg viewBox="0 0 120 100" width="18" height="15" aria-hidden="true" focusable="false"><circle cx="60" cy="38" r="21" fill="currentColor"></circle><path d="M14 44 Q60 90 106 44" fill="none" stroke="currentColor" stroke-width="12" stroke-linecap="round"></path></svg>
-        <span style="font-family:'Barlow Semi Condensed',sans-serif;font-weight:700;letter-spacing:.14em;font-size:12px">BANDEJA</span>
-        <span style="opacity:.7">operator console</span>
+      <div class="brand">
+        <svg viewBox="0 0 120 100" width="19" height="16" aria-hidden="true" focusable="false"><circle cx="60" cy="38" r="21" fill="currentColor"></circle><path d="M14 44 Q60 90 106 44" fill="none" stroke="currentColor" stroke-width="12" stroke-linecap="round"></path></svg>
+        <span class="wm">BANDEJA</span><span class="by">by YLP Solutions</span>
       </div>
-      <div class="title">Academy setup</div>
+      <div class="title">Operator console</div>
     </div>
     <div class="row" id="topRight"></div>
   </div>
@@ -119,6 +142,9 @@ a{color:inherit}
    edit, and a non-operator calling an admin endpoint is refused by Catalyst,
    not merely hidden by CSS. */
 var FUNCTION_URL = "https://ylp-academy-manager-20105401867.development.catalystserverless.eu/server/api/execute";
+
+/* Interface languages an academy can run in. Mirrors LANGUAGES in the API. */
+var LANGS={pt:"Português",es:"Español",fr:"Français",en:"English"};
 
 var S={ academies:[], users:[] };
 var sdk=null, me=null, state="loading";
@@ -166,9 +192,7 @@ function banner(msg){
 }
 function failed(what,e){
   var m=(e&&(e.message||(e.content&&e.content.message)))||"unknown error";
-  var hint=/permission|privilege|403|not allowed/i.test(m)
-    ? " App User needs Insert, Update and Delete on the Academies and AcademyUsers tables — Console → Data Store → table → Scopes and Permissions."
-    : "";
+  var hint="";
   /* Refresh first, then raise the banner: load() clears banners on success,
      so setting it beforehand would wipe the very message we need to show. */
   return load().then(function(){
@@ -190,7 +214,8 @@ function load(){
     S.academies=d.academies||[]; S.users=d.users||[];
     state="ready"; banner(null); render();
   }).catch(function(e){
-    if(e.status===403){ state="denied"; render(); return; }
+    if(e.status===403){ location.replace("./"); return; }
+    if(e.status===401){ location.replace("./?next=admin"); return; }
     state="error"; banner("Could not read the data — "+((e&&e.message)||"unknown error")); render();
   });
 }
@@ -215,10 +240,10 @@ var A={};
 A.scrim=function(id,el,ev){ if(ev&&ev.target&&ev.target.classList.contains("scrim")) closeModal(); };
 A.closeModal=closeModal;
 A.saveModal=function(){ if(onSave) onSave(); };
-A.signOut=function(){ if(sdk) sdk.auth.signOut(window.location.origin); };
+A.signOut=function(){ if(sdk) sdk.auth.signOut(location.origin+"/"); };
 A.reload=function(){ banner(null); load(); };
 
-A.newAcademy=function(){ academyForm({id:null,name:"",slug:"",plan:"TRIAL",maxClubs:1,maxUsers:3,contact:"",notes:""}); };
+A.newAcademy=function(){ academyForm({id:null,name:"",slug:"",plan:"TRIAL",maxClubs:1,maxUsers:3,contact:"",notes:"",language:"pt"}); };
 A.editAcademy=function(id){ academyForm(JSON.parse(JSON.stringify(byId(S.academies,id)))); };
 
 function academyForm(a){
@@ -237,6 +262,9 @@ function academyForm(a){
         ["TRIAL","ACTIVE","SUSPENDED"].map(function(p){return '<option'+(a.plan===p?" selected":"")+'>'+p+'</option>';}).join("")+
       '</select></label>'+
       '<label class="f"><span>Billing contact</span><input class="inp" id="aContact" value="'+esc(a.contact)+'" placeholder="email"></label>'+
+      '<label class="f"><span>App language — what everyone in this academy sees</span><select class="inp" id="aLang">'+
+        Object.keys(LANGS).map(function(l){return '<option value="'+l+'"'+((a.language||"pt")===l?" selected":"")+'>'+LANGS[l]+'</option>';}).join("")+
+      '</select></label>'+
     '</div>'+
     '<label class="f"><span>Notes</span><input class="inp" id="aNotes" value="'+esc(a.notes)+'"></label>'+
     (isNew
@@ -247,7 +275,7 @@ function academyForm(a){
       var name=v("aName"); if(!name) return toast("The academy needs a name.");
       var payload={ id:a.id||null, name:name, plan:v("aPlan"),
         maxClubs:Math.max(1,n("aMaxClubs")), maxUsers:Math.max(1,n("aMaxUsers")),
-        contact:v("aContact"), notes:v("aNotes") };
+        contact:v("aContact"), notes:v("aNotes"), language:v("aLang") };
       if(isNew){
         payload.ownerEmail=v("aOwner").toLowerCase();
         payload.ownerName=v("aOwnerName");
@@ -300,7 +328,7 @@ function usersModal(id){
         '<button class="btn icon" data-act="delUser" data-id="'+u.id+'" data-a="'+id+'">🗑</button></div>';
     }).join(""):'<div class="empty">Nobody added yet.</div>')+
     '<div class="mt"><button class="btn sm primary" data-act="newUser" data-id="'+id+'"'+(full?" disabled":"")+'>＋ Add user</button></div>'+
-    '<div class="note info mt">Adding someone here records that they belong to this academy. They still need a Catalyst app-user account with the same email before they can sign in.</div>',
+    '<div class="note info mt">Adding someone sends them an invitation by email. They sign in on the same page as everyone else, and land in this academy.</div>',
     '<button class="btn" data-act="closeModal">Done</button>',null);
 }
 
@@ -365,25 +393,8 @@ function render(){
 
   var el=document.getElementById("view");
 
-  if(state==="loading") { el.innerHTML='<div class="empty">Loading…</div>'; return; }
-  if(state==="nosdk"){
-    el.innerHTML='<div class="empty"><h3>Not served by Catalyst</h3>'+
-      '<p class="small">This page has to be opened from the Slate URL. Opening the file directly gives you the interface with nothing behind it.</p></div>'; return;
-  }
-  if(state==="signedout"){
-    el.innerHTML='<div class="card pad" style="max-width:420px;margin:40px auto">'+
-      '<h3 style="font-size:22px">Sign in</h3><p class="muted small">Operator access only.</p>'+
-      '<div id="login-container" style="min-height:320px;margin-top:10px"></div></div>';
-    try{ sdk.auth.signIn("login-container",{login_redirect:window.location.origin+"/admin.html"}); }
-    catch(e){ document.getElementById("login-container").innerHTML=
-      '<div class="note bad">Sign-in widget failed to load. If the console still has Authentication Type set to Hosted, switch it to Embedded.</div>'; }
-    return;
-  }
-  if(state==="denied"){
-    el.innerHTML='<div class="empty"><h3>Not an operator</h3>'+
-      '<p class="small">'+esc(me||"This account")+' is not on the operator list for this console.</p>'+
-      '<div class="mt"><button class="btn" data-act="signOut">Sign out</button></div></div>'; return;
-  }
+  if(state!=="ready"&&state!=="error") return;
+  document.body.classList.remove("gated");
 
   var rows=S.academies.map(function(a){
     var clubs=clubsOf(a), us=usersOf(a.id).length;
@@ -391,12 +402,12 @@ function render(){
     return '<div class="card pad mb">'+
       '<div class="row" style="justify-content:space-between">'+
         '<div class="grow"><h3 style="font-size:20px">'+esc(a.name)+'</h3>'+
-          '<div class="tiny muted">'+esc(a.slug)+(a.contact?' · '+esc(a.contact):'')+'</div></div>'+
+          '<div class="tiny muted">'+esc(a.ownerEmail||"—")+(a.contact?' · '+esc(a.contact):'')+'</div></div>'+
+        '<span class="chip langchip" title="'+esc(LANGS[a.language]||"")+'">'+esc(String(a.language||"pt").toUpperCase())+'</span>'+
         '<span class="chip '+planChip+'">'+esc(a.plan)+'</span>'+
       '</div>'+
       '<div class="row mt">'+meter(clubs,a.maxClubs,"Clubs")+meter(us,a.maxUsers,"Users")+
         '<div class="grow"></div>'+
-        '<a class="btn sm" href="./index.html?a='+encodeURIComponent(a.slug)+'" target="_blank">Open planner</a>'+
         '<button class="btn sm" data-act="users" data-id="'+a.id+'">Users</button>'+
         '<button class="btn sm" data-act="editAcademy" data-id="'+a.id+'">Edit</button>'+
         '<button class="btn sm danger" data-act="delAcademy" data-id="'+a.id+'">Delete</button>'+
@@ -412,8 +423,7 @@ function render(){
       '<div class="muted small">Each one is a tenant: its own clubs, coaches, players and classes.</div></div>'+
       '<button class="btn primary" data-act="newAcademy">＋ New academy</button>'+
     '</div>'+
-    (S.academies.length?rows:'<div class="empty">No academies yet. Create the first one.</div>')+
-    '<div class="note info mt">Limits here are commercial guardrails enforced in the planner’s interface. They are not a security boundary: because Data Store permissions are per-table rather than per-row, any signed-in user can still reach another academy’s rows directly until the tenant scoping moves into a server-side function.</div>';
+    (S.academies.length?rows:'<div class="empty">No academies yet. Create the first one.</div>');
 }
 
 /* ── events ───────────────────────────────────────────── */
@@ -424,19 +434,28 @@ document.addEventListener("click",function(ev){
   if(fn){ ev.preventDefault(); fn(el.dataset.id,el,ev); }
 });
 
-/* ── boot ───────────────────────────────────────────── */
+/* ── boot ─────────────────────────────────────────────
+   One sign-in for the whole product: this page never shows a login box. A
+   visitor who is not signed in is sent to the planner's sign-in with
+   ?next=admin, which brings operators back here; a signed-in non-operator is
+   sent to the planner. The server refuses every admin/ call from anyone not
+   in PlatformAdmins regardless — the redirect is so the page never shows them
+   an empty console, not what keeps them out. */
 waitForSdk().then(function(c){
-  if(!c){ state="nosdk"; render(); return; }
+  if(!c){ location.replace("./?next=admin"); return; }
   sdk=c;
   return sdk.auth.isUserAuthenticated().then(function(){
     return api("session").then(function(sess){
       me=sess.email||"";
-      if(!sess.isOperator){ state="denied"; render(); return; }
+      if(!sess.isOperator){ location.replace("./"); return; }
       return load();
     });
-  }).catch(function(e){
-    if(e && e.status===403){ state="denied"; render(); return; }
-    state="signedout"; render();
+  },function(){ location.replace("./?next=admin"); })
+  .catch(function(e){
+    if(e && e.status===401){ location.replace("./?next=admin"); return; }
+    if(e && e.status===403){ location.replace("./"); return; }
+    state="error"; document.body.classList.remove("gated");
+    banner("Could not reach the API — "+((e&&e.message)||"unknown error")); render();
   });
 });
 })();

@@ -2,19 +2,28 @@
    the same request/response contract the real function serves. */
 (function(){
   var SEQ=900000;
+  /* language "en" and the tour already done keep the older suites, which read
+     English text and never expected an overlay, working unchanged; the suites
+     about language and the tour set these themselves. */
   var A={ id:"777", name:"The Hyve", rules:{levelTolerance:1,classCapacity:4},
-          plan:"ACTIVE", maxClubs:3, maxUsers:5 };
+          plan:"ACTIVE", maxClubs:3, maxUsers:5, language:"en", tutorialDone:true };
   var DB={ venues:[], coaches:[], players:[], classes:[], requests:[] };
   var CALLS=[];
-  var MODE={ failSave:false, status:null, code:null };
+  var MODE={ failSave:false, status:null, code:null, signedIn:true, operator:false, noAcademy:false, admin:null };
 
   function nid(){ return String(++SEQ); }
 
   window.catalyst={
     auth:{
-      isUserAuthenticated:function(){ return Promise.resolve({content:{email_id:"ana@hyve.pt"}}); },
+      isUserAuthenticated:function(){
+        return MODE.signedIn ? Promise.resolve({content:{email_id:"ana@hyve.pt"}}) : Promise.reject(new Error("not signed in"));
+      },
       generateAuthToken:function(){ return Promise.resolve({access_token:"tok_abc"}); },
-      signIn:function(){}, signOut:function(){}
+      signIn:function(id,opts){
+        MODE.signInCalls=(MODE.signInCalls||[]).concat([{id:id,redirect:opts&&opts.login_redirect}]);
+        var el=document.getElementById(id); if(el) el.innerHTML='<div class="fake-login">[Catalyst sign-in form]</div>';
+      },
+      signOut:function(to){ MODE.signedOutTo=to; }
     }
   };
 
@@ -31,6 +40,12 @@
 
     if(MODE.status) return respond(MODE.status,{error:MODE.code||"blocked",message:"forced"});
 
+    if(path==="session"){
+      return respond(200,{email:"ana@hyve.pt",name:"Ana",isOperator:!!MODE.operator,role:"owner",
+        academy:MODE.noAcademy?null:JSON.parse(JSON.stringify(A))});
+    }
+    if(path==="tutorial"){ A.tutorialDone=body.done!==false; return respond(200,{ok:true,tutorialDone:A.tutorialDone}); }
+    if(MODE.admin&&path.indexOf("admin/")===0) return MODE.admin(path,body,respond);
     if(path==="data"){
       return respond(200,Object.assign({academy:JSON.parse(JSON.stringify(A)),role:"owner"},
         JSON.parse(JSON.stringify(DB))));

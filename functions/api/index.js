@@ -18,6 +18,33 @@ const catalyst = require('zcatalyst-sdk-node');
    fails against the wrong one, which is the usual post-promotion surprise. */
 const ZAID = '30047977891';
 
+/* Interface languages an academy can run in. The first is the default for an
+   academy that never chose one. */
+const LANGUAGES = ['pt', 'es', 'fr', 'en'];
+const pickLanguage = (v) => (LANGUAGES.includes(v) ? v : LANGUAGES[0]);
+
+/* Academies.Settings is one JSON text column. Most of it is the matching rules,
+   which an owner edits; these keys are platform state that rides along in the
+   same column and that only the server writes. Splitting them out on read and
+   putting them back on write is what stops an owner's rules save from wiping
+   the language or everyone's tutorial progress. */
+const RESERVED = ['language', 'tutorialDone'];
+
+function parseSettings(text) {
+  let o = {};
+  try { o = text ? JSON.parse(text) : {}; } catch (e) { o = {}; }
+  return o && typeof o === 'object' && !Array.isArray(o) ? o : {};
+}
+function splitSettings(settings) {
+  const rules = {};
+  Object.keys(settings).forEach((k) => { if (!RESERVED.includes(k)) rules[k] = settings[k]; });
+  return {
+    rules,
+    language: pickLanguage(settings.language),
+    tutorialDone: Array.isArray(settings.tutorialDone) ? settings.tutorialDone.map(String) : []
+  };
+}
+
 const TABLES = {
   venues:   'Clubs',
   coaches:  'Coaches',
@@ -119,10 +146,13 @@ async function loadAcademy(zcql, academyId) {
      FROM Academies WHERE Academies.ROWID = ${num(academyId)}`);
   if (!rows.length) return null;
   const a = rows[0];
-  let rules = {};
-  try { rules = a.Settings ? JSON.parse(a.Settings) : {}; } catch (e) { rules = {}; }
+  const settings = parseSettings(a.Settings);
+  const split = splitSettings(settings);
   return {
-    id: sid(a.ROWID), name: a.Name, rules,
+    id: sid(a.ROWID), name: a.Name, rules: split.rules,
+    language: split.language,
+    tutorialDone: split.tutorialDone,
+    settings,
     plan: a.PlanStatus || 'TRIAL',
     maxClubs: num(a.MaxClubs) || 1,
     maxUsers: num(a.MaxUsers) || 1,
@@ -131,6 +161,18 @@ async function loadAcademy(zcql, academyId) {
 }
 
 /* ─────────── reading one academy ─────────── */
+
+/* What the browser gets: the rules and the language, plus whether THIS caller
+   has finished the tour. The raw settings and the list of who else has are not
+   the caller's business. */
+function publicAcademy(academy, email) {
+  if (!academy) return null;
+  const out = Object.assign({}, academy);
+  delete out.settings;
+  delete out.tutorialDone;
+  out.tutorialDone = academy.tutorialDone.includes(String(email || '').toLowerCase());
+  return out;
+}
 
 async function readAll(zcql, academyId) {
   const where = `AcademyId = ${num(academyId)}`;
@@ -349,7 +391,8 @@ async function deleteRecord(app, zcql, academyId, collection, id) {
 async function listAcademies(zcql) {
   const [academies, users, clubs] = await Promise.all([
     query(zcql, `SELECT Academies.ROWID, Academies.Name, Academies.PlanStatus, Academies.MaxClubs,
-                        Academies.MaxUsers, Academies.ContactEmail, Academies.OwnerEmail, Academies.Notes
+                        Academies.MaxUsers, Academies.ContactEmail, Academies.OwnerEmail, Academies.Notes,
+                        Academies.Settings
                  FROM Academies`),
     query(zcql, `SELECT AcademyUsers.ROWID, AcademyUsers.AcademyId, AcademyUsers.Email,
                         AcademyUsers.Name, AcademyUsers.Role, AcademyUsers.Status FROM AcademyUsers`),
@@ -365,6 +408,7 @@ async function listAcademies(zcql) {
     id: sid(a.ROWID), name: a.Name, plan: a.PlanStatus || 'TRIAL',
     maxClubs: num(a.MaxClubs), maxUsers: num(a.MaxUsers),
     contact: a.ContactEmail || '', ownerEmail: a.OwnerEmail || '', notes: a.Notes || '',
+    language: pickLanguage(parseSettings(a.Settings).language),
     clubsUsed: clubCount[sid(a.ROWID)] || 0
   })).sort((x, y) => String(x.name).localeCompare(String(y.name)));
 
@@ -421,7 +465,7 @@ async function handler(req, res) {
       const academy = me.academyId ? await loadAcademy(zcql, me.academyId) : null;
       return sendJson(res, 200, {
         email: me.email, name: me.name, isOperator: me.isOperator,
-        role: me.role, academy
+        role: me.role, academy: publicAcademy(academy, me.email)
       });
     }
 
@@ -444,7 +488,11 @@ async function handler(req, res) {
         };
 
         if (a.id) {
-          await ds.updateRow(Object.assign({ ROWID: a.id }, row));
+          const current = await loadAcademy(zcql, a.id);
+          if (!current) return sendJson(res, 404, { error: 'Academy not found' });
+          const settings = Object.assign({}, current.settings,
+            { language: a.language ? pickLanguage(a.language) : current.language });
+          await ds.updateRow(Object.assign({ ROWID: a.id, Settings: JSON.stringify(settings) }, row));
           return sendJson(res, 200, { id: sid(a.id), invited: false });
         }
 
@@ -458,7 +506,8 @@ async function handler(req, res) {
           .replace(/^-|-$/g, '').slice(0, 90) + '-' + Date.now().toString(36).slice(-4);
 
         const created = await ds.insertRow(Object.assign({
-          Slug: slug, Settings: '{}', Timezone: 'Europe/Lisbon', OwnerEmail: owner
+          Slug: slug, Settings: JSON.stringify({ language: pickLanguage(a.language) }),
+          Timezone: 'Europe/Lisbon', OwnerEmail: owner
         }, row));
         const academyId = sid(created && (created.ROWID || created.rowid));
 
@@ -568,7 +617,19 @@ async function handler(req, res) {
 
     if (path === 'data') {
       const data = await readAll(zcql, me.academyId);
-      return sendJson(res, 200, Object.assign({ academy, role: me.role }, data));
+      return sendJson(res, 200, Object.assign({ academy: publicAcademy(academy, me.email), role: me.role }, data));
+    }
+
+    /* The first-login tour. Finishing or skipping it records the caller's email
+       on their academy, so it does not come back on the next device. */
+    if (path === 'tutorial') {
+      const done = new Set(academy.tutorialDone);
+      if (body.done === false) done.delete(me.email); else done.add(me.email);
+      const settings = Object.assign({}, academy.settings, { tutorialDone: Array.from(done) });
+      await app.datastore().table('Academies').updateRow({
+        ROWID: me.academyId, Settings: JSON.stringify(settings)
+      });
+      return sendJson(res, 200, { ok: true, tutorialDone: done.has(me.email) });
     }
 
     if (path === 'save') {
@@ -585,10 +646,15 @@ async function handler(req, res) {
       if (me.role !== 'owner' && me.role !== 'coordinator') {
         return sendJson(res, 403, { error: 'Only an owner or coordinator can change academy settings.' });
       }
+      /* Only rule keys come from the client; the reserved ones are carried over
+         from what is stored, whatever the request says. */
+      const incoming = body.rules && typeof body.rules === 'object' ? body.rules : academy.rules;
+      const settings = splitSettings(incoming || {}).rules;
+      RESERVED.forEach((k) => { if (academy.settings[k] !== undefined) settings[k] = academy.settings[k]; });
       await app.datastore().table('Academies').updateRow({
         ROWID: me.academyId,
         Name: body.name || academy.name,
-        Settings: JSON.stringify(body.rules || academy.rules || {})
+        Settings: JSON.stringify(settings)
       });
       return sendJson(res, 200, { ok: true });
     }

@@ -137,21 +137,40 @@ Worth settling early, because `CLAUDE.md` is what steers every future session.
 
 ---
 
+## Done since this handover was written
+
+- **Phone tables.** The waiting list and Classes list render as one card per
+  row under 768px (`table.stack`), the table above.
+- **Sign-in gate.** `index.html` shows nothing of the planner until the API has
+  confirmed who you are and returned an academy: a splash, the sign-in box, or
+  a one-sentence refusal (no academy, suspended, cannot connect).
+- **One sign-in, for the console too.** `admin.html` has no login of its own.
+  Signed out it redirects to `/?next=admin`; after sign-in the planner sends
+  operators back to the console. Non-operators who open `/admin.html` are sent
+  to the planner. The server's 403 on `admin/*` is still what keeps them out.
+- **Four languages, chosen per academy.** Portuguese (default), Spanish,
+  French, English. The operator picks it when creating an academy and can
+  change it under Edit. Every string goes through `t()` in `index.html`;
+  `tests/unit/i18n.js` fails if any string lacks a translation. Before sign-in
+  the browser's language is used, with a switcher at the bottom of the page.
+  The operator console itself is English only.
+- **First-login tour.** Six steps, shown once per person, recorded on the
+  server; replay from Manage → Academy → Show the tour again.
+- **Manual regenerated with Bandeja branding** — `node manual/shots.js` then
+  `python3 manual/build.py` → `manual/Bandeja-Guide.pdf` (English; set
+  `LANG_UI=pt` for Portuguese screenshots — the text of the guide is English).
+
+Language and tour progress live in `Academies.Settings` under keys the server
+protects (`language`, `tutorialDone`) — no schema change was needed. See
+`docs/catalyst-schema.md`.
+
 ## Still outstanding
 
-In the order I would do them:
-
-1. **Phone tables.** The waiting list and the Classes list in Manage are
-   seven-column tables; on a phone the last columns, including edit and delete,
-   sit off-screen with nothing to say the table scrolls. Drop to stacked cards
-   under 768px, keep the table above. This was the "fix first" item from the
-   UX review.
-2. **Portuguese interface.** Decided: Portuguese now, English later. Roughly a
-   hundred user-facing strings, currently inline in `client/index.html`. Pull
-   them into one object first so a second language is a swap, not a rewrite.
-3. **Regenerate the manual.** `manual/build.py` still produces the unbranded
-   English build with the old screenshots. Rerun it after 1 and 2.
-4. **Promote to Production** — a console action, not a CLI one — and change the
+1. **Deploy.** Function and client both changed; they must ship together, the
+   client calls the new `session` and `tutorial` paths.
+2. **Portuguese edition of the guide** — the screenshots can already be
+   Portuguese; the prose in `manual/build.py` is English.
+3. **Promote to Production** — a console action, not a CLI one — and change the
    ZAID.
 
 Deferred and agreed as post-trial: calendar auto-fit to the earliest and latest

@@ -44,6 +44,16 @@ settings object. Every academy disagrees with at least one default.
 partial indexes, and the "one live seat per class" uniqueness. There is no
 JSONB either — settings and audit payloads are text, parsed on read.
 
+**Every string on screen goes through `t()`.** `client/index.html` speaks
+Portuguese, Spanish, French and English, keyed by the English text. A new
+string means a new entry in each of `I18N.pt`, `I18N.es` and `I18N.fr`;
+`tests/unit/i18n.js` fails until it has them. Plurals: write `seat(s)` and pass
+the count as `{n}` — the bracketed ending is dropped for exactly one.
+
+**Nothing renders before sign-in.** The planner and the operator console stay
+behind the gate until the API has answered `session`. There is one sign-in
+page, the planner's; the console redirects there with `?next=admin`.
+
 ---
 
 ## Layout

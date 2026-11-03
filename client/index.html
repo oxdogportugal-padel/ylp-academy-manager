@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Bandeja — Padel Academy Planner</title>
+<title>Bandeja</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 100'%3E%3Crect width='120' height='100' rx='18' fill='%2312222B'/%3E%3Ccircle cx='60' cy='38' r='22' fill='%23E09A2B'/%3E%3Cpath d='M14 44 Q60 90 106 44' fill='none' stroke='%23E09A2B' stroke-width='13' stroke-linecap='round'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -165,6 +165,40 @@ td{padding:8px 10px;border-top:1px solid var(--line);vertical-align:middle}
 .step{flex:none;width:25px;height:25px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;background:var(--panel);border:1px solid var(--line);color:var(--ink2)}
 .step.done{background:var(--turf);border-color:var(--turf);color:#fff}
 textarea.inp{min-height:150px;resize:vertical;line-height:1.5}
+/* ── the gate: sign-in, splash and refusals. The only place the brand is loud. ── */
+body.gated{background:var(--head)}
+body.gated header.top, body.gated main, body.gated #bnav, body.gated #banner{display:none!important}
+#gate{display:none}
+body.gated #gate{display:block;min-height:100vh;background:var(--head);color:#EBEEE9}
+.gwrap{max-width:430px;margin:0 auto;padding:52px 16px 36px;display:flex;flex-direction:column;align-items:center;gap:26px;min-height:100vh}
+.glock{display:flex;flex-direction:column;align-items:center;gap:11px;color:var(--honey)}
+.gword{font-family:'Barlow Semi Condensed',sans-serif;font-weight:700;font-size:42px;line-height:1;letter-spacing:.09em;text-indent:.09em;color:#EBEEE9}
+.gby{font-size:12.5px;font-weight:500;letter-spacing:.04em;color:#94A6B0}
+.gcard{width:100%;color:var(--ink)}
+.glangs{display:flex;gap:4px;flex-wrap:wrap;justify-content:center;margin-top:auto}
+.glangs button{background:transparent;border:1px solid transparent;color:#94A6B0;border-radius:99px;padding:5px 11px;font-size:12.5px;min-height:34px}
+.glangs button.on{border-color:rgba(235,238,233,.35);color:#EBEEE9}
+.glangs button:hover{color:#EBEEE9}
+.gsplash{display:flex;gap:7px;padding:30px 0}
+.gdot{width:8px;height:8px;border-radius:50%;background:var(--honey);opacity:.25;animation:gpulse 1.1s infinite ease-in-out}
+.gdot:nth-child(2){animation-delay:.18s}.gdot:nth-child(3){animation-delay:.36s}
+@keyframes gpulse{0%,80%,100%{opacity:.25}40%{opacity:1}}
+@media (prefers-reduced-motion: reduce){.gdot{animation:none;opacity:.7}}
+.vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+/* ── first-login tour ── */
+.tscrim{position:fixed;inset:0;background:rgba(10,18,24,.55);z-index:70}
+body.touring nav.tabs{position:relative;z-index:71}
+body.touring #bnav{z-index:71}
+.tourhi{outline:2px solid var(--honey)!important;outline-offset:2px;border-radius:9px}
+.bottomnav .tourhi{outline-offset:-4px;border-radius:12px}
+.tcard{position:fixed;z-index:72;left:50%;transform:translateX(-50%);bottom:24px;width:min(460px,calc(100vw - 32px));
+  background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:14px;padding:18px 18px 14px;box-shadow:0 12px 40px rgba(0,0,0,.35)}
+.tmark{color:var(--honey);line-height:0;margin-bottom:8px}
+.tdots{display:flex;gap:5px;margin-bottom:8px}
+.tdots i{width:18px;height:4px;border-radius:2px;background:var(--line)}
+.tdots i.done{background:var(--ink2)}
+.tdots i.on{background:var(--honey)}
+@media(max-width:767px){ .tcard{bottom:calc(70px + env(safe-area-inset-bottom))} }
 @media(min-width:768px){.only-m{display:none!important}}
 @media(max-width:767px){.only-d{display:none!important}}
 /* ── bottom tab bar: phones get a fixed bar so no tab can be cut off ── */
@@ -202,7 +236,8 @@ textarea.inp{min-height:150px;resize:vertical;line-height:1.5}
 }
 </style>
 </head>
-<body>
+<body class="gated">
+<div id="gate"></div>
 <div id="banner"></div>
 <header class="top">
   <div class="wrap">
@@ -210,10 +245,10 @@ textarea.inp{min-height:150px;resize:vertical;line-height:1.5}
       <div>
         <div class="brand">
           <svg viewBox="0 0 120 100" width="19" height="16" aria-hidden="true" focusable="false"><circle cx="60" cy="38" r="21" fill="currentColor"></circle><path d="M14 44 Q60 90 106 44" fill="none" stroke="currentColor" stroke-width="12" stroke-linecap="round"></path></svg>
-          <span class="wm">BANDEJA</span><span class="by">by YLP Solutions</span>
+          <span class="wm">BANDEJA</span><span class="by" id="byline">by YLP Solutions</span>
         </div>
         <div class="acadname"><span id="acadName">—</span>
-          <button data-act="editAcademy" title="Edit academy" aria-label="Edit academy name">✎</button>
+          <button data-act="editAcademy" id="editAcBtn" title="Edit academy" aria-label="Edit academy">✎</button>
           <span class="grow"></span>
           <span class="hmark only-m"><svg viewBox="0 0 120 100" width="27" height="23" role="img" aria-label="Bandeja" focusable="false"><circle cx="60" cy="38" r="21" fill="currentColor"></circle><path d="M14 44 Q60 90 106 44" fill="none" stroke="currentColor" stroke-width="12" stroke-linecap="round"></path></svg></span>
         </div>
@@ -226,14 +261,881 @@ textarea.inp{min-height:150px;resize:vertical;line-height:1.5}
 <main><div class="wrap" id="view"></div></main>
 <nav class="bottomnav" id="bnav" aria-label="Sections"></nav>
 <div id="modalRoot"></div>
+<div id="tourRoot"></div>
 
 <script>
 (function(){
 "use strict";
 
 /* ─────────── constants ─────────── */
-var DAYS=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
-var DAYF=["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
+/* ─────────── language ───────────
+   Every string on screen goes through t(), keyed by its English text, so
+   English is always the fallback and a missing translation shows English
+   rather than a key. The academy's language comes from the server (the
+   operator sets it); before sign-in the browser's language picks one. */
+var LANGS={pt:"Português",es:"Español",fr:"Français",en:"English"};
+var LANG="pt";
+var DAYNAMES={
+  en:{s:["Mon","Tue","Wed","Thu","Fri","Sat","Sun"],f:["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"]},
+  pt:{s:["Seg","Ter","Qua","Qui","Sex","Sáb","Dom"],f:["Segunda","Terça","Quarta","Quinta","Sexta","Sábado","Domingo"]},
+  es:{s:["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"],f:["Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo"]},
+  fr:{s:["Lun","Mar","Mer","Jeu","Ven","Sam","Dim"],f:["Lundi","Mardi","Mercredi","Jeudi","Vendredi","Samedi","Dimanche"]}
+};
+var DAYS=DAYNAMES.en.s, DAYF=DAYNAMES.en.f;
+/* Translations, keyed by the English text. A key missing here falls back to
+   English; tests/unit/i18n.js fails the build if any key is missing. */
+var I18N={
+ pt:{
+  "Padel academy planning":"Planeamento de academias de padel",
+  "Pick a club.":"Escolha um clube.",
+  "Pick a coach.":"Escolha um treinador.",
+  "This academy runs {d} minute classes.":"Esta academia dá aulas de {d} minutos.",
+  "Level must be between {a} and {b}.":"O nível tem de estar entre {a} e {b}.",
+  "All {n} courts at {club} are booked then.":"Os {n} campos de {club} estão todos ocupados a essa hora.",
+  "{coach} does not work at this club.":"{coach} não trabalha neste clube.",
+  "{coach} already teaches at that time.":"{coach} já dá aula a essa hora.",
+  "{coach} teaches up to level {n}.":"{coach} dá aulas até ao nível {n}.",
+  "Same level ({n})":"Mesmo nível ({n})",
+  "One level up, inside tolerance":"Um nível acima, dentro da tolerância",
+  "One level down, inside tolerance":"Um nível abaixo, dentro da tolerância",
+  "Inside a preferred window":"Dentro do horário preferido",
+  "Right day, outside the hours":"Dia certo, fora do horário",
+  "Not a preferred day":"Não é um dia preferido",
+  "Group plays at the same pace":"O grupo joga ao mesmo ritmo",
+  "New class, still empty":"Aula nova, ainda vazia",
+  "Last seat":"Último lugar",
+  "Coach":"Treinador",
+  "Not saved.":"Não guardado.",
+  "Reload and see what was actually saved":"Recarregar e ver o que ficou guardado",
+  "unknown error":"erro desconhecido",
+  "Could not {what}: {msg} What you see on screen is not in the database.":"Não foi possível {what}: {msg} O que vê no ecrã não está na base de dados.",
+  "Save failed":"Falha ao guardar",
+  "Not connected, so nothing can be saved.":"Sem ligação, por isso nada pode ser guardado.",
+  "by YLP Solutions":"por YLP Solutions",
+  "Language":"Idioma",
+  "Loading…":"A carregar…",
+  "Sign in":"Entrar",
+  "One sign-in for everyone. Your account decides which academy opens.":"Uma única entrada para todos. A sua conta decide que academia abre.",
+  "Try again":"Tentar de novo",
+  "Sign out":"Sair",
+  "The sign-in box failed to load. Please reload the page.":"A caixa de entrada não carregou. Recarregue a página.",
+  "No academy yet":"Ainda sem academia",
+  "This account is not attached to any academy. Ask your administrator to add you.":"Esta conta não está associada a nenhuma academia. Peça ao seu administrador que o adicione.",
+  "Academy suspended":"Academia suspensa",
+  "This academy is suspended. Please contact your administrator.":"Esta academia está suspensa. Contacte o seu administrador.",
+  "Could not load your academy":"Não foi possível carregar a sua academia",
+  "Cannot connect":"Sem ligação",
+  "The sign-in service did not load. Check your connection and try again.":"O serviço de entrada não carregou. Verifique a ligação e tente de novo.",
+  "your academy":"a sua academia",
+  "Welcome to Bandeja":"Bem-vindo ao Bandeja",
+  "A short tour of how {academy} gets planned: where classes live, how a new player finds a place, and what happens when there is none yet.":"Uma visita rápida a como se planeia a {academy}: onde ficam as aulas, como um novo jogador encontra lugar e o que acontece quando ainda não há.",
+  "Calendar":"Calendário",
+  "Every class of the week, club by club. Colour is the level, height is the length, the dots are the seats. Tap a class to see its players, move it or cancel it. On a computer you can drag it to another time.":"Todas as aulas da semana, clube a clube. A cor é o nível, a altura é a duração, os pontos são os lugares. Toque numa aula para ver os jogadores, mudá-la ou cancelá-la. No computador pode arrastá-la para outra hora.",
+  "Place a player":"Colocar um jogador",
+  "Enter a player's level and when they can play. Bandeja ranks the classes that fit and says why. Book in one tap; what cannot be placed goes to the waiting list.":"Indique o nível do jogador e quando pode jogar. O Bandeja ordena as aulas que encaixam e explica porquê. Inscreva com um toque; o que não ficar colocado vai para a lista de espera.",
+  "Waiting list":"Lista de espera",
+  "Players still waiting for a place. When enough of them match in level and time, and a court and a coach are free, Bandeja suggests a new class to open.":"Jogadores que ainda esperam lugar. Quando há suficientes compatíveis em nível e horário, e um campo e um treinador livres, o Bandeja sugere abrir uma aula nova.",
+  "Manage":"Gerir",
+  "Your clubs, coaches, players and classes, and the academy's rules: level scale, tolerance, class size and which coach may teach which level.":"Os seus clubes, treinadores, jogadores e aulas, e as regras da academia: escala de níveis, tolerância, tamanho das aulas e que treinador pode dar que nível.",
+  "Ready to start":"Pronto para começar",
+  "Follow the checklist: a club, a coach, your players, then the first class. Prefer to look around first? Load a sample week. You can reopen this tour any time from Manage.":"Siga a lista: um clube, um treinador, os seus jogadores e depois a primeira aula. Prefere explorar primeiro? Carregue uma semana de exemplo. Pode rever esta visita a qualquer momento em Gerir.",
+  "Step {a} of {b}":"Passo {a} de {b}",
+  "Skip tour":"Saltar visita",
+  "Back":"Voltar",
+  "Get started":"Começar",
+  "Show me":"Mostrar",
+  "Next":"Seguinte",
+  "Academy":"Academia",
+  "Academy name":"Nome da academia",
+  "These rules drive every recommendation. Change them and the matching follows.":"Estas regras guiam todas as recomendações. Mude-as e as sugestões acompanham.",
+  "Lowest level":"Nível mais baixo",
+  "Highest level":"Nível mais alto",
+  "Level tolerance (±)":"Tolerância de nível (±)",
+  "Players per class":"Jogadores por aula",
+  "Minimum to open a class":"Mínimo para abrir uma aula",
+  "Class lengths (minutes)":"Durações das aulas (minutos)",
+  "Coach L1 teaches up to":"Treinador N1 dá até",
+  "Coach L2 teaches up to":"Treinador N2 dá até",
+  "Coach L3 teaches up to":"Treinador N3 dá até",
+  "Give at least one class length.":"Indique pelo menos uma duração.",
+  "Highest level must be above the lowest.":"O nível mais alto tem de ser superior ao mais baixo.",
+  "Minimum to open cannot exceed class size.":"O mínimo para abrir não pode exceder o tamanho da aula.",
+  "Club limit reached":"Limite de clubes atingido",
+  "Close":"Fechar",
+  "Edit club":"Editar clube",
+  "New club":"Novo clube",
+  "Club name":"Nome do clube",
+  "e.g. Matosinhos":"ex.: Matosinhos",
+  "Courts available to the academy":"Campos disponíveis para a academia",
+  "The club needs a name.":"O clube precisa de um nome.",
+  "Delete {name}?":"Eliminar {name}?",
+  "Its {n} class(es) will be deleted too.":"As aulas deste clube ({n}) também serão eliminadas.",
+  "Edit coach":"Editar treinador",
+  "New coach":"Novo treinador",
+  "Coach name":"Nome do treinador",
+  "Certification":"Certificação",
+  "Level {c} — up to {n}":"Nível {c} — até {n}",
+  "Works at":"Trabalha em",
+  "Create a club first.":"Crie primeiro um clube.",
+  "The coach needs a name.":"O treinador precisa de um nome.",
+  "They teach {n} class(es), which will be deleted too.":"Dá {n} aula(s), que também serão eliminadas.",
+  "Edit player":"Editar jogador",
+  "New player":"Novo jogador",
+  "Player name":"Nome do jogador",
+  "Level":"Nível",
+  "Contact (optional)":"Contacto (opcional)",
+  "email or phone":"email ou telefone",
+  "Notes (optional)":"Notas (opcional)",
+  "The player needs a name.":"O jogador precisa de um nome.",
+  "They will be removed from every class.":"Será retirado de todas as aulas.",
+  "Edit class":"Editar aula",
+  "New class":"Nova aula",
+  "Club":"Clube",
+  "Day":"Dia",
+  "Start":"Início",
+  "Length":"Duração",
+  "Seats (blank = academy default {n})":"Lugares (vazio = padrão da academia, {n})",
+  "Class level":"Nível da aula",
+  "Press Save again to schedule it anyway.":"Carregue de novo em Guardar para a marcar mesmo assim.",
+  "Cancel this class?":"Cancelar esta aula?",
+  "{day} {time}, {n} player(s) will lose their seat.":"{day} {time}: {n} jogador(es) fica(m) sem lugar.",
+  "Players":"Jogadores",
+  "{a} of {b}":"{a} de {b}",
+  "Remove":"Retirar",
+  "{n} open seat(s)":"{n} lugar(es) livre(s)",
+  "Add a player":"Adicionar jogador",
+  "Accepts levels {a}–{b}.":"Aceita níveis {a}–{b}.",
+  "Move to…":"Mudar para…",
+  "Class":"Aula",
+  "Cancel class":"Cancelar aula",
+  "Edit":"Editar",
+  "Done":"Concluído",
+  "Move this class":"Mudar esta aula",
+  "Only times with a free court and {coach} free. Same length, level and coach.":"Só horas com campo livre e {coach} disponível. Mesma duração, nível e treinador.",
+  "Only times with a free court. Same length, level and coach.":"Só horas com campo livre. Mesma duração, nível e treinador.",
+  "{n} free":"{n} livre(s)",
+  "Nothing free on {day}. Try another day, or use Edit to change the coach or club.":"{day}: nada livre. Tente outro dia ou use Editar para mudar o treinador ou o clube.",
+  "Nothing free on {day} at your usual hours.":"{day}: nada livre nas vossas horas habituais.",
+  "Only our usual hours":"Só as nossas horas habituais",
+  "Show every half hour":"Mostrar todas as meias horas",
+  "Moved to {day} {time}.":"Mudada para {day}, {time}.",
+  "Moved back to {day} {time}.":"Reposta: {day}, {time}.",
+  "Add":"Adicionar",
+  "No player within {n} level of this class. Create one in Manage → Players.":"Nenhum jogador a {n} nível desta aula. Crie um em Gerir → Jogadores.",
+  "Class is full.":"A aula está cheia.",
+  "Edit request":"Editar pedido",
+  "New request":"Novo pedido",
+  "Classes per week":"Aulas por semana",
+  "Days that work":"Dias possíveis",
+  "Not before":"Não antes das",
+  "Not after":"Não depois das",
+  "The request needs a name.":"O pedido precisa de um nome.",
+  "Pick at least one day.":"Escolha pelo menos um dia.",
+  "The end of the window must be after its start.":"O fim do horário tem de ser depois do início.",
+  "Who is joining?":"Quem vai entrar?",
+  "Added to the waiting list.":"Adicionado à lista de espera.",
+  "Sample data only goes into an empty academy.":"Os dados de exemplo só entram numa academia vazia.",
+  "Load sample data?":"Carregar dados de exemplo?",
+  "This adds a club, coaches, players and a week of classes so you can see the shape of it. Invented names only.":"Adiciona um clube, treinadores, jogadores e uma semana de aulas para ver como funciona. Só nomes inventados.",
+  "Sample week loaded.":"Semana de exemplo carregada.",
+  "no name":"sem nome",
+  "\"{v}\" is not a level":"\"{v}\" não é um nível",
+  "level {v} is outside {a}–{b}":"o nível {v} está fora de {a}–{b}",
+  "Nothing pasted yet.":"Ainda nada colado.",
+  "{n} player(s) ready":"{n} jogador(es) pronto(s)",
+  "{n} already on the list, skipped:":"{n} já na lista, ignorado(s):",
+  "Skipping {n} line(s):":"A ignorar {n} linha(s):",
+  "line {n}":"linha {n}",
+  "Paste a list of players":"Colar uma lista de jogadores",
+  "One player per line. Put the level after a comma — without one it defaults to {n} and you can correct it later.":"Um jogador por linha. Ponha o nível depois de uma vírgula — sem ele fica {n} e pode corrigir depois.",
+  "Add players":"Adicionar jogadores",
+  "No players to add.":"Não há jogadores para adicionar.",
+  "Adding {n} player(s)…":"A adicionar {n} jogador(es)…",
+  "{n} player(s) added.":"{n} jogador(es) adicionado(s).",
+  "Send feedback":"Enviar sugestões",
+  "What was confusing, missing or broken? This goes straight to the people building it.":"O que foi confuso, faltou ou não funcionou? Isto vai diretamente para quem o está a construir.",
+  "e.g. I could not work out how to say a coach is away on Tuesdays.":"ex.: Não percebi como indicar que um treinador não está às terças.",
+  "Send":"Enviar",
+  "Write a line or two first.":"Escreva primeiro uma ou duas linhas.",
+  "Not connected, so this cannot be sent.":"Sem ligação, não é possível enviar.",
+  "Sent — thank you.":"Enviado — obrigado.",
+  "Could not send that. Please try again.":"Não foi possível enviar. Tente de novo.",
+  "Delete everything?":"Eliminar tudo?",
+  "Every club, coach, player, class and request is removed. This cannot be undone.":"Todos os clubes, treinadores, jogadores, aulas e pedidos são removidos. Não é possível anular.",
+  "Cleared.":"Limpo.",
+  "This cannot be undone.":"Não é possível anular.",
+  "Confirm":"Confirmar",
+  "Class opened.":"Aula aberta.",
+  "Edit academy":"Editar academia",
+  "peak courts":"campos no pico",
+  "open seats":"lugares livres",
+  "classes to open":"aulas a abrir",
+  "Filters":"Filtros",
+  "on":"ativos",
+  "clear":"limpar",
+  "Colour is the level, height is the length, dots are the seats. Side-by-side cards are simultaneous classes on different courts.":"A cor é o nível, a altura é a duração, os pontos são os lugares. Cartões lado a lado são aulas simultâneas em campos diferentes.",
+  "Level from":"Nível de",
+  "Level to":"Nível até",
+  "Everyone":"Todos",
+  "Any":"Qualquer",
+  "Availability":"Disponibilidade",
+  "Only classes with seats":"Só aulas com lugares",
+  "All classes":"Todas as aulas",
+  "No classes on {day}. Courts are free all day.":"{day}: sem aulas. Os campos estão livres todo o dia.",
+  "Add your first club":"Adicione o primeiro clube",
+  "Its name and how many courts you actually control.":"O nome e quantos campos a academia realmente usa.",
+  "Add club":"Adicionar clube",
+  "Add a coach":"Adicione um treinador",
+  "Their certification level caps the classes they can take.":"O nível de certificação limita as aulas que pode dar.",
+  "Add coach":"Adicionar treinador",
+  "Add your players":"Adicione os jogadores",
+  "Name and level. You can paste a whole list at once.":"Nome e nível. Pode colar uma lista inteira de uma vez.",
+  "Paste a list":"Colar lista",
+  "Create your first class":"Crie a primeira aula",
+  "Day, time, length, level and coach.":"Dia, hora, duração, nível e treinador.",
+  "Add class":"Adicionar aula",
+  "Set up your academy":"Configure a sua academia",
+  "Would you rather look around first?":"Prefere explorar primeiro?",
+  "Load a sample week":"Carregar uma semana de exemplo",
+  "Level and availability decide the match. Everything else is bookkeeping.":"O nível e a disponibilidade decidem. O resto é registo.",
+  "e.g. Mariana":"ex.: Mariana",
+  "Find matching classes":"Procurar aulas compatíveis",
+  "Start over":"Recomeçar",
+  "{n} class(es) fit {name}":"{n} aula(s) servem a {name}",
+  "Nothing open for {name} yet":"Ainda nada disponível para {name}",
+  "{a} of {b} booked":"{a} de {b} inscritas",
+  "players":"jogadores",
+  "{n}% fit":"{n}% compatível",
+  "Booked":"Inscrito",
+  "Book":"Inscrever",
+  "{a} of {b} weekly sessions still unmatched.":"{a} de {b} sessões semanais ainda por colocar.",
+  "Keep the rest on the waiting list — it stays pending until a seat opens or enough players gather to start a new class.":"Deixe o resto na lista de espera — fica pendente até abrir um lugar ou juntar-se gente suficiente para uma aula nova.",
+  "Add to waiting list":"Adicionar à lista de espera",
+  "No class within {n} level has a free seat in that window.":"Nenhuma aula a {n} nível tem lugar livre nesse horário.",
+  "Classes waiting to happen":"Aulas prontas a abrir",
+  "Two or more players at a compatible level, a shared window, a free court and an available coach.":"Dois ou mais jogadores de nível compatível, um horário comum, um campo livre e um treinador disponível.",
+  "available · court free":"disponível · campo livre",
+  "Open this class":"Abrir esta aula",
+  "Nothing to open right now. Alerts appear here as the waiting list grows.":"Nada para abrir agora. Os alertas aparecem aqui à medida que a lista de espera cresce.",
+  "Wants":"Quer",
+  "{n}× / week":"{n}× / semana",
+  "Complete":"Completo",
+  "Nobody waiting. Add a request when a player asks for classes you cannot place yet.":"Ninguém à espera. Adicione um pedido quando um jogador quiser aulas que ainda não consegue colocar.",
+  "Level scale":"Escala de níveis",
+  "Level tolerance":"Tolerância de nível",
+  "Class lengths":"Durações das aulas",
+  "Minimum to open":"Mínimo para abrir",
+  "{n} players":"{n} jogadores",
+  "Coach L1 / L2 / L3":"Treinador N1 / N2 / N3",
+  "up to":"até",
+  "Only available on an empty academy":"Só disponível numa academia vazia",
+  "Load sample data":"Carregar dados de exemplo",
+  "Show the tour again":"Rever a visita guiada",
+  "Admin console":"Consola de administração",
+  "Delete all data":"Eliminar todos os dados",
+  "Sample data can only be loaded into an empty academy, so it never mixes with your own.":"Os dados de exemplo só podem ser carregados numa academia vazia, para nunca se misturarem com os seus.",
+  "Clubs":"Clubes",
+  "{n} courts":"{n} campos",
+  "{n} classes":"{n} aulas",
+  "No clubs yet.":"Ainda sem clubes.",
+  "Coaches":"Treinadores",
+  "any club":"qualquer clube",
+  "No coaches yet.":"Ainda sem treinadores.",
+  "Search players":"Procurar jogadores",
+  "Nobody matches that.":"Ninguém corresponde.",
+  "No players yet.":"Ainda sem jogadores.",
+  "Classes":"Aulas",
+  "Time":"Hora",
+  "Seats":"Lugares",
+  "No classes yet.":"Ainda sem aulas.",
+  "Cancel":"Cancelar",
+  "Save":"Guardar",
+  "Saved for {name}. Your academy is determined by your login, not by the link.":"Guardado para {name}. A sua academia é definida pela sua conta, não pelo link.",
+  "Could not reach the academy API, so recent changes may not be saved.":"Não foi possível contactar o servidor; alterações recentes podem não estar guardadas.",
+  "Connecting…":"A ligar…",
+  "Place":"Colocar",
+  "Waiting":"Espera",
+  "Player":"Jogador",
+  "save":"guardar",
+  "delete":"eliminar",
+  "This academy’s plan includes {max} club(s); {n} already set up. Ask YLP Solutions to raise the limit, or remove a club first.":"O plano desta academia inclui {max} clube(s); já criados: {n}. Peça à YLP Solutions para aumentar o limite ou remova primeiro um clube.",
+  "Clubs: {a} · Coaches: {b} · Players: {c} · Classes: {d}":"Clubes: {a} · Treinadores: {b} · Jogadores: {c} · Aulas: {d}"
+ },
+ es:{
+  "Padel academy planning":"Planificación de academias de pádel",
+  "Pick a club.":"Elige un club.",
+  "Pick a coach.":"Elige un entrenador.",
+  "This academy runs {d} minute classes.":"Esta academia da clases de {d} minutos.",
+  "Level must be between {a} and {b}.":"El nivel debe estar entre {a} y {b}.",
+  "All {n} courts at {club} are booked then.":"Las {n} pistas de {club} están todas ocupadas a esa hora.",
+  "{coach} does not work at this club.":"{coach} no trabaja en este club.",
+  "{coach} already teaches at that time.":"{coach} ya da clase a esa hora.",
+  "{coach} teaches up to level {n}.":"{coach} da clases hasta el nivel {n}.",
+  "Same level ({n})":"Mismo nivel ({n})",
+  "One level up, inside tolerance":"Un nivel por encima, dentro de la tolerancia",
+  "One level down, inside tolerance":"Un nivel por debajo, dentro de la tolerancia",
+  "Inside a preferred window":"Dentro del horario preferido",
+  "Right day, outside the hours":"Día correcto, fuera del horario",
+  "Not a preferred day":"No es un día preferido",
+  "Group plays at the same pace":"El grupo juega al mismo ritmo",
+  "New class, still empty":"Clase nueva, aún vacía",
+  "Last seat":"Última plaza",
+  "Coach":"Entrenador",
+  "Not saved.":"No guardado.",
+  "Reload and see what was actually saved":"Recargar y ver lo que se guardó",
+  "unknown error":"error desconocido",
+  "Could not {what}: {msg} What you see on screen is not in the database.":"No se ha podido {what}: {msg} Lo que ves en pantalla no está en la base de datos.",
+  "Save failed":"Error al guardar",
+  "Not connected, so nothing can be saved.":"Sin conexión, así que no se puede guardar nada.",
+  "by YLP Solutions":"por YLP Solutions",
+  "Language":"Idioma",
+  "Loading…":"Cargando…",
+  "Sign in":"Iniciar sesión",
+  "One sign-in for everyone. Your account decides which academy opens.":"Un único acceso para todos. Tu cuenta decide qué academia se abre.",
+  "Try again":"Reintentar",
+  "Sign out":"Cerrar sesión",
+  "The sign-in box failed to load. Please reload the page.":"El cuadro de acceso no se ha cargado. Recarga la página.",
+  "No academy yet":"Aún no hay academia",
+  "This account is not attached to any academy. Ask your administrator to add you.":"Esta cuenta no está vinculada a ninguna academia. Pide a tu administrador que te añada.",
+  "Academy suspended":"Academia suspendida",
+  "This academy is suspended. Please contact your administrator.":"Esta academia está suspendida. Contacta con tu administrador.",
+  "Could not load your academy":"No se ha podido cargar tu academia",
+  "Cannot connect":"No se puede conectar",
+  "The sign-in service did not load. Check your connection and try again.":"El servicio de acceso no se ha cargado. Comprueba tu conexión y vuelve a intentarlo.",
+  "your academy":"tu academia",
+  "Welcome to Bandeja":"Bienvenido a Bandeja",
+  "A short tour of how {academy} gets planned: where classes live, how a new player finds a place, and what happens when there is none yet.":"Un recorrido rápido por cómo se planifica {academy}: dónde están las clases, cómo encuentra plaza un jugador nuevo y qué pasa cuando aún no la hay.",
+  "Calendar":"Calendario",
+  "Every class of the week, club by club. Colour is the level, height is the length, the dots are the seats. Tap a class to see its players, move it or cancel it. On a computer you can drag it to another time.":"Todas las clases de la semana, club por club. El color es el nivel, la altura es la duración y los puntos son las plazas. Toca una clase para ver sus jugadores, moverla o cancelarla. En el ordenador puedes arrastrarla a otra hora.",
+  "Place a player":"Colocar a un jugador",
+  "Enter a player's level and when they can play. Bandeja ranks the classes that fit and says why. Book in one tap; what cannot be placed goes to the waiting list.":"Indica el nivel del jugador y cuándo puede jugar. Bandeja ordena las clases que encajan y explica por qué. Reserva con un toque; lo que no se pueda colocar va a la lista de espera.",
+  "Waiting list":"Lista de espera",
+  "Players still waiting for a place. When enough of them match in level and time, and a court and a coach are free, Bandeja suggests a new class to open.":"Jugadores que aún esperan plaza. Cuando suficientes coinciden en nivel y horario, y hay una pista y un entrenador libres, Bandeja sugiere abrir una clase nueva.",
+  "Manage":"Gestionar",
+  "Your clubs, coaches, players and classes, and the academy's rules: level scale, tolerance, class size and which coach may teach which level.":"Tus clubes, entrenadores, jugadores y clases, y las reglas de la academia: escala de niveles, tolerancia, tamaño de clase y qué entrenador puede dar qué nivel.",
+  "Ready to start":"Listo para empezar",
+  "Follow the checklist: a club, a coach, your players, then the first class. Prefer to look around first? Load a sample week. You can reopen this tour any time from Manage.":"Sigue la lista: un club, un entrenador, tus jugadores y luego la primera clase. ¿Prefieres echar un vistazo antes? Carga una semana de ejemplo. Puedes volver a ver este recorrido cuando quieras desde Gestionar.",
+  "Step {a} of {b}":"Paso {a} de {b}",
+  "Skip tour":"Saltar recorrido",
+  "Back":"Atrás",
+  "Get started":"Empezar",
+  "Show me":"Muéstramelo",
+  "Next":"Siguiente",
+  "Academy":"Academia",
+  "Academy name":"Nombre de la academia",
+  "These rules drive every recommendation. Change them and the matching follows.":"Estas reglas guían todas las recomendaciones. Cámbialas y las sugerencias se adaptan.",
+  "Lowest level":"Nivel más bajo",
+  "Highest level":"Nivel más alto",
+  "Level tolerance (±)":"Tolerancia de nivel (±)",
+  "Players per class":"Jugadores por clase",
+  "Minimum to open a class":"Mínimo para abrir una clase",
+  "Class lengths (minutes)":"Duraciones de clase (minutos)",
+  "Coach L1 teaches up to":"Entrenador N1 da hasta",
+  "Coach L2 teaches up to":"Entrenador N2 da hasta",
+  "Coach L3 teaches up to":"Entrenador N3 da hasta",
+  "Give at least one class length.":"Indica al menos una duración.",
+  "Highest level must be above the lowest.":"El nivel más alto debe ser mayor que el más bajo.",
+  "Minimum to open cannot exceed class size.":"El mínimo para abrir no puede superar el tamaño de la clase.",
+  "Club limit reached":"Límite de clubes alcanzado",
+  "Close":"Cerrar",
+  "Edit club":"Editar club",
+  "New club":"Nuevo club",
+  "Club name":"Nombre del club",
+  "e.g. Matosinhos":"p. ej.: Matosinhos",
+  "Courts available to the academy":"Pistas disponibles para la academia",
+  "The club needs a name.":"El club necesita un nombre.",
+  "Delete {name}?":"¿Eliminar {name}?",
+  "Its {n} class(es) will be deleted too.":"Su(s) {n} clase(s) también se eliminará(n).",
+  "Edit coach":"Editar entrenador",
+  "New coach":"Nuevo entrenador",
+  "Coach name":"Nombre del entrenador",
+  "Certification":"Certificación",
+  "Level {c} — up to {n}":"Nivel {c} — hasta {n}",
+  "Works at":"Trabaja en",
+  "Create a club first.":"Crea primero un club.",
+  "The coach needs a name.":"El entrenador necesita un nombre.",
+  "They teach {n} class(es), which will be deleted too.":"Da {n} clase(s), que también se eliminará(n).",
+  "Edit player":"Editar jugador",
+  "New player":"Nuevo jugador",
+  "Player name":"Nombre del jugador",
+  "Level":"Nivel",
+  "Contact (optional)":"Contacto (opcional)",
+  "email or phone":"email o teléfono",
+  "Notes (optional)":"Notas (opcional)",
+  "The player needs a name.":"El jugador necesita un nombre.",
+  "They will be removed from every class.":"Se le quitará de todas las clases.",
+  "Edit class":"Editar clase",
+  "New class":"Nueva clase",
+  "Club":"Club",
+  "Day":"Día",
+  "Start":"Inicio",
+  "Length":"Duración",
+  "Seats (blank = academy default {n})":"Plazas (vacío = valor de la academia, {n})",
+  "Class level":"Nivel de la clase",
+  "Press Save again to schedule it anyway.":"Pulsa Guardar otra vez para programarla igualmente.",
+  "Cancel this class?":"¿Cancelar esta clase?",
+  "{day} {time}, {n} player(s) will lose their seat.":"{day} {time}: {n} jugador(es) se queda(n) sin plaza.",
+  "Players":"Jugadores",
+  "{a} of {b}":"{a} de {b}",
+  "Remove":"Quitar",
+  "{n} open seat(s)":"{n} plaza(s) libre(s)",
+  "Add a player":"Añadir jugador",
+  "Accepts levels {a}–{b}.":"Admite niveles {a}–{b}.",
+  "Move to…":"Mover a…",
+  "Class":"Clase",
+  "Cancel class":"Cancelar clase",
+  "Edit":"Editar",
+  "Done":"Hecho",
+  "Move this class":"Mover esta clase",
+  "Only times with a free court and {coach} free. Same length, level and coach.":"Solo horas con pista libre y {coach} disponible. Misma duración, nivel y entrenador.",
+  "Only times with a free court. Same length, level and coach.":"Solo horas con pista libre. Misma duración, nivel y entrenador.",
+  "{n} free":"{n} libre(s)",
+  "Nothing free on {day}. Try another day, or use Edit to change the coach or club.":"{day}: nada libre. Prueba otro día o usa Editar para cambiar el entrenador o el club.",
+  "Nothing free on {day} at your usual hours.":"{day}: nada libre en vuestras horas habituales.",
+  "Only our usual hours":"Solo nuestras horas habituales",
+  "Show every half hour":"Mostrar cada media hora",
+  "Moved to {day} {time}.":"Movida a {day}, {time}.",
+  "Moved back to {day} {time}.":"Devuelta a {day}, {time}.",
+  "Add":"Añadir",
+  "No player within {n} level of this class. Create one in Manage → Players.":"Ningún jugador a {n} nivel de esta clase. Crea uno en Gestionar → Jugadores.",
+  "Class is full.":"La clase está completa.",
+  "Edit request":"Editar solicitud",
+  "New request":"Nueva solicitud",
+  "Classes per week":"Clases por semana",
+  "Days that work":"Días que le van bien",
+  "Not before":"No antes de",
+  "Not after":"No después de",
+  "The request needs a name.":"La solicitud necesita un nombre.",
+  "Pick at least one day.":"Elige al menos un día.",
+  "The end of the window must be after its start.":"El final del horario debe ser posterior al inicio.",
+  "Who is joining?":"¿Quién se apunta?",
+  "Added to the waiting list.":"Añadido a la lista de espera.",
+  "Sample data only goes into an empty academy.":"Los datos de ejemplo solo se cargan en una academia vacía.",
+  "Load sample data?":"¿Cargar datos de ejemplo?",
+  "This adds a club, coaches, players and a week of classes so you can see the shape of it. Invented names only.":"Añade un club, entrenadores, jugadores y una semana de clases para que veas cómo funciona. Solo nombres inventados.",
+  "Sample week loaded.":"Semana de ejemplo cargada.",
+  "no name":"sin nombre",
+  "\"{v}\" is not a level":"\"{v}\" no es un nivel",
+  "level {v} is outside {a}–{b}":"el nivel {v} está fuera de {a}–{b}",
+  "Nothing pasted yet.":"Aún no has pegado nada.",
+  "{n} player(s) ready":"{n} jugador(es) listo(s)",
+  "{n} already on the list, skipped:":"{n} ya en la lista, omitido(s):",
+  "Skipping {n} line(s):":"Se omite(n) {n} línea(s):",
+  "line {n}":"línea {n}",
+  "Paste a list of players":"Pegar una lista de jugadores",
+  "One player per line. Put the level after a comma — without one it defaults to {n} and you can correct it later.":"Un jugador por línea. Pon el nivel después de una coma; si no, queda en {n} y puedes corregirlo luego.",
+  "Add players":"Añadir jugadores",
+  "No players to add.":"No hay jugadores que añadir.",
+  "Adding {n} player(s)…":"Añadiendo {n} jugador(es)…",
+  "{n} player(s) added.":"{n} jugador(es) añadido(s).",
+  "Send feedback":"Enviar comentarios",
+  "What was confusing, missing or broken? This goes straight to the people building it.":"¿Qué fue confuso, faltó o no funcionó? Esto llega directamente a quienes lo desarrollan.",
+  "e.g. I could not work out how to say a coach is away on Tuesdays.":"p. ej.: No supe cómo indicar que un entrenador no está los martes.",
+  "Send":"Enviar",
+  "Write a line or two first.":"Escribe antes una o dos líneas.",
+  "Not connected, so this cannot be sent.":"Sin conexión, no se puede enviar.",
+  "Sent — thank you.":"Enviado, ¡gracias!",
+  "Could not send that. Please try again.":"No se ha podido enviar. Inténtalo de nuevo.",
+  "Delete everything?":"¿Eliminar todo?",
+  "Every club, coach, player, class and request is removed. This cannot be undone.":"Se eliminan todos los clubes, entrenadores, jugadores, clases y solicitudes. No se puede deshacer.",
+  "Cleared.":"Borrado.",
+  "This cannot be undone.":"No se puede deshacer.",
+  "Confirm":"Confirmar",
+  "Class opened.":"Clase abierta.",
+  "Edit academy":"Editar academia",
+  "peak courts":"pistas en el pico",
+  "open seats":"plazas libres",
+  "classes to open":"clases por abrir",
+  "Filters":"Filtros",
+  "on":"activos",
+  "clear":"quitar",
+  "Colour is the level, height is the length, dots are the seats. Side-by-side cards are simultaneous classes on different courts.":"El color es el nivel, la altura es la duración y los puntos son las plazas. Las tarjetas una al lado de otra son clases simultáneas en pistas distintas.",
+  "Level from":"Nivel desde",
+  "Level to":"Nivel hasta",
+  "Everyone":"Todos",
+  "Any":"Cualquiera",
+  "Availability":"Disponibilidad",
+  "Only classes with seats":"Solo clases con plazas",
+  "All classes":"Todas las clases",
+  "No classes on {day}. Courts are free all day.":"{day}: sin clases. Las pistas están libres todo el día.",
+  "Add your first club":"Añade tu primer club",
+  "Its name and how many courts you actually control.":"Su nombre y cuántas pistas controláis de verdad.",
+  "Add club":"Añadir club",
+  "Add a coach":"Añade un entrenador",
+  "Their certification level caps the classes they can take.":"Su nivel de certificación limita las clases que puede dar.",
+  "Add coach":"Añadir entrenador",
+  "Add your players":"Añade tus jugadores",
+  "Name and level. You can paste a whole list at once.":"Nombre y nivel. Puedes pegar una lista entera de una vez.",
+  "Paste a list":"Pegar lista",
+  "Create your first class":"Crea tu primera clase",
+  "Day, time, length, level and coach.":"Día, hora, duración, nivel y entrenador.",
+  "Add class":"Añadir clase",
+  "Set up your academy":"Configura tu academia",
+  "Would you rather look around first?":"¿Prefieres echar un vistazo antes?",
+  "Load a sample week":"Cargar una semana de ejemplo",
+  "Level and availability decide the match. Everything else is bookkeeping.":"El nivel y la disponibilidad deciden. Lo demás es papeleo.",
+  "e.g. Mariana":"p. ej.: Mariana",
+  "Find matching classes":"Buscar clases compatibles",
+  "Start over":"Empezar de nuevo",
+  "{n} class(es) fit {name}":"{n} clase(s) encajan con {name}",
+  "Nothing open for {name} yet":"Aún nada disponible para {name}",
+  "{a} of {b} booked":"{a} de {b} reservadas",
+  "players":"jugadores",
+  "{n}% fit":"{n}% de encaje",
+  "Booked":"Reservada",
+  "Book":"Reservar",
+  "{a} of {b} weekly sessions still unmatched.":"{a} de {b} sesiones semanales aún sin colocar.",
+  "Keep the rest on the waiting list — it stays pending until a seat opens or enough players gather to start a new class.":"Deja el resto en la lista de espera: queda pendiente hasta que se libere una plaza o se junten suficientes jugadores para una clase nueva.",
+  "Add to waiting list":"Añadir a la lista de espera",
+  "No class within {n} level has a free seat in that window.":"Ninguna clase a {n} nivel tiene plaza libre en ese horario.",
+  "Classes waiting to happen":"Clases listas para abrir",
+  "Two or more players at a compatible level, a shared window, a free court and an available coach.":"Dos o más jugadores de nivel compatible, un horario común, una pista libre y un entrenador disponible.",
+  "available · court free":"disponible · pista libre",
+  "Open this class":"Abrir esta clase",
+  "Nothing to open right now. Alerts appear here as the waiting list grows.":"Nada que abrir ahora. Los avisos aparecen aquí a medida que crece la lista de espera.",
+  "Wants":"Quiere",
+  "{n}× / week":"{n}× / semana",
+  "Complete":"Completo",
+  "Nobody waiting. Add a request when a player asks for classes you cannot place yet.":"Nadie esperando. Añade una solicitud cuando un jugador pida clases que aún no puedes colocar.",
+  "Level scale":"Escala de niveles",
+  "Level tolerance":"Tolerancia de nivel",
+  "Class lengths":"Duraciones de clase",
+  "Minimum to open":"Mínimo para abrir",
+  "{n} players":"{n} jugadores",
+  "Coach L1 / L2 / L3":"Entrenador N1 / N2 / N3",
+  "up to":"hasta",
+  "Only available on an empty academy":"Solo disponible en una academia vacía",
+  "Load sample data":"Cargar datos de ejemplo",
+  "Show the tour again":"Ver de nuevo el recorrido",
+  "Admin console":"Consola de administración",
+  "Delete all data":"Eliminar todos los datos",
+  "Sample data can only be loaded into an empty academy, so it never mixes with your own.":"Los datos de ejemplo solo se pueden cargar en una academia vacía, para que nunca se mezclen con los tuyos.",
+  "Clubs":"Clubes",
+  "{n} courts":"{n} pistas",
+  "{n} classes":"{n} clases",
+  "No clubs yet.":"Aún no hay clubes.",
+  "Coaches":"Entrenadores",
+  "any club":"cualquier club",
+  "No coaches yet.":"Aún no hay entrenadores.",
+  "Search players":"Buscar jugadores",
+  "Nobody matches that.":"Nadie coincide.",
+  "No players yet.":"Aún no hay jugadores.",
+  "Classes":"Clases",
+  "Time":"Hora",
+  "Seats":"Plazas",
+  "No classes yet.":"Aún no hay clases.",
+  "Cancel":"Cancelar",
+  "Save":"Guardar",
+  "Saved for {name}. Your academy is determined by your login, not by the link.":"Guardado para {name}. Tu academia la determina tu cuenta, no el enlace.",
+  "Could not reach the academy API, so recent changes may not be saved.":"No se ha podido contactar con el servidor; puede que los cambios recientes no se hayan guardado.",
+  "Connecting…":"Conectando…",
+  "Place":"Colocar",
+  "Waiting":"Espera",
+  "Player":"Jugador",
+  "save":"guardar",
+  "delete":"eliminar",
+  "This academy’s plan includes {max} club(s); {n} already set up. Ask YLP Solutions to raise the limit, or remove a club first.":"El plan de esta academia incluye {max} club(es); ya creados: {n}. Pide a YLP Solutions que amplíe el límite o elimina antes un club.",
+  "Clubs: {a} · Coaches: {b} · Players: {c} · Classes: {d}":"Clubes: {a} · Entrenadores: {b} · Jugadores: {c} · Clases: {d}"
+ },
+ fr:{
+  "Padel academy planning":"Planification d'académies de padel",
+  "Pick a club.":"Choisissez un club.",
+  "Pick a coach.":"Choisissez un entraîneur.",
+  "This academy runs {d} minute classes.":"Cette académie propose des cours de {d} minutes.",
+  "Level must be between {a} and {b}.":"Le niveau doit être compris entre {a} et {b}.",
+  "All {n} courts at {club} are booked then.":"Les {n} terrains de {club} sont tous occupés à cette heure-là.",
+  "{coach} does not work at this club.":"{coach} ne travaille pas dans ce club.",
+  "{coach} already teaches at that time.":"{coach} donne déjà un cours à cette heure-là.",
+  "{coach} teaches up to level {n}.":"{coach} enseigne jusqu'au niveau {n}.",
+  "Same level ({n})":"Même niveau ({n})",
+  "One level up, inside tolerance":"Un niveau au-dessus, dans la tolérance",
+  "One level down, inside tolerance":"Un niveau en dessous, dans la tolérance",
+  "Inside a preferred window":"Dans un créneau préféré",
+  "Right day, outside the hours":"Bon jour, hors des horaires",
+  "Not a preferred day":"Pas un jour préféré",
+  "Group plays at the same pace":"Le groupe joue au même rythme",
+  "New class, still empty":"Nouveau cours, encore vide",
+  "Last seat":"Dernière place",
+  "Coach":"Entraîneur",
+  "Not saved.":"Non enregistré.",
+  "Reload and see what was actually saved":"Recharger et voir ce qui a été enregistré",
+  "unknown error":"erreur inconnue",
+  "Could not {what}: {msg} What you see on screen is not in the database.":"Impossible de {what} : {msg} Ce que vous voyez à l'écran n'est pas dans la base de données.",
+  "Save failed":"Échec de l'enregistrement",
+  "Not connected, so nothing can be saved.":"Pas de connexion : rien ne peut être enregistré.",
+  "by YLP Solutions":"par YLP Solutions",
+  "Language":"Langue",
+  "Loading…":"Chargement…",
+  "Sign in":"Se connecter",
+  "One sign-in for everyone. Your account decides which academy opens.":"Une seule connexion pour tous. Votre compte détermine quelle académie s'ouvre.",
+  "Try again":"Réessayer",
+  "Sign out":"Se déconnecter",
+  "The sign-in box failed to load. Please reload the page.":"Le formulaire de connexion n'a pas pu se charger. Rechargez la page.",
+  "No academy yet":"Pas encore d'académie",
+  "This account is not attached to any academy. Ask your administrator to add you.":"Ce compte n'est rattaché à aucune académie. Demandez à votre administrateur de vous ajouter.",
+  "Academy suspended":"Académie suspendue",
+  "This academy is suspended. Please contact your administrator.":"Cette académie est suspendue. Contactez votre administrateur.",
+  "Could not load your academy":"Impossible de charger votre académie",
+  "Cannot connect":"Connexion impossible",
+  "The sign-in service did not load. Check your connection and try again.":"Le service de connexion ne s'est pas chargé. Vérifiez votre connexion et réessayez.",
+  "your academy":"votre académie",
+  "Welcome to Bandeja":"Bienvenue sur Bandeja",
+  "A short tour of how {academy} gets planned: where classes live, how a new player finds a place, and what happens when there is none yet.":"Une courte visite de la planification de {academy} : où sont les cours, comment un nouveau joueur trouve sa place, et ce qui se passe quand il n'y en a pas encore.",
+  "Calendar":"Calendrier",
+  "Every class of the week, club by club. Colour is the level, height is the length, the dots are the seats. Tap a class to see its players, move it or cancel it. On a computer you can drag it to another time.":"Tous les cours de la semaine, club par club. La couleur indique le niveau, la hauteur la durée, les points les places. Touchez un cours pour voir ses joueurs, le déplacer ou l'annuler. Sur ordinateur, vous pouvez le faire glisser vers un autre horaire.",
+  "Place a player":"Placer un joueur",
+  "Enter a player's level and when they can play. Bandeja ranks the classes that fit and says why. Book in one tap; what cannot be placed goes to the waiting list.":"Indiquez le niveau du joueur et ses disponibilités. Bandeja classe les cours qui conviennent et explique pourquoi. Inscrivez en un geste ; ce qui ne peut pas être placé va en liste d'attente.",
+  "Waiting list":"Liste d'attente",
+  "Players still waiting for a place. When enough of them match in level and time, and a court and a coach are free, Bandeja suggests a new class to open.":"Les joueurs qui attendent encore une place. Quand assez d'entre eux correspondent en niveau et en horaire, et qu'un terrain et un entraîneur sont libres, Bandeja propose d'ouvrir un nouveau cours.",
+  "Manage":"Gérer",
+  "Your clubs, coaches, players and classes, and the academy's rules: level scale, tolerance, class size and which coach may teach which level.":"Vos clubs, entraîneurs, joueurs et cours, et les règles de l'académie : échelle de niveaux, tolérance, taille des cours et quel entraîneur peut enseigner quel niveau.",
+  "Ready to start":"Prêt à commencer",
+  "Follow the checklist: a club, a coach, your players, then the first class. Prefer to look around first? Load a sample week. You can reopen this tour any time from Manage.":"Suivez la liste : un club, un entraîneur, vos joueurs, puis le premier cours. Vous préférez d'abord explorer ? Chargez une semaine d'exemple. Vous pouvez revoir cette visite à tout moment depuis Gérer.",
+  "Step {a} of {b}":"Étape {a} sur {b}",
+  "Skip tour":"Passer la visite",
+  "Back":"Retour",
+  "Get started":"Commencer",
+  "Show me":"Me montrer",
+  "Next":"Suivant",
+  "Academy":"Académie",
+  "Academy name":"Nom de l'académie",
+  "These rules drive every recommendation. Change them and the matching follows.":"Ces règles guident toutes les recommandations. Modifiez-les et les suggestions suivent.",
+  "Lowest level":"Niveau le plus bas",
+  "Highest level":"Niveau le plus haut",
+  "Level tolerance (±)":"Tolérance de niveau (±)",
+  "Players per class":"Joueurs par cours",
+  "Minimum to open a class":"Minimum pour ouvrir un cours",
+  "Class lengths (minutes)":"Durées des cours (minutes)",
+  "Coach L1 teaches up to":"Entraîneur N1 enseigne jusqu'à",
+  "Coach L2 teaches up to":"Entraîneur N2 enseigne jusqu'à",
+  "Coach L3 teaches up to":"Entraîneur N3 enseigne jusqu'à",
+  "Give at least one class length.":"Indiquez au moins une durée.",
+  "Highest level must be above the lowest.":"Le niveau le plus haut doit dépasser le plus bas.",
+  "Minimum to open cannot exceed class size.":"Le minimum pour ouvrir ne peut pas dépasser la taille du cours.",
+  "Club limit reached":"Limite de clubs atteinte",
+  "Close":"Fermer",
+  "Edit club":"Modifier le club",
+  "New club":"Nouveau club",
+  "Club name":"Nom du club",
+  "e.g. Matosinhos":"ex. : Matosinhos",
+  "Courts available to the academy":"Terrains disponibles pour l'académie",
+  "The club needs a name.":"Le club doit avoir un nom.",
+  "Delete {name}?":"Supprimer {name} ?",
+  "Its {n} class(es) will be deleted too.":"Ses {n} cours seront aussi supprimés.",
+  "Edit coach":"Modifier l'entraîneur",
+  "New coach":"Nouvel entraîneur",
+  "Coach name":"Nom de l'entraîneur",
+  "Certification":"Certification",
+  "Level {c} — up to {n}":"Niveau {c} — jusqu'à {n}",
+  "Works at":"Travaille à",
+  "Create a club first.":"Créez d'abord un club.",
+  "The coach needs a name.":"L'entraîneur doit avoir un nom.",
+  "They teach {n} class(es), which will be deleted too.":"Cet entraîneur donne {n} cours, qui seront aussi supprimés.",
+  "Edit player":"Modifier le joueur",
+  "New player":"Nouveau joueur",
+  "Player name":"Nom du joueur",
+  "Level":"Niveau",
+  "Contact (optional)":"Contact (facultatif)",
+  "email or phone":"e-mail ou téléphone",
+  "Notes (optional)":"Notes (facultatif)",
+  "The player needs a name.":"Le joueur doit avoir un nom.",
+  "They will be removed from every class.":"Ce joueur sera retiré de tous les cours.",
+  "Edit class":"Modifier le cours",
+  "New class":"Nouveau cours",
+  "Club":"Club",
+  "Day":"Jour",
+  "Start":"Début",
+  "Length":"Durée",
+  "Seats (blank = academy default {n})":"Places (vide = valeur de l'académie, {n})",
+  "Class level":"Niveau du cours",
+  "Press Save again to schedule it anyway.":"Appuyez à nouveau sur Enregistrer pour le programmer quand même.",
+  "Cancel this class?":"Annuler ce cours ?",
+  "{day} {time}, {n} player(s) will lose their seat.":"{day} {time} : {n} joueur(s) perd(ent) sa place.",
+  "Players":"Joueurs",
+  "{a} of {b}":"{a} sur {b}",
+  "Remove":"Retirer",
+  "{n} open seat(s)":"{n} place(s) libre(s)",
+  "Add a player":"Ajouter un joueur",
+  "Accepts levels {a}–{b}.":"Accepte les niveaux {a}–{b}.",
+  "Move to…":"Déplacer vers…",
+  "Class":"Cours",
+  "Cancel class":"Annuler le cours",
+  "Edit":"Modifier",
+  "Done":"Terminé",
+  "Move this class":"Déplacer ce cours",
+  "Only times with a free court and {coach} free. Same length, level and coach.":"Uniquement les horaires avec un terrain libre et {coach} disponible. Même durée, niveau et entraîneur.",
+  "Only times with a free court. Same length, level and coach.":"Uniquement les horaires avec un terrain libre. Même durée, niveau et entraîneur.",
+  "{n} free":"{n} libre(s)",
+  "Nothing free on {day}. Try another day, or use Edit to change the coach or club.":"{day} : rien de libre. Essayez un autre jour ou utilisez Modifier pour changer l'entraîneur ou le club.",
+  "Nothing free on {day} at your usual hours.":"{day} : rien de libre à vos horaires habituels.",
+  "Only our usual hours":"Seulement nos horaires habituels",
+  "Show every half hour":"Afficher chaque demi-heure",
+  "Moved to {day} {time}.":"Déplacé : {day}, {time}.",
+  "Moved back to {day} {time}.":"Remis : {day}, {time}.",
+  "Add":"Ajouter",
+  "No player within {n} level of this class. Create one in Manage → Players.":"Aucun joueur à {n} niveau de ce cours. Créez-en un dans Gérer → Joueurs.",
+  "Class is full.":"Le cours est complet.",
+  "Edit request":"Modifier la demande",
+  "New request":"Nouvelle demande",
+  "Classes per week":"Cours par semaine",
+  "Days that work":"Jours possibles",
+  "Not before":"Pas avant",
+  "Not after":"Pas après",
+  "The request needs a name.":"La demande doit avoir un nom.",
+  "Pick at least one day.":"Choisissez au moins un jour.",
+  "The end of the window must be after its start.":"La fin du créneau doit être après son début.",
+  "Who is joining?":"Qui s'inscrit ?",
+  "Added to the waiting list.":"Ajouté à la liste d'attente.",
+  "Sample data only goes into an empty academy.":"Les données d'exemple ne vont que dans une académie vide.",
+  "Load sample data?":"Charger des données d'exemple ?",
+  "This adds a club, coaches, players and a week of classes so you can see the shape of it. Invented names only.":"Ajoute un club, des entraîneurs, des joueurs et une semaine de cours pour voir comment ça marche. Uniquement des noms inventés.",
+  "Sample week loaded.":"Semaine d'exemple chargée.",
+  "no name":"sans nom",
+  "\"{v}\" is not a level":"« {v} » n'est pas un niveau",
+  "level {v} is outside {a}–{b}":"le niveau {v} est hors de {a}–{b}",
+  "Nothing pasted yet.":"Rien n'a encore été collé.",
+  "{n} player(s) ready":"{n} joueur(s) prêt(s)",
+  "{n} already on the list, skipped:":"{n} déjà dans la liste, ignoré(s) :",
+  "Skipping {n} line(s):":"{n} ligne(s) ignorée(s) :",
+  "line {n}":"ligne {n}",
+  "Paste a list of players":"Coller une liste de joueurs",
+  "One player per line. Put the level after a comma — without one it defaults to {n} and you can correct it later.":"Un joueur par ligne. Mettez le niveau après une virgule — sans niveau, c'est {n} et vous pourrez corriger ensuite.",
+  "Add players":"Ajouter les joueurs",
+  "No players to add.":"Aucun joueur à ajouter.",
+  "Adding {n} player(s)…":"Ajout de {n} joueur(s)…",
+  "{n} player(s) added.":"{n} joueur(s) ajouté(s).",
+  "Send feedback":"Envoyer un avis",
+  "What was confusing, missing or broken? This goes straight to the people building it.":"Qu'est-ce qui était confus, manquant ou cassé ? Ceci va directement aux personnes qui le construisent.",
+  "e.g. I could not work out how to say a coach is away on Tuesdays.":"ex. : Je n'ai pas trouvé comment indiquer qu'un entraîneur est absent le mardi.",
+  "Send":"Envoyer",
+  "Write a line or two first.":"Écrivez d'abord une ou deux lignes.",
+  "Not connected, so this cannot be sent.":"Pas de connexion : impossible d'envoyer.",
+  "Sent — thank you.":"Envoyé — merci.",
+  "Could not send that. Please try again.":"Envoi impossible. Veuillez réessayer.",
+  "Delete everything?":"Tout supprimer ?",
+  "Every club, coach, player, class and request is removed. This cannot be undone.":"Tous les clubs, entraîneurs, joueurs, cours et demandes sont supprimés. Action irréversible.",
+  "Cleared.":"Effacé.",
+  "This cannot be undone.":"Action irréversible.",
+  "Confirm":"Confirmer",
+  "Class opened.":"Cours ouvert.",
+  "Edit academy":"Modifier l'académie",
+  "peak courts":"terrains au pic",
+  "open seats":"places libres",
+  "classes to open":"cours à ouvrir",
+  "Filters":"Filtres",
+  "on":"actifs",
+  "clear":"effacer",
+  "Colour is the level, height is the length, dots are the seats. Side-by-side cards are simultaneous classes on different courts.":"La couleur indique le niveau, la hauteur la durée, les points les places. Des cartes côte à côte sont des cours simultanés sur des terrains différents.",
+  "Level from":"Niveau de",
+  "Level to":"Niveau jusqu'à",
+  "Everyone":"Tous",
+  "Any":"Toutes",
+  "Availability":"Disponibilité",
+  "Only classes with seats":"Seulement les cours avec places",
+  "All classes":"Tous les cours",
+  "No classes on {day}. Courts are free all day.":"{day} : pas de cours. Les terrains sont libres toute la journée.",
+  "Add your first club":"Ajoutez votre premier club",
+  "Its name and how many courts you actually control.":"Son nom et le nombre de terrains que vous gérez vraiment.",
+  "Add club":"Ajouter un club",
+  "Add a coach":"Ajoutez un entraîneur",
+  "Their certification level caps the classes they can take.":"Son niveau de certification limite les cours qu'il peut donner.",
+  "Add coach":"Ajouter un entraîneur",
+  "Add your players":"Ajoutez vos joueurs",
+  "Name and level. You can paste a whole list at once.":"Nom et niveau. Vous pouvez coller toute une liste d'un coup.",
+  "Paste a list":"Coller une liste",
+  "Create your first class":"Créez votre premier cours",
+  "Day, time, length, level and coach.":"Jour, heure, durée, niveau et entraîneur.",
+  "Add class":"Ajouter un cours",
+  "Set up your academy":"Configurez votre académie",
+  "Would you rather look around first?":"Vous préférez d'abord explorer ?",
+  "Load a sample week":"Charger une semaine d'exemple",
+  "Level and availability decide the match. Everything else is bookkeeping.":"Le niveau et les disponibilités décident. Le reste, c'est de la paperasse.",
+  "e.g. Mariana":"ex. : Mariana",
+  "Find matching classes":"Trouver des cours compatibles",
+  "Start over":"Recommencer",
+  "{n} class(es) fit {name}":"{n} cours conviennent à {name}",
+  "Nothing open for {name} yet":"Rien de disponible pour {name} pour l'instant",
+  "{a} of {b} booked":"{a} sur {b} réservés",
+  "players":"joueurs",
+  "{n}% fit":"{n} % de correspondance",
+  "Booked":"Réservé",
+  "Book":"Réserver",
+  "{a} of {b} weekly sessions still unmatched.":"{a} séance(s) sur {b} encore sans cours.",
+  "Keep the rest on the waiting list — it stays pending until a seat opens or enough players gather to start a new class.":"Gardez le reste en liste d'attente — il reste en suspens jusqu'à ce qu'une place se libère ou que suffisamment de joueurs se regroupent pour un nouveau cours.",
+  "Add to waiting list":"Ajouter à la liste d'attente",
+  "No class within {n} level has a free seat in that window.":"Aucun cours à {n} niveau n'a de place libre sur ce créneau.",
+  "Classes waiting to happen":"Cours prêts à ouvrir",
+  "Two or more players at a compatible level, a shared window, a free court and an available coach.":"Deux joueurs ou plus de niveau compatible, un créneau commun, un terrain libre et un entraîneur disponible.",
+  "available · court free":"disponible · terrain libre",
+  "Open this class":"Ouvrir ce cours",
+  "Nothing to open right now. Alerts appear here as the waiting list grows.":"Rien à ouvrir pour l'instant. Les alertes apparaissent ici à mesure que la liste d'attente grandit.",
+  "Wants":"Souhaite",
+  "{n}× / week":"{n}× / semaine",
+  "Complete":"Complet",
+  "Nobody waiting. Add a request when a player asks for classes you cannot place yet.":"Personne en attente. Ajoutez une demande quand un joueur veut des cours que vous ne pouvez pas encore placer.",
+  "Level scale":"Échelle de niveaux",
+  "Level tolerance":"Tolérance de niveau",
+  "Class lengths":"Durées des cours",
+  "Minimum to open":"Minimum pour ouvrir",
+  "{n} players":"{n} joueurs",
+  "Coach L1 / L2 / L3":"Entraîneur N1 / N2 / N3",
+  "up to":"jusqu'à",
+  "Only available on an empty academy":"Disponible uniquement pour une académie vide",
+  "Load sample data":"Charger des données d'exemple",
+  "Show the tour again":"Revoir la visite guidée",
+  "Admin console":"Console d'administration",
+  "Delete all data":"Supprimer toutes les données",
+  "Sample data can only be loaded into an empty academy, so it never mixes with your own.":"Les données d'exemple ne peuvent être chargées que dans une académie vide, pour ne jamais se mélanger aux vôtres.",
+  "Clubs":"Clubs",
+  "{n} courts":"{n} terrains",
+  "{n} classes":"{n} cours",
+  "No clubs yet.":"Pas encore de club.",
+  "Coaches":"Entraîneurs",
+  "any club":"tous les clubs",
+  "No coaches yet.":"Pas encore d'entraîneur.",
+  "Search players":"Rechercher des joueurs",
+  "Nobody matches that.":"Aucun résultat.",
+  "No players yet.":"Pas encore de joueur.",
+  "Classes":"Cours",
+  "Time":"Heure",
+  "Seats":"Places",
+  "No classes yet.":"Pas encore de cours.",
+  "Cancel":"Annuler",
+  "Save":"Enregistrer",
+  "Saved for {name}. Your academy is determined by your login, not by the link.":"Enregistré pour {name}. Votre académie est déterminée par votre compte, pas par le lien.",
+  "Could not reach the academy API, so recent changes may not be saved.":"Impossible de joindre le serveur ; les modifications récentes peuvent ne pas être enregistrées.",
+  "Connecting…":"Connexion…",
+  "Place":"Placer",
+  "Waiting":"Attente",
+  "Player":"Joueur",
+  "save":"enregistrer",
+  "delete":"supprimer",
+  "This academy’s plan includes {max} club(s); {n} already set up. Ask YLP Solutions to raise the limit, or remove a club first.":"L'abonnement de cette académie inclut {max} club(s) ; déjà créés : {n}. Demandez à YLP Solutions d'augmenter la limite, ou supprimez d'abord un club.",
+  "Clubs: {a} · Coaches: {b} · Players: {c} · Classes: {d}":"Clubs : {a} · Entraîneurs : {b} · Joueurs : {c} · Cours : {d}"
+ }
+};
+function setLang(l){
+  LANG=LANGS[l]?l:"pt";
+  DAYS=DAYNAMES[LANG].s; DAYF=DAYNAMES[LANG].f;
+  document.documentElement.lang=LANG;
+  document.title="Bandeja — "+t("Padel academy planning");
+}
+function browserLang(){
+  var list=(navigator.languages&&navigator.languages.length)?navigator.languages:[navigator.language||""];
+  for(var i=0;i<list.length;i++){ var l=String(list[i]).slice(0,2).toLowerCase(); if(LANGS[l]) return l; }
+  return "pt";
+}
+function t(key,vars){
+  var d=I18N[LANG], out=(d&&d[key])||key;
+  if(vars){
+    /* "seat(s)", "jogador(es)", "fica(m)": the bracketed ending is dropped for
+       exactly one and kept for anything else, counted by {n} (or {a}). */
+    var c=vars.n!=null?vars.n:vars.a;
+    if(c!=null) out=out.replace(/([A-Za-zÀ-ÿ])\(([a-zà-ÿ]{1,3})\)/g,function(m,l,e){ return +c===1?l:l+e; });
+    out=out.replace(/\{(\w+)\}/g,function(m,k){ return vars[k]!=null?vars[k]:m; });
+  }
+  return out;
+}
 var RAMP=["#9FBF9B","#7FB292","#5DA489","#3E9588","#2A8590","#26739B","#2C5F9E","#414A92","#5A3C84","#7A386F","#96335A"];
 var DAY_START=8*60, DAY_END=22*60, ROW=22;
 
@@ -250,6 +1152,7 @@ var S={ academy:{name:"My Padel Academy", rules:clone(DEFAULT_RULES)},
 var UI={ view:"calendar", sub:"academy", venueId:null, day:0, showFilters:false,
          filters:{minLvl:null,maxLvl:null,coachId:"",duration:"",onlyFree:false} };
 var storage="off", booted=false;
+var A={};          /* actions, keyed by data-act */
 
 function clone(o){return JSON.parse(JSON.stringify(o));}
 function uid(p){return p+Math.random().toString(36).slice(2,9);}
@@ -280,15 +1183,15 @@ function coachFree(coachId,day,s,dur,ignore){
 function canSchedule(k){
   var out=[],r=rules(),s=toMin(k.start);
   var v=byId(S.venues,k.venueId), co=byId(S.coaches,k.coachId);
-  if(!v) out.push("Pick a club.");
-  if(!co) out.push("Pick a coach.");
-  if(r.durations.indexOf(k.duration)<0) out.push("This academy runs "+r.durations.join(", ")+" minute classes.");
-  if(k.level<r.levelMin||k.level>r.levelMax) out.push("Level must be between "+r.levelMin+" and "+r.levelMax+".");
-  if(v && courtsInUse(k.venueId,k.day,s,k.duration,k.id)>=v.courts) out.push("All "+v.courts+" courts at "+v.name+" are booked then.");
+  if(!v) out.push(t("Pick a club."));
+  if(!co) out.push(t("Pick a coach."));
+  if(r.durations.indexOf(k.duration)<0) out.push(t("This academy runs {d} minute classes.",{d:r.durations.join(", ")}));
+  if(k.level<r.levelMin||k.level>r.levelMax) out.push(t("Level must be between {a} and {b}.",{a:r.levelMin,b:r.levelMax}));
+  if(v && courtsInUse(k.venueId,k.day,s,k.duration,k.id)>=v.courts) out.push(t("All {n} courts at {club} are booked then.",{n:v.courts,club:v.name}));
   if(co){
-    if(co.venueIds&&co.venueIds.length&&co.venueIds.indexOf(k.venueId)<0) out.push(co.name+" does not work at this club.");
-    if(!coachFree(k.coachId,k.day,s,k.duration,k.id)) out.push(co.name+" already teaches at that time.");
-    if(k.level>coachMax(co)) out.push(co.name+" teaches up to level "+coachMax(co)+".");
+    if(co.venueIds&&co.venueIds.length&&co.venueIds.indexOf(k.venueId)<0) out.push(t("{coach} does not work at this club.",{coach:co.name}));
+    if(!coachFree(k.coachId,k.day,s,k.duration,k.id)) out.push(t("{coach} already teaches at that time.",{coach:co.name}));
+    if(k.level>coachMax(co)) out.push(t("{coach} teaches up to level {n}.",{coach:co.name,n:coachMax(co)}));
   }
   return out;
 }
@@ -308,26 +1211,26 @@ function fit(cls,req){
   var inWin=sameDay.some(function(w){return toMin(w.from)<=s&&toMin(w.to)>=e;});
 
   var lvlPart=1-gap/(r.levelTolerance+1);
-  reasons.push({t:gap===0?"Same level ("+fmtLvl(cls.level)+")":"One level "+(cls.level>req.level?"up":"down")+", inside tolerance",k:"ok"});
+  reasons.push({t:gap===0?t("Same level ({n})",{n:fmtLvl(cls.level)}):(cls.level>req.level?t("One level up, inside tolerance"):t("One level down, inside tolerance")),k:"ok"});
 
   var timePart=0;
-  if(inWin){timePart=1;reasons.push({t:"Inside a preferred window",k:"ok"});}
-  else if(sameDay.length){timePart=.45;reasons.push({t:"Right day, outside the hours",k:"warn"});}
-  else reasons.push({t:"Not a preferred day",k:"warn"});
+  if(inWin){timePart=1;reasons.push({t:t("Inside a preferred window"),k:"ok"});}
+  else if(sameDay.length){timePart=.45;reasons.push({t:t("Right day, outside the hours"),k:"warn"});}
+  else reasons.push({t:t("Not a preferred day"),k:"warn"});
 
   var cohesion=.6, mates=(cls.playerIds||[]).map(function(i){return byId(S.players,i);}).filter(Boolean);
   if(mates.length){
     var avg=mates.reduce(function(a,p){return a+p.level;},0)/mates.length;
     var d=Math.abs(avg-req.level);
     cohesion=Math.max(0,1-d/(r.levelTolerance+1));
-    if(d<=.5) reasons.push({t:"Group plays at the same pace",k:"ok"});
-  } else reasons.push({t:"New class, still empty",k:"ok"});
+    if(d<=.5) reasons.push({t:t("Group plays at the same pace"),k:"ok"});
+  } else reasons.push({t:t("New class, still empty"),k:"ok"});
 
   var seatPart=free>=2?1:.6;
-  if(free===1) reasons.push({t:"Last seat",k:"warn"});
+  if(free===1) reasons.push({t:t("Last seat"),k:"warn"});
 
   var score=Math.round((lvlPart*45+timePart*30+cohesion*15+seatPart*10));
-  if(!certified){score=Math.max(0,score-25);reasons.push({t:(co?co.name:"Coach")+" teaches up to level "+coachMax(co),k:"bad"});}
+  if(!certified){score=Math.max(0,score-25);reasons.push({t:t("{coach} teaches up to level {n}.",{coach:co?co.name:t("Coach"),n:coachMax(co)}),k:"bad"});}
   return {cls:cls,score:score,reasons:reasons,free:free};
 }
 function rank(req){
@@ -431,14 +1334,14 @@ function banner(msg){
   if(!el) return;
   if(!msg){ el.className=""; el.innerHTML=""; return; }
   el.className="on";
-  el.innerHTML='<strong>Not saved.</strong> '+esc(msg)+
-    ' <button data-act="reloadNow">Reload and see what was actually saved</button>';
+  el.innerHTML='<strong>'+t("Not saved.")+'</strong> '+esc(msg)+
+    ' <button data-act="reloadNow">'+t("Reload and see what was actually saved")+'</button>';
 }
 function failed(what,e){
   storage="error";
-  var msg=(e&&e.message)||"unknown error";
-  banner("Could not "+what+": "+msg+" What you see on screen is not in the database.");
-  toast("Save failed"); render();
+  var msg=(e&&e.message)||t("unknown error");
+  banner(t("Could not {what}: {msg} What you see on screen is not in the database.",{what:t(what),msg:msg}));
+  toast(t("Save failed")); render();
 }
 
 /* ── read ── */
@@ -450,6 +1353,7 @@ function loadAll(){
     S.venues=d.venues||[]; S.coaches=d.coaches||[]; S.players=d.players||[];
     S.classes=d.classes||[]; S.requests=d.requests||[];
     if(!UI.venueId&&S.venues.length) UI.venueId=S.venues[0].id;
+    if(d.academy.language && d.academy.language!==LANG){ setLang(d.academy.language); remember("bandeja.lang",LANG); }
     storage="on"; banner(null); render();
   });
 }
@@ -465,7 +1369,7 @@ function put(coll,obj){
   for(var k=0;k<list.length;k++) if(list[k].id===obj.id) i=k;
   if(i>=0) list[i]=obj; else list.push(obj);
   render();
-  if(!sdk){ banner("The Catalyst SDK is not loaded, so nothing can be saved."); return Promise.resolve(obj); }
+  if(!sdk){ banner(t("Not connected, so nothing can be saved.")); return Promise.resolve(obj); }
   return api("save",{collection:coll,record:obj}).then(function(r){
     if(r && r.id){ obj.id=sid(r.id); render(); }
     return obj;
@@ -495,68 +1399,202 @@ function saveAcademy(next){
   });
 }
 
-/* ── auth gate + boot ── */
-function showLogin(){
-  storage="signedout"; booted=true;
-  /* Signed out there is no academy to name, so the product brand has the screen
-     to itself — the only place in the app where it is loud. */
-  var hd=document.querySelector("header.top"), bn=document.getElementById("bnav");
-  if(hd) hd.style.display="none";
-  if(bn) bn.style.display="none";
-  document.body.style.background="var(--head)";
-  document.getElementById("view").innerHTML=
-    '<div style="max-width:420px;margin:0 auto;padding:46px 0 40px;display:flex;flex-direction:column;align-items:center;gap:26px">'+
-      '<div style="display:flex;flex-direction:column;align-items:center;gap:11px;color:var(--honey)">'+
-        '<svg viewBox="0 0 120 100" width="78" height="65" role="img" aria-label="Bandeja" focusable="false">'+
-          '<circle cx="60" cy="38" r="21" fill="currentColor"></circle>'+
-          '<path d="M14 44 Q60 90 106 44" fill="none" stroke="currentColor" stroke-width="12" stroke-linecap="round"></path></svg>'+
-        '<div style="font-family:\'Barlow Semi Condensed\',sans-serif;font-weight:700;font-size:42px;line-height:1;letter-spacing:.09em;text-indent:.09em;color:#EBEEE9">BANDEJA</div>'+
-        '<div style="font-size:12.5px;font-weight:500;letter-spacing:.04em;color:#94A6B0">by YLP Solutions</div>'+
-      '</div>'+
-      '<div class="card pad" style="width:100%">'+
-        '<h3 style="font-size:22px">Sign in</h3>'+
-        '<p class="muted small">Your academy is chosen by your account, so there is nothing else to enter.</p>'+
-        '<div id="login-container" style="min-height:320px;margin-top:10px"></div>'+
-      '</div>'+
-      '<p class="tiny" style="margin:0;color:#53646E">Padel academy management</p>'+
-    '</div>';
-  try{ sdk.auth.signIn("login-container",{ login_redirect: window.location.origin + "/" }); }
-  catch(e){
-    document.getElementById("login-container").innerHTML=
-      '<div class="note bad">Sign-in widget failed to load. If the console still has '+
-      'Authentication Type set to Hosted, switch it to Embedded.</div>';
+/* ─────────── the gate ───────────
+   Nothing of the planner is on screen until the API has said who this is and
+   handed back their academy. Before that the page is the brand, a sign-in box,
+   or a plain sentence saying why it cannot go further — never an empty planner
+   that looks usable and saves nothing. The operator console has no sign-in of
+   its own: it sends people here with ?next=admin, and this page sends
+   operators back once they are in. */
+var WANTS_ADMIN=/[?&]next=admin\b/.test(location.search);
+var IS_OPERATOR=false, ME="";
+
+function markSvg(w,h,label){
+  return '<svg viewBox="0 0 120 100" width="'+w+'" height="'+h+'" '+(label?'role="img" aria-label="'+label+'"':'aria-hidden="true"')+' focusable="false">'+
+    '<circle cx="60" cy="38" r="21" fill="currentColor"></circle>'+
+    '<path d="M14 44 Q60 90 106 44" fill="none" stroke="currentColor" stroke-width="12" stroke-linecap="round"></path></svg>';
+}
+function gateFrame(inner){
+  return '<div class="gwrap">'+
+    '<div class="glock">'+markSvg(78,65,"Bandeja")+
+      '<div class="gword">BANDEJA</div>'+
+      '<div class="gby">'+t("by YLP Solutions")+'</div></div>'+
+    inner+
+    '<div class="glangs" role="group" aria-label="'+esc(t("Language"))+'">'+
+      Object.keys(LANGS).map(function(l){
+        return '<button class="'+(l===LANG?"on":"")+'" data-act="gateLang" data-id="'+l+'" lang="'+l+'">'+LANGS[l]+'</button>';
+      }).join("")+'</div>'+
+  '</div>';
+}
+var GATE={mode:null,opts:null};
+function gate(mode,opts){
+  GATE={mode:mode,opts:opts||{}};
+  document.body.classList.add("gated");
+  var g=document.getElementById("gate"), inner="";
+  if(mode==="splash"){
+    inner='<div class="gsplash" aria-live="polite"><span class="gdot"></span><span class="gdot"></span><span class="gdot"></span>'+
+      '<span class="vh">'+t("Loading…")+'</span></div>';
+  } else if(mode==="login"){
+    storage="signedout";
+    inner='<div class="card pad gcard">'+
+      '<h2 style="font-size:24px">'+t("Sign in")+'</h2>'+
+      '<p class="muted small" style="margin:4px 0 0">'+t("One sign-in for everyone. Your account decides which academy opens.")+'</p>'+
+      '<div id="login-container" style="min-height:320px;margin-top:12px"></div></div>';
+  } else {
+    var o=GATE.opts;
+    inner='<div class="card pad gcard">'+
+      '<h2 style="font-size:22px">'+esc(o.title)+'</h2>'+
+      '<p class="small muted">'+esc(o.msg)+'</p>'+
+      '<div class="row mt">'+
+        (o.retry?'<button class="btn primary" data-act="reloadNow">'+t("Try again")+'</button>':'')+
+        (sdk?'<button class="btn" data-act="signOut">'+t("Sign out")+'</button>':'')+
+      '</div></div>';
+  }
+  g.innerHTML=gateFrame(inner);
+  if(mode==="login"){
+    try{ sdk.auth.signIn("login-container",{ login_redirect: location.origin+"/"+(WANTS_ADMIN?"?next=admin":"") }); }
+    catch(e){
+      document.getElementById("login-container").innerHTML=
+        '<div class="note bad">'+t("The sign-in box failed to load. Please reload the page.")+'</div>';
+    }
   }
 }
-function showMessage(title,msg){
-  storage="blocked"; booted=true;
-  document.getElementById("view").innerHTML=
-    '<div class="empty"><h3 style="font-size:22px">'+esc(title)+'</h3>'+
-    '<p class="small">'+esc(msg)+'</p>'+
-    '<div class="mt"><button class="btn" data-act="signOut">Sign out</button></div></div>';
+function openApp(){
+  var g=document.getElementById("gate");
+  if(g) g.innerHTML="";
+  GATE={mode:null,opts:null};
+  document.body.classList.remove("gated");
+  render();
+}
+
+function start(){
+  return api("session").then(function(sess){
+    IS_OPERATOR=!!sess.isOperator; ME=String(sess.email||"").toLowerCase();
+    if(sess.academy&&sess.academy.language){ setLang(sess.academy.language); remember("bandeja.lang",LANG); }
+    if(IS_OPERATOR&&(WANTS_ADMIN||!sess.academy)){ location.replace("./admin.html"); return; }
+    if(!sess.academy){
+      storage="blocked";
+      return gate("message",{title:t("No academy yet"),
+        msg:t("This account is not attached to any academy. Ask your administrator to add you.")});
+    }
+    return loadAll().then(function(){
+      openApp();
+      if(!ACADEMY.tutorialDone&&!recall("bandeja.tour."+ME)) tourStart();
+    });
+  }).catch(function(e){
+    if(e&&e.status===401) return gate("login");
+    storage="blocked";
+    if(e&&e.code==="no-academy") return gate("message",{title:t("No academy yet"),
+      msg:t("This account is not attached to any academy. Ask your administrator to add you.")});
+    if(e&&e.code==="suspended") return gate("message",{title:t("Academy suspended"),
+      msg:t("This academy is suspended. Please contact your administrator.")});
+    storage="error";
+    gate("message",{title:t("Could not load your academy"),msg:(e&&e.message)||t("unknown error"),retry:true});
+  });
 }
 
 function boot(){
-  render();
-  storage="loading"; render();
+  var saved=recall("bandeja.lang");
+  setLang(saved||browserLang());
+  gate("splash");
+  storage="loading";
   waitForSdk().then(function(c){
-    if(!c){ storage="nosdk"; booted=true; render(); return; }
+    if(!c){ storage="nosdk";
+      return gate("message",{title:t("Cannot connect"),
+        msg:t("The sign-in service did not load. Check your connection and try again."),retry:true}); }
     sdk=c; booted=true;
-    return sdk.auth.isUserAuthenticated().then(function(){
-      return loadAll().catch(function(e){
-        if(e.status===401) return showLogin();
-        if(e.code==="no-academy") return showMessage("No academy yet",
-          "This account is not attached to any academy. Ask your administrator to add you.");
-        if(e.code==="suspended") return showMessage("Academy suspended",
-          "This academy is suspended. Please contact your administrator.");
-        storage="error"; banner("Could not load: "+((e&&e.message)||"unknown error")); render();
-      });
-    }).catch(function(){ showLogin(); });
+    return sdk.auth.isUserAuthenticated().then(start,function(){ gate("login"); });
   });
   setInterval(function(){ if(!document.hidden&&storage==="on") loadAll().catch(function(){}); },30000);
   window.addEventListener("focus",function(){ if(storage==="on") loadAll().catch(function(){}); });
 }
 
-function signOut(){ if(sdk) sdk.auth.signOut(window.location.origin); }
+function signOut(){ if(sdk) sdk.auth.signOut(location.origin+"/"); }
+
+/* Per-browser conveniences only; nothing here is relied on. */
+function remember(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
+function recall(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
+
+/* ─────────── first-login tour ───────────
+   Shown once per person, the first time they get in. Each step brings up the
+   screen it talks about behind a dimmed layer, with the matching tab lifted
+   above it, so the words and the place line up. Finishing or skipping is
+   recorded on the server, so it does not come back on another device; it can
+   be replayed from Manage. */
+var TOUR=null;
+function tourSteps(){
+  var name=esc(S.academy.name||t("your academy"));
+  return [
+    {view:null, title:t("Welcome to Bandeja"),
+     text:t("A short tour of how {academy} gets planned: where classes live, how a new player finds a place, and what happens when there is none yet.",{academy:name})},
+    {view:"calendar", title:t("Calendar"),
+     text:t("Every class of the week, club by club. Colour is the level, height is the length, the dots are the seats. Tap a class to see its players, move it or cancel it. On a computer you can drag it to another time.")},
+    {view:"place", title:t("Place a player"),
+     text:t("Enter a player's level and when they can play. Bandeja ranks the classes that fit and says why. Book in one tap; what cannot be placed goes to the waiting list.")},
+    {view:"waitlist", title:t("Waiting list"),
+     text:t("Players still waiting for a place. When enough of them match in level and time, and a court and a coach are free, Bandeja suggests a new class to open.")},
+    {view:"manage", title:t("Manage"),
+     text:t("Your clubs, coaches, players and classes, and the academy's rules: level scale, tolerance, class size and which coach may teach which level.")},
+    {view:"manage", title:t("Ready to start"),
+     text:t("Follow the checklist: a club, a coach, your players, then the first class. Prefer to look around first? Load a sample week. You can reopen this tour any time from Manage.")}
+  ];
+}
+function tourStart(){
+  closeModal();
+  TOUR={i:0,back:{view:UI.view,sub:UI.sub}};
+  tourRender();
+}
+function tourRender(){
+  var steps=tourSteps(), s=steps[TOUR.i], last=TOUR.i===steps.length-1;
+  if(s.view){ UI.view=s.view; if(s.view==="manage") UI.sub="academy"; }
+  document.body.classList.add("touring");
+  render();
+  var root=document.getElementById("tourRoot");
+  root.innerHTML='<div class="tscrim"></div>'+
+    '<div class="tcard" role="dialog" aria-modal="true" aria-labelledby="tourTitle">'+
+      (TOUR.i===0?'<div class="tmark">'+markSvg(46,38)+'</div>':'')+
+      '<div class="tdots" aria-hidden="true">'+steps.map(function(x,i){return '<i class="'+(i===TOUR.i?"on":i<TOUR.i?"done":"")+'"></i>';}).join("")+'</div>'+
+      '<div class="tiny muted">'+t("Step {a} of {b}",{a:TOUR.i+1,b:steps.length})+'</div>'+
+      '<h3 id="tourTitle" style="font-size:22px;margin-top:2px">'+s.title+'</h3>'+
+      '<p style="margin:8px 0 0">'+s.text+'</p>'+
+      '<div class="row mt" style="justify-content:space-between">'+
+        (last?'<span></span>':'<button class="btn icon" data-act="tourSkip">'+t("Skip tour")+'</button>')+
+        '<span class="row" style="gap:8px">'+
+          (TOUR.i>0?'<button class="btn" data-act="tourBack">'+t("Back")+'</button>':'')+
+          '<button class="btn honey" data-act="tourNext" id="tourNext">'+(last?t("Get started"):TOUR.i===0?t("Show me"):t("Next"))+'</button>'+
+        '</span></div>'+
+    '</div>';
+  /* the tab for this step is lifted above the dimmed layer and marked */
+  Array.prototype.forEach.call(document.querySelectorAll('[data-act="tab"]'),function(b){
+    b.classList.toggle("tourhi",!!s.view&&b.dataset.id===s.view);
+  });
+  var nb=document.getElementById("tourNext"); if(nb) nb.focus();
+}
+function tourEnd(){
+  if(!TOUR) return;
+  TOUR=null;
+  document.body.classList.remove("touring");
+  document.getElementById("tourRoot").innerHTML="";
+  Array.prototype.forEach.call(document.querySelectorAll(".tourhi"),function(b){b.classList.remove("tourhi");});
+  if(ACADEMY) ACADEMY.tutorialDone=true;
+  remember("bandeja.tour."+ME,"1");
+  if(sdk) api("tutorial",{done:true}).catch(function(){});
+  render();
+}
+A.tourStart=function(){ tourStart(); };
+A.tourNext=function(){ if(!TOUR) return; if(TOUR.i>=tourSteps().length-1){ UI.view="manage"; UI.sub="academy"; return tourEnd(); } TOUR.i++; tourRender(); };
+A.tourBack=function(){ if(TOUR&&TOUR.i>0){ TOUR.i--; tourRender(); } };
+A.tourSkip=function(){ tourEnd(); };
+document.addEventListener("keydown",function(ev){
+  if(!TOUR) return;
+  if(ev.key==="Escape"){ ev.preventDefault(); tourEnd(); }
+  else if(ev.key==="ArrowRight") A.tourNext();
+  else if(ev.key==="ArrowLeft") A.tourBack();
+});
+A.gateLang=function(l){
+  setLang(l); remember("bandeja.lang",l);
+  if(GATE.mode) gate(GATE.mode,GATE.opts);
+};
 
 /* ─────────── derived ─────────── */
 function venue(){return byId(S.venues,UI.venueId)||S.venues[0]||null;}
@@ -637,7 +1675,7 @@ function dayOpts(){return DAYF.map(function(d,i){return {v:i,t:d};});}
 function durOpts(){return rules().durations.map(function(d){return {v:d,t:d+" min"};});}
 
 /* ─────────── ACTIONS ─────────── */
-var A={};
+/* A is declared with the state, near the top, so earlier blocks can register actions. */
 
 A.scrim=function(id,el,ev){ if(ev&&ev.target&&ev.target.classList.contains("scrim")) closeModal(); };
 A.closeModal=closeModal;
@@ -654,28 +1692,28 @@ A.toggleFree=function(){ UI.filters.onlyFree=!UI.filters.onlyFree; render(); };
 /* academy */
 A.editAcademy=function(){
   var r=rules();
-  openModal("Academy",
-    fText("acName","Academy name",S.academy.name)+
-    '<div class="note info mb">These rules drive every recommendation. Change them and the matching follows.</div>'+
+  openModal(t("Academy"),
+    fText("acName",t("Academy name"),S.academy.name)+
+    '<div class="note info mb">'+t("These rules drive every recommendation. Change them and the matching follows.")+'</div>'+
     '<div class="grid g2">'+
-      fNum("acLvlMin","Lowest level",r.levelMin,0,20,1)+
-      fNum("acLvlMax","Highest level",r.levelMax,1,20,1)+
-      fNum("acTol","Level tolerance (±)",r.levelTolerance,0,5,1)+
-      fNum("acCap","Players per class",r.classCapacity,1,12,1)+
-      fNum("acMin","Minimum to open a class",r.minPlayersToOpen,1,12,1)+
-      fText("acDur","Class lengths (minutes)",r.durations.join(", "))+
-      fNum("acC1","Coach L1 teaches up to",r.coachCertification[1],0,20,1)+
-      fNum("acC2","Coach L2 teaches up to",r.coachCertification[2],0,20,1)+
-      fNum("acC3","Coach L3 teaches up to",r.coachCertification[3],0,20,1)+
+      fNum("acLvlMin",t("Lowest level"),r.levelMin,0,20,1)+
+      fNum("acLvlMax",t("Highest level"),r.levelMax,1,20,1)+
+      fNum("acTol",t("Level tolerance (±)"),r.levelTolerance,0,5,1)+
+      fNum("acCap",t("Players per class"),r.classCapacity,1,12,1)+
+      fNum("acMin",t("Minimum to open a class"),r.minPlayersToOpen,1,12,1)+
+      fText("acDur",t("Class lengths (minutes)"),r.durations.join(", "))+
+      fNum("acC1",t("Coach L1 teaches up to"),r.coachCertification[1],0,20,1)+
+      fNum("acC2",t("Coach L2 teaches up to"),r.coachCertification[2],0,20,1)+
+      fNum("acC3",t("Coach L3 teaches up to"),r.coachCertification[3],0,20,1)+
     '</div>',
-    '<button class="btn" data-act="closeModal">Cancel</button><button class="btn primary" data-act="saveModal">Save</button>',
+    footCS(),
     function(){
       var durs=mval("acDur").split(/[,\s]+/).map(function(x){return parseInt(x,10);}).filter(function(x){return x>0;});
-      if(!durs.length){toast("Give at least one class length.");return;}
+      if(!durs.length){toast(t("Give at least one class length."));return;}
       var min=mnum("acLvlMin"),max=mnum("acLvlMax");
-      if(max<=min){toast("Highest level must be above the lowest.");return;}
+      if(max<=min){toast(t("Highest level must be above the lowest."));return;}
       var cap=mnum("acCap"),mp=mnum("acMin");
-      if(mp>cap){toast("Minimum to open cannot exceed class size.");return;}
+      if(mp>cap){toast(t("Minimum to open cannot exceed class size."));return;}
       saveAcademy({name:mval("acName")||"Academy",
         rules:{levelMin:min,levelMax:max,levelTolerance:mnum("acTol"),classCapacity:cap,
           durations:durs,minPlayersToOpen:mp,newClassDuration:durs.indexOf(90)>=0?90:durs[0],
@@ -690,29 +1728,27 @@ A.reloadNow=function(){ location.reload(); };
 A.newVenue=function(){
   var max=ACADEMY?ACADEMY.maxClubs:99;
   if(S.venues.length>=max){
-    return openModal("Club limit reached",
-      '<div class="note warn">This academy’s plan includes '+max+' club'+(max===1?"":"s")+
-      ', and '+S.venues.length+' '+(S.venues.length===1?"is":"are")+' already set up. '+
-      'Raise the limit in the setup console, or remove a club first.</div>',
-      '<button class="btn primary" data-act="closeModal">Close</button>',null);
+    return openModal(t("Club limit reached"),
+      '<div class="note warn">'+t("This academy’s plan includes {max} club(s); {n} already set up. Ask YLP Solutions to raise the limit, or remove a club first.",{max:max,n:S.venues.length})+'</div>',
+      '<button class="btn primary" data-act="closeModal">'+t("Close")+'</button>',null);
   }
   venueForm({id:uid("v"),name:"",courts:2});
 };
 A.editVenue=function(id){ venueForm(clone(byId(S.venues,id))); };
 function venueForm(v){
-  openModal(v.name?"Edit club":"New club",
-    fText("vName","Club name",v.name,"e.g. Matosinhos")+
-    fNum("vCourts","Courts available to the academy",v.courts,1,30,1),
-    '<button class="btn" data-act="closeModal">Cancel</button><button class="btn primary" data-act="saveModal">Save</button>',
+  openModal(v.name?t("Edit club"):t("New club"),
+    fText("vName",t("Club name"),v.name,t("e.g. Matosinhos"))+
+    fNum("vCourts",t("Courts available to the academy"),v.courts,1,30,1),
+    footCS(),
     function(){
-      if(!mval("vName").trim()){toast("The club needs a name.");return;}
+      if(!mval("vName").trim()){toast(t("The club needs a name."));return;}
       v.name=mval("vName").trim(); v.courts=Math.max(1,mnum("vCourts"));
       put("venues",v); if(!UI.venueId)UI.venueId=v.id; closeModal();
     });
 }
 A.delVenue=function(id){
   var v=byId(S.venues,id),n=S.classes.filter(function(c){return c.venueId===id;}).length;
-  confirmBox("Delete "+v.name+"?", n?("Its "+n+" class(es) will be deleted too."):"",function(){
+  confirmBox(t("Delete {name}?",{name:v.name}), n?t("Its {n} class(es) will be deleted too.",{n:n}):"",function(){
     S.classes.filter(function(c){return c.venueId===id;}).forEach(function(c){drop("classes",c.id);});
     drop("venues",id); if(UI.venueId===id)UI.venueId=(S.venues[0]||{}).id||null; closeModal();
   });
@@ -722,20 +1758,20 @@ A.delVenue=function(id){
 A.newCoach=function(){ coachForm({id:uid("co"),name:"",certLevel:1,venueIds:[]}); };
 A.editCoach=function(id){ coachForm(clone(byId(S.coaches,id))); };
 function coachForm(c){
-  openModal(c.name?"Edit coach":"New coach",
-    fText("cName","Coach name",c.name)+
-    fSel("cLevel","Certification",c.certLevel,[{v:1,t:"Level 1 — up to "+rules().coachCertification[1]},{v:2,t:"Level 2 — up to "+rules().coachCertification[2]},{v:3,t:"Level 3 — up to "+rules().coachCertification[3]}])+
-    (S.venues.length?fMulti("coachVenues","Works at",c.venueIds||[],venueOpts()):'<div class="note warn">Create a club first.</div>'),
-    '<button class="btn" data-act="closeModal">Cancel</button><button class="btn primary" data-act="saveModal">Save</button>',
+  openModal(c.name?t("Edit coach"):t("New coach"),
+    fText("cName",t("Coach name"),c.name)+
+    fSel("cLevel",t("Certification"),c.certLevel,[1,2,3].map(function(n){return {v:n,t:t("Level {c} — up to {n}",{c:n,n:rules().coachCertification[n]})};}))+
+    (S.venues.length?fMulti("coachVenues",t("Works at"),c.venueIds||[],venueOpts()):'<div class="note warn">'+t("Create a club first.")+'</div>'),
+    footCS(),
     function(){
-      if(!mval("cName").trim()){toast("The coach needs a name.");return;}
+      if(!mval("cName").trim()){toast(t("The coach needs a name."));return;}
       c.name=mval("cName").trim(); c.certLevel=+mval("cLevel"); c.venueIds=mchecked("coachVenues");
       put("coaches",c); closeModal();
     });
 }
 A.delCoach=function(id){
   var c=byId(S.coaches,id),n=S.classes.filter(function(k){return k.coachId===id;}).length;
-  confirmBox("Delete "+c.name+"?", n?("They teach "+n+" class(es), which will be deleted too."):"",function(){
+  confirmBox(t("Delete {name}?",{name:c.name}), n?t("They teach {n} class(es), which will be deleted too.",{n:n}):"",function(){
     S.classes.filter(function(k){return k.coachId===id;}).forEach(function(k){drop("classes",k.id);});
     drop("coaches",id); closeModal();
   });
@@ -745,21 +1781,21 @@ A.delCoach=function(id){
 A.newPlayer=function(){ playerForm({id:uid("p"),name:"",level:Math.round((rules().levelMin+rules().levelMax)/2),contact:"",notes:""}); };
 A.editPlayer=function(id){ playerForm(clone(byId(S.players,id))); };
 function playerForm(p){
-  openModal(p.name?"Edit player":"New player",
-    fText("pName","Player name",p.name)+
-    fLevel("pLevel","Level",p.level)+
-    fText("pContact","Contact (optional)",p.contact,"email or phone")+
-    fText("pNotes","Notes (optional)",p.notes),
-    '<button class="btn" data-act="closeModal">Cancel</button><button class="btn primary" data-act="saveModal">Save</button>',
+  openModal(p.name?t("Edit player"):t("New player"),
+    fText("pName",t("Player name"),p.name)+
+    fLevel("pLevel",t("Level"),p.level)+
+    fText("pContact",t("Contact (optional)"),p.contact,t("email or phone"))+
+    fText("pNotes",t("Notes (optional)"),p.notes),
+    footCS(),
     function(){
-      if(!mval("pName").trim()){toast("The player needs a name.");return;}
+      if(!mval("pName").trim()){toast(t("The player needs a name."));return;}
       p.name=mval("pName").trim(); p.level=mnum("pLevel"); p.contact=mval("pContact"); p.notes=mval("pNotes");
       put("players",p); closeModal();
     });
 }
 A.delPlayer=function(id){
   var p=byId(S.players,id);
-  confirmBox("Delete "+p.name+"?","They will be removed from every class.",function(){
+  confirmBox(t("Delete {name}?",{name:p.name}),t("They will be removed from every class."),function(){
     S.classes.forEach(function(c){
       if((c.playerIds||[]).indexOf(id)>=0){ c.playerIds=c.playerIds.filter(function(x){return x!==id;}); put("classes",c); }
     });
@@ -769,7 +1805,7 @@ A.delPlayer=function(id){
 
 /* classes */
 A.newClass=function(){
-  var v=venue(); if(!v){toast("Create a club first.");return;}
+  var v=venue(); if(!v){toast(t("Create a club first."));return;}
   var r=rules();
   classForm({id:uid("k"),venueId:v.id,coachId:(coachOpts(v.id)[0]||{}).v||"",day:UI.day||0,start:"19:00",
     duration:r.durations.indexOf(90)>=0?90:r.durations[0],level:Math.round((r.levelMin+r.levelMax)/2),capacity:null,playerIds:[]});
@@ -777,17 +1813,17 @@ A.newClass=function(){
 A.editClass=function(id){ MOVE=null; classForm(clone(byId(S.classes,id))); };
 function classForm(k){
   var r=rules();
-  openModal(k.playerIds&&byId(S.classes,k.id)?"Edit class":"New class",
+  openModal(k.playerIds&&byId(S.classes,k.id)?t("Edit class"):t("New class"),
     '<div class="grid g2">'+
-      fSel("kVenue","Club",k.venueId,venueOpts())+
-      fSel("kCoach","Coach",k.coachId,coachOpts(null))+
-      fSel("kDay","Day",k.day,dayOpts())+
-      fTime("kStart","Start",k.start)+
-      fSel("kDur","Length",k.duration,durOpts())+
-      fNum("kCap","Seats (blank = academy default "+r.classCapacity+")",k.capacity,1,12,1)+
-    '</div>'+fLevel("kLevel","Class level",k.level)+
+      fSel("kVenue",t("Club"),k.venueId,venueOpts())+
+      fSel("kCoach",t("Coach"),k.coachId,coachOpts(null))+
+      fSel("kDay",t("Day"),k.day,dayOpts())+
+      fTime("kStart",t("Start"),k.start)+
+      fSel("kDur",t("Length"),k.duration,durOpts())+
+      fNum("kCap",t("Seats (blank = academy default {n})",{n:r.classCapacity}),k.capacity,1,12,1)+
+    '</div>'+fLevel("kLevel",t("Class level"),k.level)+
     '<div id="kConflicts"></div>',
-    '<button class="btn" data-act="closeModal">Cancel</button><button class="btn primary" data-act="saveModal">Save</button>',
+    footCS(),
     function(){
       var next={id:k.id,venueId:mval("kVenue"),coachId:mval("kCoach"),day:+mval("kDay"),start:mval("kStart"),
         duration:+mval("kDur"),level:mnum("kLevel"),capacity:mval("kCap")?mnum("kCap"):null,playerIds:k.playerIds||[]};
@@ -795,7 +1831,7 @@ function classForm(k){
       var box=document.getElementById("kConflicts");
       if(bad.length && !box.dataset.forced){
         box.dataset.forced="1";
-        box.innerHTML='<div class="note bad mt">⚠ '+bad.map(esc).join("<br>")+'<br><br>Press Save again to schedule it anyway.</div>';
+        box.innerHTML='<div class="note bad mt">⚠ '+bad.map(esc).join("<br>")+'<br><br>'+t("Press Save again to schedule it anyway.")+'</div>';
         return;
       }
       put("classes",next); UI.venueId=next.venueId; closeModal();
@@ -803,7 +1839,7 @@ function classForm(k){
 }
 A.delClass=function(id){
   var k=byId(S.classes,id);
-  confirmBox("Cancel this class?",DAYF[k.day]+" "+k.start+", "+(k.playerIds||[]).length+" player(s) will lose their seat.",function(){
+  confirmBox(t("Cancel this class?"),t("{day} {time}, {n} player(s) will lose their seat.",{day:DAYF[k.day],time:k.start,n:(k.playerIds||[]).length}),function(){
     drop("classes",id); closeModal();
   });
 };
@@ -818,20 +1854,20 @@ function classDetail(id){
       '<h3 style="font-size:26px">'+k.start+'–'+hhmm(endOf(k))+'</h3>'+
       '<div class="muted small">'+DAYF[k.day]+' · '+k.duration+' min · '+esc(v?v.name:"—")+' · '+esc(co?co.name:"—")+'</div>'+
     '</div>'+lvlTag(k.level,38)+'</div>'+
-    '<div class="row mt" style="justify-content:space-between"><b>Players</b><span class="muted small">'+roster.length+' of '+capOf(k)+'</span></div>'+
+    '<div class="row mt" style="justify-content:space-between"><b>'+t("Players")+'</b><span class="muted small">'+t("{a} of {b}",{a:roster.length,b:capOf(k)})+'</span></div>'+
     '<div class="mt">'+
       roster.map(function(p){return '<div class="listrow">'+lvlTag(p.level,22)+'<span class="grow">'+esc(p.name)+'</span>'+
-        '<button class="btn icon" data-act="unenrol" data-id="'+k.id+'" data-p="'+p.id+'" title="Remove">✕</button></div>';}).join("")+
-      (free>0?'<div class="listrow" style="background:transparent;border:1px dashed var(--line);color:var(--ink2)">'+free+' open seat'+(free>1?"s":"")+'</div>':"")+
+        '<button class="btn icon" data-act="unenrol" data-id="'+k.id+'" data-p="'+p.id+'" title="'+t("Remove")+'">✕</button></div>';}).join("")+
+      (free>0?'<div class="listrow" style="background:transparent;border:1px dashed var(--line);color:var(--ink2)">'+t("{n} open seat(s)",{n:free})+'</div>':"")+
     '</div>'+
-    (free>0?'<div class="mt"><button class="btn sm" data-act="addToClass" data-id="'+k.id+'">＋ Add a player</button></div>':"")+
-    '<div class="note info mt">Accepts levels '+fmtLvl(Math.max(r.levelMin,k.level-r.levelTolerance))+'–'+fmtLvl(Math.min(r.levelMax,k.level+r.levelTolerance))+'.</div>'+
+    (free>0?'<div class="mt"><button class="btn sm" data-act="addToClass" data-id="'+k.id+'">＋ '+t("Add a player")+'</button></div>':"")+
+    '<div class="note info mt">'+t("Accepts levels {a}–{b}.",{a:fmtLvl(Math.max(r.levelMin,k.level-r.levelTolerance)),b:fmtLvl(Math.min(r.levelMax,k.level+r.levelTolerance))})+'</div>'+
     (MOVE&&MOVE.id===k.id ? movePanel(k)
-      : '<div class="mt"><button class="btn sm" data-act="moveClass" data-id="'+k.id+'">↔ Move to…</button></div>');
-  openModal("Class",body,
-    '<button class="btn danger" data-act="delClass" data-id="'+k.id+'">Cancel class</button>'+
-    '<button class="btn" data-act="editClass" data-id="'+k.id+'">Edit</button>'+
-    '<button class="btn primary" data-act="closeModal">Done</button>',null);
+      : '<div class="mt"><button class="btn sm" data-act="moveClass" data-id="'+k.id+'">↔ '+t("Move to…")+'</button></div>');
+  openModal(t("Class"),body,
+    '<button class="btn danger" data-act="delClass" data-id="'+k.id+'">'+t("Cancel class")+'</button>'+
+    '<button class="btn" data-act="editClass" data-id="'+k.id+'">'+t("Edit")+'</button>'+
+    '<button class="btn primary" data-act="closeModal">'+t("Done")+'</button>',null);
 }
 
 /* ── move a class ──
@@ -870,24 +1906,23 @@ function movePanel(k){
   for(i=0;i<7;i++) counts.push(freeStarts(k,i,all).length);
   var slots=freeStarts(k,day,all);
   return '<div class="card pad mt" id="movePanel" style="background:var(--sunken)">'+
-    '<div class="row" style="justify-content:space-between"><b>Move this class</b>'+
-      '<button class="btn icon" data-act="moveCancel" aria-label="Close move">✕</button></div>'+
-    '<p class="tiny muted" style="margin:2px 0 0">Only times with a free court'+(co?' and '+esc(co.name)+' free':"")+
-      '. Same length, level and coach.</p>'+
+    '<div class="row" style="justify-content:space-between"><b>'+t("Move this class")+'</b>'+
+      '<button class="btn icon" data-act="moveCancel" aria-label="'+t("Close")+'">✕</button></div>'+
+    '<p class="tiny muted" style="margin:2px 0 0">'+(co?t("Only times with a free court and {coach} free. Same length, level and coach.",{coach:esc(co.name)}):t("Only times with a free court. Same length, level and coach."))+'</p>'+
     '<div class="row mt" style="gap:5px">'+
       DAYS.map(function(d,n){
         return '<button class="chip pick'+(n===day?" on":"")+'" data-act="moveDay" data-id="'+n+'"'+(counts[n]?"":" disabled")+
-          ' aria-label="'+DAYF[n]+', '+counts[n]+' free">'+d+' <b>'+counts[n]+'</b></button>';
+          ' aria-label="'+DAYF[n]+', '+t("{n} free",{n:counts[n]})+'">'+d+' <b>'+counts[n]+'</b></button>';
       }).join("")+
     '</div>'+
     (slots.length
       ? '<div class="row mt" style="gap:6px">'+slots.map(function(t){
           return '<button class="chip pick" data-act="moveTo" data-id="'+k.id+'" data-t="'+t+'">'+t+'</button>';
         }).join("")+'</div>'
-      : '<div class="note warn mt">Nothing free on '+DAYF[day]+
-        (all?'. Try another day, or use Edit to change the coach or club.':' at your usual hours.')+'</div>')+
+      : '<div class="note warn mt">'+(all?t("Nothing free on {day}. Try another day, or use Edit to change the coach or club.",{day:DAYF[day]})
+                                         :t("Nothing free on {day} at your usual hours.",{day:DAYF[day]}))+'</div>')+
     '<div class="row mt"><button class="btn sm" data-act="moveAll">'+
-      (all?'Only our usual hours':'Show every half hour')+'</button></div>';
+      (all?t("Only our usual hours"):t("Show every half hour"))+'</button></div>';
 }
 function showMovePanel(id){
   classDetail(id);
@@ -915,11 +1950,11 @@ A.moveTo=function(id,el){
 function rescheduleTo(k,from){
   put("classes",k);
   UI.day=k.day; render();
-  toast("Moved to "+DAYF[k.day]+" "+k.start+".",function(){
+  toast(t("Moved to {day} {time}.",{day:DAYF[k.day],time:k.start}),function(){
     var back=clone(byId(S.classes,k.id)); if(!back) return;
     back.day=from.day; back.start=from.start;
     put("classes",back); UI.day=from.day; render();
-    toast("Moved back to "+DAYF[from.day]+" "+from.start+".");
+    toast(t("Moved back to {day} {time}.",{day:DAYF[from.day],time:from.start}));
   });
 }
 A.unenrol=function(id,el){
@@ -931,16 +1966,16 @@ A.addToClass=function(id){
   var cands=S.players.filter(function(p){
     return (k.playerIds||[]).indexOf(p.id)<0 && Math.abs(p.level-k.level)<=r.levelTolerance;
   }).sort(function(a,b){return Math.abs(a.level-k.level)-Math.abs(b.level-k.level);});
-  openModal("Add a player",
+  openModal(t("Add a player"),
     (cands.length? cands.map(function(p){return '<div class="listrow">'+lvlTag(p.level,22)+'<span class="grow">'+esc(p.name)+'</span>'+
-      '<button class="btn sm honey" data-act="enrol" data-id="'+k.id+'" data-p="'+p.id+'">Add</button></div>';}).join("")
-      : '<div class="empty">No player within '+r.levelTolerance+' level of this class. Create one in Manage → Players.</div>'),
-    '<button class="btn" data-act="closeModal">Close</button>',null);
+      '<button class="btn sm honey" data-act="enrol" data-id="'+k.id+'" data-p="'+p.id+'">'+t("Add")+'</button></div>';}).join("")
+      : '<div class="empty">'+t("No player within {n} level of this class. Create one in Manage → Players.",{n:r.levelTolerance})+'</div>'),
+    '<button class="btn" data-act="closeModal">'+t("Close")+'</button>',null);
 };
 A.enrol=function(id,el){
   var k=clone(byId(S.classes,id));
   k.playerIds=(k.playerIds||[]).concat([el.dataset.p]);
-  if(k.playerIds.length>capOf(k)){toast("Class is full.");return;}
+  if(k.playerIds.length>capOf(k)){toast(t("Class is full."));return;}
   put("classes",k); classDetail(id);
 };
 
@@ -951,21 +1986,21 @@ A.editRequest=function(id){ requestForm(clone(byId(S.requests,id))); };
 function requestForm(q){
   var days=(q.windows||[]).map(function(w){return String(w.day);});
   var w0=(q.windows||[])[0]||{from:"18:00",to:"21:00"};
-  openModal(q.name?"Edit request":"New request",
-    fText("qName","Player name",q.name)+
-    fLevel("qLevel","Level",q.level)+
+  openModal(q.name?t("Edit request"):t("New request"),
+    fText("qName",t("Player name"),q.name)+
+    fLevel("qLevel",t("Level"),q.level)+
     '<div class="grid g2">'+
-      fSel("qVenue","Club",q.venueId,venueOpts())+
-      fSel("qSessions","Classes per week",q.sessions,[{v:1,t:"1×"},{v:2,t:"2×"},{v:3,t:"3×"}])+
+      fSel("qVenue",t("Club"),q.venueId,venueOpts())+
+      fSel("qSessions",t("Classes per week"),q.sessions,[{v:1,t:"1×"},{v:2,t:"2×"},{v:3,t:"3×"}])+
     '</div>'+
-    fMulti("qDays","Days that work",days,DAYS.map(function(d,i){return {v:String(i),t:d};}))+
-    '<div class="grid g2">'+fTime("qFrom","Not before",w0.from)+fTime("qTo","Not after",w0.to)+'</div>',
-    '<button class="btn" data-act="closeModal">Cancel</button><button class="btn primary" data-act="saveModal">Save</button>',
+    fMulti("qDays",t("Days that work"),days,DAYS.map(function(d,i){return {v:String(i),t:d};}))+
+    '<div class="grid g2">'+fTime("qFrom",t("Not before"),w0.from)+fTime("qTo",t("Not after"),w0.to)+'</div>',
+    footCS(),
     function(){
       var ds=mchecked("qDays");
-      if(!mval("qName").trim()){toast("The request needs a name.");return;}
-      if(!ds.length){toast("Pick at least one day.");return;}
-      if(toMin(mval("qTo"))<=toMin(mval("qFrom"))){toast("The end of the window must be after its start.");return;}
+      if(!mval("qName").trim()){toast(t("The request needs a name."));return;}
+      if(!ds.length){toast(t("Pick at least one day."));return;}
+      if(toMin(mval("qTo"))<=toMin(mval("qFrom"))){toast(t("The end of the window must be after its start."));return;}
       q.name=mval("qName").trim(); q.level=mnum("qLevel"); q.venueId=mval("qVenue"); q.sessions=+mval("qSessions");
       q.windows=ds.map(function(d){return {day:+d,from:mval("qFrom"),to:mval("qTo")};});
       put("requests",q); closeModal();
@@ -978,8 +2013,8 @@ var PP={name:"",level:null,venueId:null,sessions:1,days:["1","3"],from:"18:00",t
 A.ppSearch=function(){
   PP.name=mval("ppName").trim(); PP.level=mnum("ppLevel"); PP.venueId=mval("ppVenue");
   PP.sessions=+mval("ppSessions"); PP.days=mchecked("ppDays"); PP.from=mval("ppFrom"); PP.to=mval("ppTo");
-  if(!PP.name){toast("Who is joining?");return;}
-  if(!PP.days.length){toast("Pick at least one day.");return;}
+  if(!PP.name){toast(t("Who is joining?"));return;}
+  if(!PP.days.length){toast(t("Pick at least one day."));return;}
   PP.booked=[];
   PP.results=rank({level:PP.level,venueId:PP.venueId,windows:PP.days.map(function(d){return {day:+d,from:PP.from,to:PP.to};})});
   render();
@@ -989,16 +2024,16 @@ A.ppWait=function(){
   put("requests",{id:uid("r"),name:PP.name,level:PP.level,venueId:PP.venueId,sessions:PP.sessions,
     windows:PP.days.map(function(d){return {day:+d,from:PP.from,to:PP.to};}),
     placed:PP.booked.map(function(){return "booked";})});
-  toast("Added to the waiting list."); PP.results=null; PP.booked=[]; UI.view="waitlist"; render();
+  toast(t("Added to the waiting list.")); PP.results=null; PP.booked=[]; UI.view="waitlist"; render();
 };
 
 /* demo + reset */
 function hasRealData(){ return !!(S.venues.length||S.coaches.length||S.players.length||S.classes.length||S.requests.length); }
 
 A.loadDemo=function(){
-  if(hasRealData()){ toast("Sample data only goes into an empty academy."); return; }
-  confirmBox("Load sample data?","This adds a club, coaches, players and a week of classes so you can see the shape of it. Invented names only.",function(){
-    seedDemo(); closeModal(); toast("Sample week loaded.");
+  if(hasRealData()){ toast(t("Sample data only goes into an empty academy.")); return; }
+  confirmBox(t("Load sample data?"),t("This adds a club, coaches, players and a week of classes so you can see the shape of it. Invented names only."),function(){
+    seedDemo(); closeModal(); toast(t("Sample week loaded."));
   });
 };
 
@@ -1016,12 +2051,12 @@ function parseRoster(text){
     var parts=raw.split(/\s*[,;\t]\s*|\s{2,}/);
     var name=(parts[0]||"").trim();
     var lvlTxt=(parts[1]||"").trim().replace(",",".");
-    if(!name){ out.bad.push({n:i+1,why:"no name",raw:raw}); return; }
+    if(!name){ out.bad.push({n:i+1,why:t("no name"),raw:raw}); return; }
     var lvl=mid;
     if(lvlTxt!==""){
       var v=parseFloat(lvlTxt);
-      if(isNaN(v)){ out.bad.push({n:i+1,why:'"'+lvlTxt+'" is not a level',raw:raw}); return; }
-      if(v<r.levelMin||v>r.levelMax){ out.bad.push({n:i+1,why:"level "+v+" is outside "+r.levelMin+"–"+r.levelMax,raw:raw}); return; }
+      if(isNaN(v)){ out.bad.push({n:i+1,why:t('"{v}" is not a level',{v:lvlTxt}),raw:raw}); return; }
+      if(v<r.levelMin||v>r.levelMax){ out.bad.push({n:i+1,why:t("level {v} is outside {a}–{b}",{v:v,a:r.levelMin,b:r.levelMax}),raw:raw}); return; }
       lvl=Math.round(v*2)/2;
     }
     var key=name.toLowerCase();
@@ -1034,33 +2069,32 @@ function parseRoster(text){
 function rosterPreview(){
   var box=document.getElementById("impOut"); if(!box) return;
   var p=parseRoster(mval("impText"));
-  if(!p.rows.length&&!p.bad.length&&!p.dupes.length){ box.className="note info mt"; box.textContent="Nothing pasted yet."; return; }
+  if(!p.rows.length&&!p.bad.length&&!p.dupes.length){ box.className="note info mt"; box.textContent=t("Nothing pasted yet."); return; }
   var bits=[];
-  if(p.rows.length) bits.push("<b>"+p.rows.length+" player"+(p.rows.length===1?"":"s")+" ready</b> — "+
+  if(p.rows.length) bits.push("<b>"+t("{n} player(s) ready",{n:p.rows.length})+"</b> — "+
     p.rows.slice(0,4).map(function(x){return esc(x.name)+" ("+fmtLvl(x.level)+")";}).join(", ")+(p.rows.length>4?" …":""));
-  if(p.dupes.length) bits.push(p.dupes.length+" already on the list, skipped: "+p.dupes.slice(0,4).map(esc).join(", "));
-  if(p.bad.length) bits.push("Skipping "+p.bad.length+" line"+(p.bad.length===1?"":"s")+": "+
-    p.bad.slice(0,3).map(function(b){return "line "+b.n+" ("+esc(b.why)+")";}).join(", "));
+  if(p.dupes.length) bits.push(t("{n} already on the list, skipped:",{n:p.dupes.length})+" "+p.dupes.slice(0,4).map(esc).join(", "));
+  if(p.bad.length) bits.push(t("Skipping {n} line(s):",{n:p.bad.length})+" "+
+    p.bad.slice(0,3).map(function(b){return t("line {n}",{n:b.n})+" ("+esc(b.why)+")";}).join(", "));
   box.className="note "+(p.bad.length?"warn":p.rows.length?"info":"warn")+" mt";
   box.innerHTML='<div>'+bits.join("<br>")+'</div>';
 }
 A.importPlayers=function(){
   var r=rules(), mid=Math.round((r.levelMin+r.levelMax)*0.5*2)/2;
-  openModal("Paste a list of players",
-    '<p class="muted small">One player per line. Put the level after a comma — without one it defaults to '+
-    fmtLvl(mid)+' and you can correct it later.</p>'+
+  openModal(t("Paste a list of players"),
+    '<p class="muted small">'+t("One player per line. Put the level after a comma — without one it defaults to {n} and you can correct it later.",{n:fmtLvl(mid)})+'</p>'+
     '<textarea class="inp" id="impText" placeholder="Mariana S., 4&#10;Tiago R., 2.5&#10;Ana P."></textarea>'+
-    '<div class="note info mt" id="impOut">Nothing pasted yet.</div>',
-    '<button class="btn" data-act="closeModal">Cancel</button><button class="btn primary" data-act="saveModal">Add players</button>',
+    '<div class="note info mt" id="impOut">'+t("Nothing pasted yet.")+'</div>',
+    footCS(t("Add players")),
     async function(){
       var p=parseRoster(mval("impText"));
-      if(!p.rows.length){ toast("No players to add."); return; }
+      if(!p.rows.length){ toast(t("No players to add.")); return; }
       closeModal();
-      toast("Adding "+p.rows.length+" player"+(p.rows.length===1?"":"s")+"…");
+      toast(t("Adding {n} player(s)…",{n:p.rows.length}));
       for(var i=0;i<p.rows.length;i++)
         await put("players",{id:uid("p"),name:p.rows[i].name,level:p.rows[i].level,contact:"",notes:""});
       UI.view="manage"; UI.sub="players"; render();
-      toast(p.rows.length+" player"+(p.rows.length===1?"":"s")+" added.");
+      toast(t("{n} player(s) added.",{n:p.rows.length}));
     });
 };
 
@@ -1068,32 +2102,32 @@ A.importPlayers=function(){
    Trial academies will not open a support ticket; they will tell us in the
    moment or not at all, so the form is one tap from wherever they are. */
 A.feedback=function(){
-  openModal("Send feedback",
-    '<p class="muted small">What was confusing, missing or broken? This goes straight to the people building it.</p>'+
-    '<textarea class="inp" id="fbText" placeholder="e.g. I could not work out how to say a coach is away on Tuesdays."></textarea>',
-    '<button class="btn" data-act="closeModal">Cancel</button><button class="btn primary" data-act="saveModal">Send</button>',
+  openModal(t("Send feedback"),
+    '<p class="muted small">'+t("What was confusing, missing or broken? This goes straight to the people building it.")+'</p>'+
+    '<textarea class="inp" id="fbText" placeholder="'+esc(t("e.g. I could not work out how to say a coach is away on Tuesdays."))+'"></textarea>',
+    footCS(t("Send")),
     function(){
       var msg=mval("fbText").trim();
-      if(!msg){ toast("Write a line or two first."); return; }
-      if(!sdk){ toast("Not connected, so this cannot be sent."); return; }
+      if(!msg){ toast(t("Write a line or two first.")); return; }
+      if(!sdk){ toast(t("Not connected, so this cannot be sent.")); return; }
       closeModal();
       api("feedback",{message:msg,screen:UI.view,
         context:JSON.stringify({sub:UI.sub,clubs:S.venues.length,coaches:S.coaches.length,
           players:S.players.length,classes:S.classes.length,waiting:S.requests.length})})
-      .then(function(){ toast("Sent — thank you."); })
-      .catch(function(){ toast("Could not send that. Please try again."); });
+      .then(function(){ toast(t("Sent — thank you.")); })
+      .catch(function(){ toast(t("Could not send that. Please try again.")); });
     });
 };
 A.signOut=function(){ signOut(); };
 A.wipe=function(){
-  confirmBox("Delete everything?","Every club, coach, player, class and request is removed. This cannot be undone.",function(){
+  confirmBox(t("Delete everything?"),t("Every club, coach, player, class and request is removed. This cannot be undone."),function(){
     COLLS.forEach(function(c){ S[c].slice().forEach(function(x){ drop(c,x.id); }); });
-    closeModal(); toast("Cleared.");
+    closeModal(); toast(t("Cleared."));
   });
 };
 function confirmBox(title,msg,onYes){
-  openModal(title,(msg?'<div class="note warn">'+esc(msg)+'</div>':'<div class="muted">This cannot be undone.</div>'),
-    '<button class="btn" data-act="closeModal">Cancel</button><button class="btn primary" data-act="saveModal">Confirm</button>',onYes);
+  openModal(title,(msg?'<div class="note warn">'+esc(msg)+'</div>':'<div class="muted">'+t("This cannot be undone.")+'</div>'),
+    footCS(t("Confirm")),onYes);
 }
 
 /* Creates now get their id from the server, so anything that references a
@@ -1165,7 +2199,7 @@ A.openFormable=async function(_,el){
     await put("requests",nq);
   }
   UI.venueId=a.venue.id; UI.day=a.day; UI.view="calendar";
-  toast("Class opened."); render();
+  toast(t("Class opened.")); render();
 };
 
 A.ppBook=async function(id){
@@ -1181,7 +2215,9 @@ A.ppBook=async function(id){
 
 /* ─────────── render ─────────── */
 function render(){
-  document.getElementById("acadName").textContent=S.academy.name||"Academy";
+  document.getElementById("acadName").textContent=S.academy.name||t("Academy");
+  document.getElementById("byline").textContent=t("by YLP Solutions");
+  var eb=document.getElementById("editAcBtn"); eb.title=t("Edit academy"); eb.setAttribute("aria-label",eb.title);
   renderStats(); renderTabs();
   var v=document.getElementById("view");
   if(UI.view==="calendar") v.innerHTML=viewCalendar();
@@ -1195,9 +2231,9 @@ function renderStats(){
   if(v){ for(var d=0;d<7;d++) for(var m=DAY_START;m<DAY_END;m+=30) peak=Math.max(peak,courtsInUse(v.id,d,m,30)); }
   var seats=visibleClasses().reduce(function(a,c){return a+(capOf(c)-(c.playerIds||[]).length);},0);
   document.getElementById("stats").innerHTML=
-    '<div class="stat"><b>'+peak+'<span style="opacity:.5;font-size:15px">/'+(v?v.courts:0)+'</span></b><span>peak courts</span></div>'+
-    '<div class="stat"><b>'+seats+'</b><span>open seats</span></div>'+
-    '<div class="stat"><b style="'+(n?"color:var(--honey)":"")+'">'+n+'</b><span>classes to open</span></div>';
+    '<div class="stat"><b>'+peak+'<span style="opacity:.5;font-size:15px">/'+(v?v.courts:0)+'</span></b><span>'+t("peak courts")+'</span></div>'+
+    '<div class="stat"><b>'+seats+'</b><span>'+t("open seats")+'</span></div>'+
+    '<div class="stat"><b style="'+(n?"color:var(--honey)":"")+'">'+n+'</b><span>'+t("classes to open")+'</span></div>';
 }
 /* id, desktop label, phone label, icon path */
 var TABS=[
@@ -1213,16 +2249,16 @@ var TABS=[
 function renderTabs(){
   var n=formable().length;
   document.getElementById("tabs").innerHTML=TABS.map(function(x){
-    return '<button class="'+(UI.view===x[0]?"on":"")+'" data-act="tab" data-id="'+x[0]+'">'+x[1]+
+    return '<button class="'+(UI.view===x[0]?"on":"")+'" data-act="tab" data-id="'+x[0]+'">'+t(x[1])+
       (x[0]==="waitlist"&&n?' <span class="badge">'+n+'</span>':"")+'</button>';
   }).join("");
   document.getElementById("bnav").innerHTML=TABS.map(function(x){
     var on=UI.view===x[0];
     return '<button class="'+(on?"on":"")+'" data-act="tab" data-id="'+x[0]+
-      '" aria-current="'+(on?"page":"false")+'" aria-label="'+x[1]+'">'+
+      '" aria-current="'+(on?"page":"false")+'" aria-label="'+esc(t(x[1]))+'">'+
       '<span class="bicon"><svg viewBox="0 0 24 24" aria-hidden="true">'+x[3]+'</svg>'+
       (x[0]==="waitlist"&&n?'<i class="bdot">'+(n>9?"9+":n)+'</i>':"")+'</span>'+
-      '<span>'+x[2]+'</span></button>';
+      '<span>'+t(x[2])+'</span></button>';
   }).join("");
 }
 
@@ -1238,27 +2274,27 @@ function viewCalendar(){
   var cls=visibleClasses();
   var h=venuePicker()+
     '<div class="row mb">'+
-      '<button class="btn sm" data-act="toggleFilters">Filters'+(filtersOn()?" · on":"")+'</button>'+
-      (filtersOn()?'<button class="btn sm icon" data-act="clearFilters">clear</button>':"")+
+      '<button class="btn sm" data-act="toggleFilters">'+t("Filters")+(filtersOn()?" · "+t("on"):"")+'</button>'+
+      (filtersOn()?'<button class="btn sm icon" data-act="clearFilters">'+t("clear")+'</button>':"")+
       '<div class="grow"></div>'+
-      '<button class="btn sm primary" data-act="newClass">＋ New class</button>'+
+      '<button class="btn sm primary" data-act="newClass">＋ '+t("New class")+'</button>'+
     '</div>'+
     (UI.showFilters?filterPanel():"")+
     '<div class="card scroll only-d">'+weekGrid(cls)+'</div>'+
     '<div class="only-m">'+dayList(cls)+'</div>'+
-    '<div class="note info mt">Colour is the level, height is the length, dots are the seats. Side-by-side cards are simultaneous classes on different courts.</div>';
+    '<div class="note info mt">'+t("Colour is the level, height is the length, dots are the seats. Side-by-side cards are simultaneous classes on different courts.")+'</div>';
   return h;
 }
 function filterPanel(){
   var r=rules(),f=UI.filters;
   return '<div class="card pad mb"><div class="grid g2">'+
-    '<label class="f"><span>Level from '+(f.minLvl==null?r.levelMin:f.minLvl)+'</span><input type="range" min="'+r.levelMin+'" max="'+r.levelMax+'" value="'+(f.minLvl==null?r.levelMin:f.minLvl)+'" data-bind="minLvl"></label>'+
-    '<label class="f"><span>Level to '+(f.maxLvl==null?r.levelMax:f.maxLvl)+'</span><input type="range" min="'+r.levelMin+'" max="'+r.levelMax+'" value="'+(f.maxLvl==null?r.levelMax:f.maxLvl)+'" data-bind="maxLvl"></label>'+
-    '<label class="f"><span>Coach</span><select class="inp" data-bind="coachId"><option value="">Everyone</option>'+
+    '<label class="f"><span>'+t("Level from")+' '+(f.minLvl==null?r.levelMin:f.minLvl)+'</span><input type="range" min="'+r.levelMin+'" max="'+r.levelMax+'" value="'+(f.minLvl==null?r.levelMin:f.minLvl)+'" data-bind="minLvl"></label>'+
+    '<label class="f"><span>'+t("Level to")+' '+(f.maxLvl==null?r.levelMax:f.maxLvl)+'</span><input type="range" min="'+r.levelMin+'" max="'+r.levelMax+'" value="'+(f.maxLvl==null?r.levelMax:f.maxLvl)+'" data-bind="maxLvl"></label>'+
+    '<label class="f"><span>'+t("Coach")+'</span><select class="inp" data-bind="coachId"><option value="">'+t("Everyone")+'</option>'+
       S.coaches.map(function(c){return '<option value="'+c.id+'"'+(f.coachId===c.id?" selected":"")+'>'+esc(c.name)+'</option>';}).join("")+'</select></label>'+
-    '<label class="f"><span>Length</span><select class="inp" data-bind="duration"><option value="">Any</option>'+
+    '<label class="f"><span>'+t("Length")+'</span><select class="inp" data-bind="duration"><option value="">'+t("Any")+'</option>'+
       r.durations.map(function(d){return '<option value="'+d+'"'+(f.duration==d?" selected":"")+'>'+d+' min</option>';}).join("")+'</select></label>'+
-    '<label class="f"><span>Availability</span><button class="btn" style="width:100%'+(f.onlyFree?";background:var(--ink);color:var(--bg)":"")+'" data-act="toggleFree">'+(f.onlyFree?"Only classes with seats":"All classes")+'</button></label>'+
+    '<label class="f"><span>'+t("Availability")+'</span><button class="btn" style="width:100%'+(f.onlyFree?";background:var(--ink);color:var(--bg)":"")+'" data-act="toggleFree">'+(f.onlyFree?t("Only classes with seats"):t("All classes"))+'</button></label>'+
   '</div></div>';
 }
 function laneOut(list){
@@ -1289,7 +2325,7 @@ function laneOut(list){
 function pips(k){
   var n=capOf(k),f=(k.playerIds||[]).length,s="";
   for(var i=0;i<n;i++) s+='<span class="pip'+(i<f?" on":"")+'"></span>';
-  return '<div class="pips">'+s+(n-f>0?'<span style="font-size:10px;margin-left:3px;opacity:.9">'+(n-f)+' free</span>':"")+'</div>';
+  return '<div class="pips">'+s+(n-f>0?'<span style="font-size:10px;margin-left:3px;opacity:.9">'+t("{n} free",{n:n-f})+'</span>':"")+'</div>';
 }
 function weekGrid(cls){
   var rows=(DAY_END-DAY_START)/30;
@@ -1320,12 +2356,12 @@ function dayList(cls){
     return '<button class="'+(i===UI.day?"on":"")+'" data-act="day" data-id="'+i+'"><b>'+d+'</b><span class="tiny">'+cls.filter(function(c){return c.day===i;}).length+'</span></button>';
   }).join("")+'</div>';
   var items=cls.filter(function(c){return c.day===UI.day;}).sort(function(a,b){return toMin(a.start)-toMin(b.start);});
-  if(!items.length) return strip+'<div class="empty">No classes on '+DAYF[UI.day]+'. Courts are free all day.</div>';
+  if(!items.length) return strip+'<div class="empty">'+t("No classes on {day}. Courts are free all day.",{day:DAYF[UI.day]})+'</div>';
   return strip+items.map(function(c){
     var co=byId(S.coaches,c.coachId);
     return '<button class="daycard" data-act="openClassDetail" data-id="'+c.id+'" style="background:'+lvlColor(c.level)+'">'+
       '<div class="row" style="justify-content:space-between"><b>'+c.start+'–'+hhmm(endOf(c))+'</b><span class="tiny">'+c.duration+' min</span></div>'+
-      '<div class="tiny">Level '+fmtLvl(c.level)+' · '+esc(co?co.name:"—")+'</div>'+pips(c)+'</button>';
+      '<div class="tiny">'+t("Level")+' '+fmtLvl(c.level)+' · '+esc(co?co.name:"—")+'</div>'+pips(c)+'</button>';
   }).join("");
 }
 /* ── setup checklist ──
@@ -1333,14 +2369,14 @@ function dayList(cls){
    These are the four things that have to exist before the planner can plan. */
 function setupSteps(){
   return [
-    {t:"Add your first club", d:"Its name and how many courts you actually control.",
-     ok:S.venues.length>0,  ready:true, act:"newVenue", btn:"Add club"},
-    {t:"Add a coach", d:"Their certification level caps the classes they can take.",
-     ok:S.coaches.length>0, ready:S.venues.length>0, act:"newCoach", btn:"Add coach"},
-    {t:"Add your players", d:"Name and level. You can paste a whole list at once.",
-     ok:S.players.length>0, ready:true, act:"importPlayers", btn:"Paste a list"},
-    {t:"Create your first class", d:"Day, time, length, level and coach.",
-     ok:S.classes.length>0, ready:S.venues.length>0&&S.coaches.length>0, act:"newClass", btn:"Add class"}
+    {t:t("Add your first club"), d:t("Its name and how many courts you actually control."),
+     ok:S.venues.length>0,  ready:true, act:"newVenue", btn:t("Add club")},
+    {t:t("Add a coach"), d:t("Their certification level caps the classes they can take."),
+     ok:S.coaches.length>0, ready:S.venues.length>0, act:"newCoach", btn:t("Add coach")},
+    {t:t("Add your players"), d:t("Name and level. You can paste a whole list at once."),
+     ok:S.players.length>0, ready:true, act:"importPlayers", btn:t("Paste a list")},
+    {t:t("Create your first class"), d:t("Day, time, length, level and coach."),
+     ok:S.classes.length>0, ready:S.venues.length>0&&S.coaches.length>0, act:"newClass", btn:t("Add class")}
   ];
 }
 function setupDone(){ return setupSteps().every(function(s){return s.ok;}); }
@@ -1356,190 +2392,192 @@ function setupChecklist(){
       '</div>';
   }).join("");
   return '<div class="card pad mb">'+
-    '<div class="row mb" style="justify-content:space-between"><h3 style="font-size:20px">Set up your academy</h3>'+
-    '<span class="muted small">'+done+' of '+st.length+'</span></div>'+
+    '<div class="row mb" style="justify-content:space-between"><h3 style="font-size:20px">'+t("Set up your academy")+'</h3>'+
+    '<span class="muted small">'+t("{a} of {b}",{a:done,b:st.length})+'</span></div>'+
     '<div class="bar mb"><i style="width:'+Math.round(done/st.length*100)+'%;background:var(--turf)"></i></div>'+
     rows+'</div>';
 }
 function emptyStart(){
   return setupChecklist()+
-    '<div class="empty"><p class="small" style="margin:0">Would you rather look around first? '+
-    '<button class="btn sm" data-act="loadDemo">Load a sample week</button></p></div>';
+    '<div class="empty"><p class="small" style="margin:0">'+t("Would you rather look around first?")+' '+
+    '<button class="btn sm" data-act="loadDemo">'+t("Load a sample week")+'</button></p></div>';
 }
 
 function viewPlace(){
   if(!S.venues.length) return emptyStart();
   var r=rules();
-  var form='<div class="card pad mb"><h3 style="font-size:21px">Who is joining?</h3>'+
-    '<p class="muted small mb">Level and availability decide the match. Everything else is bookkeeping.</p>'+
+  var form='<div class="card pad mb"><h3 style="font-size:21px">'+t("Who is joining?")+'</h3>'+
+    '<p class="muted small mb">'+t("Level and availability decide the match. Everything else is bookkeeping.")+'</p>'+
     '<div class="grid g2">'+
-      fText("ppName","Player name",PP.name,"e.g. Mariana")+
-      fSel("ppVenue","Club",PP.venueId||UI.venueId,venueOpts())+
-      fSel("ppSessions","Classes per week",PP.sessions,[{v:1,t:"1×"},{v:2,t:"2×"},{v:3,t:"3×"}])+
+      fText("ppName",t("Player name"),PP.name,t("e.g. Mariana"))+
+      fSel("ppVenue",t("Club"),PP.venueId||UI.venueId,venueOpts())+
+      fSel("ppSessions",t("Classes per week"),PP.sessions,[{v:1,t:"1×"},{v:2,t:"2×"},{v:3,t:"3×"}])+
     '</div>'+
-    fLevel("ppLevel","Level",PP.level==null?Math.round((r.levelMin+r.levelMax)/2):PP.level)+
-    fMulti("ppDays","Days that work",PP.days,DAYS.map(function(d,i){return {v:String(i),t:d};}))+
-    '<div class="grid g2">'+fTime("ppFrom","Not before",PP.from)+fTime("ppTo","Not after",PP.to)+'</div>'+
-    '<div class="row mt"><button class="btn primary" data-act="ppSearch">Find matching classes</button>'+
-    (PP.results?'<button class="btn" data-act="ppReset">Start over</button>':"")+'</div></div>';
+    fLevel("ppLevel",t("Level"),PP.level==null?Math.round((r.levelMin+r.levelMax)/2):PP.level)+
+    fMulti("ppDays",t("Days that work"),PP.days,DAYS.map(function(d,i){return {v:String(i),t:d};}))+
+    '<div class="grid g2">'+fTime("ppFrom",t("Not before"),PP.from)+fTime("ppTo",t("Not after"),PP.to)+'</div>'+
+    '<div class="row mt"><button class="btn primary" data-act="ppSearch">'+t("Find matching classes")+'</button>'+
+    (PP.results?'<button class="btn" data-act="ppReset">'+t("Start over")+'</button>':"")+'</div></div>';
   if(!PP.results) return form;
 
   var gap=PP.sessions-PP.booked.length;
   var head='<div class="row mb" style="justify-content:space-between"><h3 style="font-size:21px">'+
-    (PP.results.length? PP.results.length+' classes fit '+esc(PP.name) : 'Nothing open for '+esc(PP.name)+' yet')+
-    '</h3><span class="muted small">'+PP.booked.length+' of '+PP.sessions+' booked</span></div>';
+    (PP.results.length? t("{n} class(es) fit {name}",{n:PP.results.length,name:esc(PP.name)}) : t("Nothing open for {name} yet",{name:esc(PP.name)}))+
+    '</h3><span class="muted small">'+t("{a} of {b} booked",{a:PP.booked.length,b:PP.sessions})+'</span></div>';
   var list=PP.results.map(function(m){
     var co=byId(S.coaches,m.cls.coachId), taken=PP.booked.indexOf(m.cls.id)>=0;
     return '<div class="card pad mb">'+
       '<div class="row">'+lvlTag(m.cls.level,34)+
         '<div class="grow"><div style="font-family:\'Barlow Semi Condensed\',sans-serif;font-weight:700;font-size:17px">'+DAYF[m.cls.day]+' '+m.cls.start+'–'+hhmm(endOf(m.cls))+'</div>'+
-        '<div class="muted small">'+esc(co?co.name:"—")+' · '+(m.cls.playerIds||[]).length+'/'+capOf(m.cls)+' players</div></div>'+
-        '<div style="width:86px"><div class="bar"><i style="width:'+m.score+'%;background:'+(m.score>75?"var(--turf)":m.score>50?"var(--honey)":"var(--ink2)")+'"></i></div><div class="tiny muted" style="margin-top:3px">'+m.score+'% fit</div></div>'+
-        '<button class="btn sm '+(taken?"":"honey")+'" data-act="ppBook" data-id="'+m.cls.id+'"'+(taken||PP.booked.length>=PP.sessions?" disabled":"")+'>'+(taken?"✓ Booked":"Book")+'</button>'+
+        '<div class="muted small">'+esc(co?co.name:"—")+' · '+(m.cls.playerIds||[]).length+'/'+capOf(m.cls)+' '+t("players")+'</div></div>'+
+        '<div style="width:86px"><div class="bar"><i style="width:'+m.score+'%;background:'+(m.score>75?"var(--turf)":m.score>50?"var(--honey)":"var(--ink2)")+'"></i></div><div class="tiny muted" style="margin-top:3px">'+t("{n}% fit",{n:m.score})+'</div></div>'+
+        '<button class="btn sm '+(taken?"":"honey")+'" data-act="ppBook" data-id="'+m.cls.id+'"'+(taken||PP.booked.length>=PP.sessions?" disabled":"")+'>'+(taken?"✓ "+t("Booked"):t("Book"))+'</button>'+
       '</div>'+
       '<div class="row mt">'+m.reasons.map(function(x){return '<span class="chip '+(x.k==="ok"?"ok":x.k==="bad"?"bad":"warn")+'">'+esc(x.t)+'</span>';}).join("")+'</div></div>';
   }).join("");
   var tail="";
-  if(gap>0) tail='<div class="note warn mt"><span>⚠</span><div><b>'+gap+' of '+PP.sessions+' weekly sessions still unmatched.</b> '+
-    'Keep the rest on the waiting list — it stays pending until a seat opens or enough players gather to start a new class.'+
-    '<div class="mt"><button class="btn sm" data-act="ppWait">Add to waiting list</button></div></div></div>';
-  return form+head+(list||'<div class="card pad mb"><p class="muted small" style="margin:0">No class within '+r.levelTolerance+' level has a free seat in that window.</p></div>')+tail;
+  if(gap>0) tail='<div class="note warn mt"><span>⚠</span><div><b>'+t("{a} of {b} weekly sessions still unmatched.",{a:gap,b:PP.sessions})+'</b> '+
+    t("Keep the rest on the waiting list — it stays pending until a seat opens or enough players gather to start a new class.")+
+    '<div class="mt"><button class="btn sm" data-act="ppWait">'+t("Add to waiting list")+'</button></div></div></div>';
+  return form+head+(list||'<div class="card pad mb"><p class="muted small" style="margin:0">'+t("No class within {n} level has a free seat in that window.",{n:r.levelTolerance})+'</p></div>')+tail;
 }
 
 function viewWaitlist(){
   var al=formable();
-  var alerts='<h3 style="font-size:21px">Classes waiting to happen</h3>'+
-    '<p class="muted small mb">Two or more players at a compatible level, a shared window, a free court and an available coach.</p>'+
+  var alerts='<h3 style="font-size:21px">'+t("Classes waiting to happen")+'</h3>'+
+    '<p class="muted small mb">'+t("Two or more players at a compatible level, a shared window, a free court and an available coach.")+'</p>'+
     (al.length? al.map(function(a,i){
       var co=byId(S.coaches,a.coachId);
       return '<div class="card pad mb" style="border-color:var(--honey)">'+
-        '<div class="row"><div class="grow"><div style="font-family:\'Barlow Semi Condensed\',sans-serif;font-weight:700;font-size:18px">Level '+fmtLvl(a.level)+' · '+DAYF[a.day]+' '+a.start+' · '+a.duration+' min</div>'+
-        '<div class="muted small">'+esc(a.venue.name)+' · '+esc(co?co.name:"—")+' available · court free</div></div>'+
-        '<button class="btn sm honey" data-act="openFormable" data-i="'+i+'">＋ Open this class</button></div>'+
+        '<div class="row"><div class="grow"><div style="font-family:\'Barlow Semi Condensed\',sans-serif;font-weight:700;font-size:18px">'+t("Level")+' '+fmtLvl(a.level)+' · '+DAYF[a.day]+' '+a.start+' · '+a.duration+' min</div>'+
+        '<div class="muted small">'+esc(a.venue.name)+' · '+esc(co?co.name:"—")+' '+t("available · court free")+'</div></div>'+
+        '<button class="btn sm honey" data-act="openFormable" data-i="'+i+'">＋ '+t("Open this class")+'</button></div>'+
         '<div class="row mt">'+a.members.map(function(m){return '<span class="chip">'+lvlTag(m.level,18)+' '+esc(m.name)+'</span>';}).join("")+'</div></div>';
-    }).join("") : '<div class="empty">Nothing to open right now. Alerts appear here as the waiting list grows.</div>');
+    }).join("") : '<div class="empty">'+t("Nothing to open right now. Alerts appear here as the waiting list grows.")+'</div>');
 
   var rows=S.requests.map(function(q){
     var placed=(q.placed||[]).length, done=placed>=q.sessions;
-    return '<tr><td class="th">'+esc(q.name)+'</td><td data-label="Level">'+lvlTag(q.level,22)+'</td>'+
-      '<td class="muted" data-label="Club">'+esc((byId(S.venues,q.venueId)||{}).name||"—")+'</td>'+
-      '<td data-label="Wants">'+q.sessions+'× / week</td>'+
-      '<td data-label="Booked"><span class="chip '+(done?"ok":placed?"warn":"")+'">'+(done?"Complete":placed+" of "+q.sessions)+'</span></td>'+
-      '<td class="muted small" data-label="Availability">'+(q.windows||[]).map(function(w){return DAYS[w.day];}).join(", ")+' · '+((q.windows||[])[0]||{}).from+'–'+((q.windows||[])[0]||{}).to+'</td>'+
+    return '<tr><td class="th">'+esc(q.name)+'</td><td data-label="'+t("Level")+'">'+lvlTag(q.level,22)+'</td>'+
+      '<td class="muted" data-label="'+t("Club")+'">'+esc((byId(S.venues,q.venueId)||{}).name||"—")+'</td>'+
+      '<td data-label="'+t("Wants")+'">'+t("{n}× / week",{n:q.sessions})+'</td>'+
+      '<td data-label="'+t("Booked")+'"><span class="chip '+(done?"ok":placed?"warn":"")+'">'+(done?t("Complete"):t("{a} of {b}",{a:placed,b:q.sessions}))+'</span></td>'+
+      '<td class="muted small" data-label="'+t("Availability")+'">'+(q.windows||[]).map(function(w){return DAYS[w.day];}).join(", ")+' · '+((q.windows||[])[0]||{}).from+'–'+((q.windows||[])[0]||{}).to+'</td>'+
       '<td class="acts" style="text-align:right;white-space:nowrap"><button class="btn icon" data-act="editRequest" data-id="'+q.id+'">✎</button>'+
       '<button class="btn icon" data-act="delRequest" data-id="'+q.id+'">🗑</button></td></tr>';
   }).join("");
 
   return alerts+
-    '<div class="row mt mb" style="justify-content:space-between"><h3 style="font-size:21px">Waiting list · '+openRequests().length+'</h3>'+
-    '<button class="btn sm primary" data-act="newRequest">＋ New request</button></div>'+
-    (S.requests.length?'<div class="card scroll stackwrap"><table class="stack"><thead><tr><th>Player</th><th>Level</th><th>Club</th><th>Wants</th><th>Booked</th><th>Availability</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>'
-      :'<div class="empty">Nobody waiting. Add a request when a player asks for classes you cannot place yet.</div>');
+    '<div class="row mt mb" style="justify-content:space-between"><h3 style="font-size:21px">'+t("Waiting list")+' · '+openRequests().length+'</h3>'+
+    '<button class="btn sm primary" data-act="newRequest">＋ '+t("New request")+'</button></div>'+
+    (S.requests.length?'<div class="card scroll stackwrap"><table class="stack"><thead><tr>'+thead(["Player","Level","Club","Wants","Booked","Availability",""])+'</tr></thead><tbody>'+rows+'</tbody></table></div>'
+      :'<div class="empty">'+t("Nobody waiting. Add a request when a player asks for classes you cannot place yet.")+'</div>');
 }
 
 function viewManage(){
   var subs=[["academy","Academy"],["venues","Clubs"],["coaches","Coaches"],["players","Players"],["classes","Classes"]];
-  var h='<div class="sub">'+subs.map(function(s){return '<button class="'+(UI.sub===s[0]?"on":"")+'" data-act="sub" data-id="'+s[0]+'">'+s[1]+'</button>';}).join("")+'</div>';
+  var h='<div class="sub">'+subs.map(function(s){return '<button class="'+(UI.sub===s[0]?"on":"")+'" data-act="sub" data-id="'+s[0]+'">'+t(s[1])+'</button>';}).join("")+'</div>';
   var r=rules();
 
   if(UI.sub==="academy"){
     h+=setupChecklist();
     h+='<div class="card pad">'+
       '<div class="row" style="justify-content:space-between"><div><h3 style="font-size:21px">'+esc(S.academy.name)+'</h3>'+
-      '<div class="muted small">'+S.venues.length+' club(s) · '+S.coaches.length+' coach(es) · '+S.players.length+' player(s) · '+S.classes.length+' class(es)</div></div>'+
-      '<button class="btn" data-act="editAcademy">Edit</button></div>'+
+      '<div class="muted small">'+t("Clubs: {a} · Coaches: {b} · Players: {c} · Classes: {d}",{a:S.venues.length,b:S.coaches.length,c:S.players.length,d:S.classes.length})+'</div></div>'+
+      '<button class="btn" data-act="editAcademy">'+t("Edit")+'</button></div>'+
       '<div class="grid g3 gset mt">'+
-        card("Level scale",r.levelMin+" – "+r.levelMax)+
-        card("Level tolerance","± "+r.levelTolerance)+
-        card("Players per class",r.classCapacity)+
-        card("Class lengths",r.durations.join(" / ")+" min")+
-        card("Minimum to open",r.minPlayersToOpen+" players")+
-        card("Coach L1 / L2 / L3","up to "+r.coachCertification[1]+" / "+r.coachCertification[2]+" / "+r.coachCertification[3])+
+        card(t("Level scale"),r.levelMin+" – "+r.levelMax)+
+        card(t("Level tolerance"),"± "+r.levelTolerance)+
+        card(t("Players per class"),r.classCapacity)+
+        card(t("Class lengths"),r.durations.join(" / ")+" min")+
+        card(t("Minimum to open"),t("{n} players",{n:r.minPlayersToOpen}))+
+        card(t("Coach L1 / L2 / L3"),t("up to")+" "+r.coachCertification[1]+" / "+r.coachCertification[2]+" / "+r.coachCertification[3])+
       '</div>'+
       '<div class="row mt">'+
       /* Sample data is for an empty academy only — mixing invented players into
          real ones is nearly impossible to unpick afterwards. */
       (hasRealData()
-        ? '<button class="btn" disabled title="Only available on an empty academy">Load sample data</button>'
-        : '<button class="btn" data-act="loadDemo">Load sample data</button>')+
-      '<button class="btn" data-act="feedback">Send feedback</button>'+
-      '<button class="btn" data-act="signOut">Sign out</button>'+
-      '<button class="btn danger" data-act="wipe">Delete all data</button></div>'+
-      (hasRealData()?'<div class="tiny muted mt">Sample data can only be loaded into an empty academy, so it never mixes with your own.</div>':"")+
+        ? '<button class="btn" disabled title="'+esc(t("Only available on an empty academy"))+'">'+t("Load sample data")+'</button>'
+        : '<button class="btn" data-act="loadDemo">'+t("Load sample data")+'</button>')+
+      '<button class="btn" data-act="tourStart">'+t("Show the tour again")+'</button>'+
+      (IS_OPERATOR?'<a class="btn" href="./admin.html">'+t("Admin console")+'</a>':"")+
+      '<button class="btn" data-act="feedback">'+t("Send feedback")+'</button>'+
+      '<button class="btn" data-act="signOut">'+t("Sign out")+'</button>'+
+      '<button class="btn danger" data-act="wipe">'+t("Delete all data")+'</button></div>'+
+      (hasRealData()?'<div class="tiny muted mt">'+t("Sample data can only be loaded into an empty academy, so it never mixes with your own.")+'</div>':"")+
       '<div class="note info mt">'+storageNote()+'</div>'+
       '<div class="row mt" style="gap:7px;align-items:center;opacity:.55">'+
         '<svg viewBox="0 0 120 100" width="17" height="14" aria-hidden="true" focusable="false"><circle cx="60" cy="38" r="21" fill="currentColor"></circle><path d="M14 44 Q60 90 106 44" fill="none" stroke="currentColor" stroke-width="12" stroke-linecap="round"></path></svg>'+
-        '<span class="tiny">Bandeja · by YLP Solutions</span></div>'+
+        '<span class="tiny">Bandeja · '+t("by YLP Solutions")+'</span></div>'+
     '</div>';
     return h;
   }
   if(UI.sub==="venues"){
-    h+=crudHead("Clubs","newVenue","New club");
+    h+=crudHead(t("Clubs"),"newVenue",t("New club"));
     h+= S.venues.length? S.venues.map(function(v){
       return '<div class="listrow"><span class="grow"><b>'+esc(v.name)+'</b></span>'+
-        '<span class="muted small">'+v.courts+' courts</span>'+
-        '<span class="muted small">'+S.classes.filter(function(c){return c.venueId===v.id;}).length+' classes</span>'+
+        '<span class="muted small">'+t("{n} courts",{n:v.courts})+'</span>'+
+        '<span class="muted small">'+t("{n} classes",{n:S.classes.filter(function(c){return c.venueId===v.id;}).length})+'</span>'+
         '<button class="btn icon" data-act="editVenue" data-id="'+v.id+'">✎</button>'+
         '<button class="btn icon" data-act="delVenue" data-id="'+v.id+'">🗑</button></div>';
-    }).join("") : '<div class="empty">No clubs yet.</div>';
+    }).join("") : '<div class="empty">'+t("No clubs yet.")+'</div>';
     return h;
   }
   if(UI.sub==="coaches"){
-    h+=crudHead("Coaches","newCoach","New coach");
+    h+=crudHead(t("Coaches"),"newCoach",t("New coach"));
     h+= S.coaches.length? S.coaches.map(function(c){
       return '<div class="listrow"><span class="grow"><b>'+esc(c.name)+'</b></span>'+
-        '<span class="muted small">L'+c.certLevel+' · up to '+coachMax(c)+'</span>'+
-        '<span class="muted small">'+((c.venueIds||[]).map(function(i){return (byId(S.venues,i)||{}).name;}).filter(Boolean).join(", ")||"any club")+'</span>'+
+        '<span class="muted small">L'+c.certLevel+' · '+t("up to")+' '+coachMax(c)+'</span>'+
+        '<span class="muted small">'+((c.venueIds||[]).map(function(i){return (byId(S.venues,i)||{}).name;}).filter(Boolean).join(", ")||t("any club"))+'</span>'+
         '<button class="btn icon" data-act="editCoach" data-id="'+c.id+'">✎</button>'+
         '<button class="btn icon" data-act="delCoach" data-id="'+c.id+'">🗑</button></div>';
-    }).join("") : '<div class="empty">No coaches yet.</div>';
+    }).join("") : '<div class="empty">'+t("No coaches yet.")+'</div>';
     return h;
   }
   if(UI.sub==="players"){
     h+='<div class="row mb" style="justify-content:space-between">'+
-      '<h3 style="font-size:21px">Players · '+S.players.length+'</h3>'+
-      '<span class="row" style="gap:6px"><button class="btn sm" data-act="importPlayers">Paste a list</button>'+
-      '<button class="btn sm primary" data-act="newPlayer">＋ New player</button></span></div>';
+      '<h3 style="font-size:21px">'+t("Players")+' · '+S.players.length+'</h3>'+
+      '<span class="row" style="gap:6px"><button class="btn sm" data-act="importPlayers">'+t("Paste a list")+'</button>'+
+      '<button class="btn sm primary" data-act="newPlayer">＋ '+t("New player")+'</button></span></div>';
     /* Filtering happens in the DOM rather than through render(), so the field
        keeps focus while you type — which on a phone keyboard matters a lot. */
     if(S.players.length>6)
-      h+='<input class="inp mb" id="pq" type="search" placeholder="Search players" autocomplete="off">';
+      h+='<input class="inp mb" id="pq" type="search" placeholder="'+esc(t("Search players"))+'" autocomplete="off">';
     h+= S.players.length? '<div class="grid g3" id="plist">'+S.players.slice().sort(function(a,b){return a.level-b.level;}).map(function(p){
       return '<div class="listrow" data-pname="'+esc(p.name.toLowerCase())+'">'+lvlTag(p.level,24)+'<span class="grow">'+esc(p.name)+'</span>'+
         '<span class="tiny muted">'+S.classes.filter(function(c){return (c.playerIds||[]).indexOf(p.id)>=0;}).length+'×</span>'+
         '<button class="btn icon" data-act="editPlayer" data-id="'+p.id+'">✎</button>'+
         '<button class="btn icon" data-act="delPlayer" data-id="'+p.id+'">🗑</button></div>';
-    }).join("")+'</div><div class="empty hide" id="pnone">Nobody matches that.</div>' : '<div class="empty">No players yet.</div>';
+    }).join("")+'</div><div class="empty hide" id="pnone">'+t("Nobody matches that.")+'</div>' : '<div class="empty">'+t("No players yet.")+'</div>';
     return h;
   }
-  h+=crudHead("Classes","newClass","New class");
+  h+=crudHead(t("Classes"),"newClass",t("New class"));
   var sorted=S.classes.slice().sort(function(a,b){return a.day-b.day||toMin(a.start)-toMin(b.start);});
-  h+= sorted.length? '<div class="card scroll stackwrap"><table class="stack"><thead><tr><th>Day</th><th>Time</th><th>Level</th><th>Coach</th><th>Club</th><th>Seats</th><th></th></tr></thead><tbody>'+
+  h+= sorted.length? '<div class="card scroll stackwrap"><table class="stack"><thead><tr>'+thead(["Day","Time","Level","Coach","Club","Seats",""])+'</tr></thead><tbody>'+
     sorted.map(function(k){
-      return '<tr><td class="th">'+DAYS[k.day]+'<span class="only-m">· '+k.start+'–'+hhmm(endOf(k))+'</span></td><td class="only-d" data-label="Time">'+k.start+'–'+hhmm(endOf(k))+'</td><td data-label="Level">'+lvlTag(k.level,22)+'</td>'+
-        '<td data-label="Coach">'+esc((byId(S.coaches,k.coachId)||{}).name||"—")+'</td>'+
-        '<td class="muted" data-label="Club">'+esc((byId(S.venues,k.venueId)||{}).name||"—")+'</td>'+
-        '<td data-label="Seats">'+(k.playerIds||[]).length+'/'+capOf(k)+'</td>'+
+      return '<tr><td class="th">'+DAYS[k.day]+'<span class="only-m">· '+k.start+'–'+hhmm(endOf(k))+'</span></td><td class="only-d" data-label="'+t("Time")+'">'+k.start+'–'+hhmm(endOf(k))+'</td><td data-label="'+t("Level")+'">'+lvlTag(k.level,22)+'</td>'+
+        '<td data-label="'+t("Coach")+'">'+esc((byId(S.coaches,k.coachId)||{}).name||"—")+'</td>'+
+        '<td class="muted" data-label="'+t("Club")+'">'+esc((byId(S.venues,k.venueId)||{}).name||"—")+'</td>'+
+        '<td data-label="'+t("Seats")+'">'+(k.playerIds||[]).length+'/'+capOf(k)+'</td>'+
         '<td class="acts" style="text-align:right;white-space:nowrap"><button class="btn icon" data-act="openClassDetail" data-id="'+k.id+'">👥</button>'+
         '<button class="btn icon" data-act="editClass" data-id="'+k.id+'">✎</button>'+
         '<button class="btn icon" data-act="delClass" data-id="'+k.id+'">🗑</button></td></tr>';
-    }).join("")+'</tbody></table></div>' : '<div class="empty">No classes yet.</div>';
+    }).join("")+'</tbody></table></div>' : '<div class="empty">'+t("No classes yet.")+'</div>';
   return h;
 }
 function card(t,v){return '<div class="listrow" style="display:block"><div class="tiny muted">'+esc(t)+'</div><div style="font-family:\'Barlow Semi Condensed\',sans-serif;font-weight:700;font-size:18px">'+esc(v)+'</div></div>';}
+function footCS(label){
+  return '<button class="btn" data-act="closeModal">'+t("Cancel")+'</button>'+
+    '<button class="btn primary" data-act="saveModal">'+(label||t("Save"))+'</button>';
+}
+function thead(cols){ return cols.map(function(c){return '<th>'+(c?t(c):"")+'</th>';}).join(""); }
 function crudHead(title,act,label){
   return '<div class="row mb" style="justify-content:space-between"><h3 style="font-size:21px">'+title+'</h3>'+
     '<button class="btn sm primary" data-act="'+act+'">＋ '+label+'</button></div>';
 }
 function storageNote(){
-  if(storage==="on") return "Saved through the academy API as "+esc(ACADEMY?ACADEMY.name:"this academy")+
-    ". Your academy is determined by your login, not by the link.";
-  if(storage==="loading") return "Loading…";
-  if(storage==="signedout") return "Signed out.";
-  if(storage==="blocked") return "This account cannot open an academy right now.";
-  if(storage==="nosdk") return "The Catalyst SDK did not load, so nothing is being saved. This page has to be opened from its Slate URL.";
-  if(storage==="error") return "Could not reach the academy API, so recent changes may not be saved.";
-  return "Connecting…";
+  if(storage==="on") return t("Saved for {name}. Your academy is determined by your login, not by the link.",{name:esc(ACADEMY?ACADEMY.name:S.academy.name)});
+  if(storage==="error") return t("Could not reach the academy API, so recent changes may not be saved.");
+  return t("Connecting…");
 }
 
 /* ── drag to reschedule, on the week grid ──

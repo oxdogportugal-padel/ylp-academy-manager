@@ -38,6 +38,11 @@ Settings text(10000) · Timezone varchar(64) default `Europe/Lisbon` ·
 PlanStatus varchar(20) req default `TRIAL`
 
 `Settings` holds the matching rules as JSON. Empty means the app's defaults.
+Two keys in it are platform state, not rules, and only the server writes them:
+`language` (`pt`/`es`/`fr`/`en`, default `pt`, set by the operator) and
+`tutorialDone` (emails of people who finished the first-login tour). The API
+strips both before sending rules to the browser and carries them over on every
+rules save, so an owner cannot change or erase them.
 This is the column the September project was missing, and it's what keeps level
 scale, tolerance, class size, durations and coach caps out of the code.
 

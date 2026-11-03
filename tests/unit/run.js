@@ -125,6 +125,45 @@ function check(label, cond, detail) {
   check('user with no academy gets a clear answer',
     (await call('GET', { path: 'data' }, { email_id: 'nobody@nowhere.pt' })).error === 'no-academy');
 
+  console.log('\ninterface language per academy');
+  const acA = () => DB.Academies.find(r => String(r.ROWID) === String(a.id));
+  check('an academy created without a language defaults to Portuguese',
+    (await call('GET', { path: 'session' }, OWNER_A)).academy.language === 'pt');
+  const fr = await call('POST', { path: 'admin/academy', academy: {
+    name: 'Padel Lyon', ownerEmail: 'chloe@lyon.fr', language: 'fr', maxClubs: 1, maxUsers: 1 } }, OPERATOR);
+  const lyon = DB.Academies.find(r => String(r.ROWID) === String(fr.id));
+  check('the operator picks the language at creation', JSON.parse(lyon.Settings).language === 'fr', lyon.Settings);
+  const bogus = await call('POST', { path: 'admin/academy', academy: {
+    name: 'Bogus', ownerEmail: 'x@bogus.de', language: 'de', maxClubs: 1, maxUsers: 1 } }, OPERATOR);
+  check('an unsupported language falls back to Portuguese',
+    JSON.parse(DB.Academies.find(r => String(r.ROWID) === String(bogus.id)).Settings).language === 'pt');
+  await call('POST', { path: 'admin/academy', academy: { id: a.id, name: 'The Hyve', language: 'es',
+    plan: 'ACTIVE', maxClubs: 2, maxUsers: 3 } }, OPERATOR);
+  check('the operator can change it later', (await call('GET', { path: 'data' }, OWNER_A)).academy.language === 'es');
+  const listed = await call('GET', { path: 'admin/academies' }, OPERATOR);
+  check('the operator list shows each academy\'s language',
+    listed.academies.find(x => x.id === fr.id).language === 'fr', listed.academies.map(x => x.language));
+  await call('POST', { path: 'academy', name: 'The Hyve', rules: { levelTolerance: 2, language: 'en', tutorialDone: ['x@y'] } }, OWNER_A);
+  const st = JSON.parse(acA().Settings);
+  check('an owner saving rules cannot change the language', st.language === 'es', st);
+  check('an owner saving rules does keep the new rule', st.levelTolerance === 2, st);
+  check('an owner cannot write the tutorial list', !(st.tutorialDone || []).includes('x@y'), st);
+
+  console.log('\nfirst-login tour');
+  let dd = await call('GET', { path: 'data' }, OWNER_A);
+  check('a new user has not done the tour', dd.academy.tutorialDone === false, dd.academy);
+  check('the raw settings never reach the browser', dd.academy.settings === undefined, Object.keys(dd.academy));
+  await call('POST', { path: 'tutorial', done: true }, OWNER_A);
+  dd = await call('GET', { path: 'data' }, OWNER_A);
+  check('finishing the tour is remembered', dd.academy.tutorialDone === true, dd.academy);
+  const rui = { email_id: 'rui@hyve.pt', first_name: 'Rui' };
+  check('it is remembered per person, not per academy',
+    (await call('GET', { path: 'data' }, rui)).academy.tutorialDone === false);
+  await call('POST', { path: 'academy', name: 'The Hyve', rules: { levelTolerance: 1 } }, OWNER_A);
+  check('a rules save keeps tour progress',
+    (await call('GET', { path: 'data' }, OWNER_A)).academy.tutorialDone === true);
+  check('and keeps the language', JSON.parse(acA().Settings).language === 'es');
+
   console.log(`\n${pass} passed, ${fail} failed`);
   process.exit(fail ? 1 : 0);
 })();
