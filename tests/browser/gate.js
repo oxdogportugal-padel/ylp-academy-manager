@@ -45,17 +45,25 @@ const shown=(p,sel)=>p.evaluate(s=>{const e=document.querySelector(s); return !!
   ok('the planner body is not', !(await shown(p,'main')));
   ok('the tab bar is not', !(await shown(p,'#bnav')));
   ok('no academy data was requested', !(await p.evaluate(()=>window.__API.calls.includes('data'))));
-  ok('a Portuguese browser gets Portuguese', /Entrar/.test(await p.locator('#gate h2').innerText()));
+  ok('a Portuguese browser gets Portuguese', /Uma única entrada/.test(await p.locator('.glead').innerText()));
+  const fr=await p.evaluate(()=>{const f=document.querySelector('#login-container iframe'), c=document.querySelector('.glogin');
+    const r=f.getBoundingClientRect(), cr=c.getBoundingClientRect();
+    return {h:Math.round(r.height), w:Math.round(r.width), cw:Math.round(cr.width), bg:getComputedStyle(c).backgroundColor,
+            titles:[...document.querySelectorAll('#gate h2')].filter(h=>h.getBoundingClientRect().width>1).length};});
+  ok('the sign-in frame is tall enough for the whole form', fr.h>=480, fr);
+  ok('and as wide as its card', fr.w===fr.cw, fr);
+  ok('the card is white, like the form inside it', fr.bg==='rgb(255, 255, 255)', fr);
+  ok('only Zoho\'s own heading is visible, not a second one', fr.titles===0, fr);
   ok('sign-in returns to the planner', (await p.evaluate(()=>window.__API.mode.signInCalls[0].redirect)).endsWith('/'));
   await p.screenshot({path:`${OUT}/gate-login.png`});
   await p.locator('.glangs [data-id="es"]').click(); await sleep(200);
-  ok('the language can be switched before sign-in', /Iniciar sesión/.test(await p.locator('#gate h2').innerText()));
+  ok('the language can be switched before sign-in', /Un único acceso/.test(await p.locator('.glead').innerText()));
   ok('html lang follows', await p.evaluate(()=>document.documentElement.lang)==='es');
   await p.context().close();
 
   p=await page(()=>{ window.__API.mode.signedIn=false; },{locale:'fr-FR'});
   await p.goto(BASE+'/',{waitUntil:'load'}); await sleep(600);
-  ok('a French browser gets French', /Se connecter/.test(await p.locator('#gate h2').innerText()));
+  ok('a French browser gets French', /Une seule connexion/.test(await p.locator('.glead').innerText()));
   await p.context().close();
 
   console.log('\nthe operator console has no sign-in of its own');

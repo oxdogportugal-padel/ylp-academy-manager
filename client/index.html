@@ -175,6 +175,15 @@ body.gated #gate{display:block;min-height:100vh;background:var(--head);color:#EB
 .gword{font-family:'Barlow Semi Condensed',sans-serif;font-weight:700;font-size:42px;line-height:1;letter-spacing:.09em;text-indent:.09em;color:#EBEEE9}
 .gby{font-size:12.5px;font-weight:500;letter-spacing:.04em;color:#94A6B0}
 .gcard{width:100%;color:var(--ink)}
+.glead{margin:-6px 0 0;max-width:340px;text-align:center;font-size:13.5px;line-height:1.5;color:#94A6B0}
+/* The sign-in card stays white in both themes: the Zoho form inside it is
+   white and cannot follow ours, so the card matches it instead. Its iframe
+   arrives with a small fixed height that cuts the form off after the first
+   field — it is given room for the whole form here. */
+.glogin{width:100%;background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+#login-container{min-height:0}
+#login-container iframe{display:block;width:100%!important;height:500px!important;min-height:500px;border:0!important}
+@media(max-width:420px){ #login-container iframe{height:540px!important;min-height:540px} }
 .glangs{display:flex;gap:4px;flex-wrap:wrap;justify-content:center;margin-top:auto}
 .glangs button{background:transparent;border:1px solid transparent;color:#94A6B0;border-radius:99px;padding:5px 11px;font-size:12.5px;min-height:34px}
 .glangs button.on{border-color:rgba(235,238,233,.35);color:#EBEEE9}
@@ -1436,10 +1445,11 @@ function gate(mode,opts){
       '<span class="vh">'+t("Loading…")+'</span></div>';
   } else if(mode==="login"){
     storage="signedout";
-    inner='<div class="card pad gcard">'+
-      '<h2 style="font-size:24px">'+t("Sign in")+'</h2>'+
-      '<p class="muted small" style="margin:4px 0 0">'+t("One sign-in for everyone. Your account decides which academy opens.")+'</p>'+
-      '<div id="login-container" style="min-height:320px;margin-top:12px"></div></div>';
+    /* Zoho's widget brings its own heading and its own white frame, so the
+       card is just a light surface for it — no second title, no dark border. */
+    inner='<p class="glead">'+t("One sign-in for everyone. Your account decides which academy opens.")+'</p>'+
+      '<div class="glogin"><h2 class="vh">'+t("Sign in")+'</h2>'+
+      '<div id="login-container"></div></div>';
   } else {
     var o=GATE.opts;
     inner='<div class="card pad gcard">'+

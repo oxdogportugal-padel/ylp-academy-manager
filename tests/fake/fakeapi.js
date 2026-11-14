@@ -21,7 +21,8 @@
       generateAuthToken:function(){ return Promise.resolve({access_token:"tok_abc"}); },
       signIn:function(id,opts){
         MODE.signInCalls=(MODE.signInCalls||[]).concat([{id:id,redirect:opts&&opts.login_redirect}]);
-        var el=document.getElementById(id); if(el) el.innerHTML='<div class="fake-login">[Catalyst sign-in form]</div>';
+        /* like the real widget: an iframe that arrives with a small fixed height */
+        var el=document.getElementById(id); if(el) el.innerHTML='<iframe title="sign-in" height="200" style="height:200px;width:300px" srcdoc="<p style=&quot;font:16px sans-serif;padding:20px&quot;>[Catalyst sign-in form]</p>"></iframe>';
       },
       signOut:function(to){ MODE.signedOutTo=to; }
     }
