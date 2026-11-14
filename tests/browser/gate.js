@@ -9,7 +9,8 @@ const PORT=8941, BASE=`http://localhost:${PORT}`;
 const srv=http.createServer((req,res)=>{
   const url=req.url.split('?')[0];
   if(url==='/__catalyst/sdk/init.js'){res.writeHead(200,{'Content-Type':'application/javascript'});return res.end('/*stub*/');}
-  const f=path.join(root,url==='/'?'index.html':url);
+  let f=path.join(root,url==='/'?'index.html':url);
+  if(url!=='/'&&url.endsWith('/')) f=path.join(f,'index.html');
   if(!fs.existsSync(f)){res.writeHead(404);return res.end('nope');}
   res.writeHead(200,{'Content-Type':'text/html; charset=utf-8'}); res.end(fs.readFileSync(f));
 });
@@ -105,6 +106,22 @@ const shown=(p,sel)=>p.evaluate(s=>{const e=document.querySelector(s); return !!
   ok('the chosen language is sent', await p.evaluate(()=>window.__lastAcademy&&window.__lastAcademy.language)==='es');
   ok('the academy card shows it', /ES/.test(await p.locator('.langchip').first().innerText()));
   ok('no page errors in the console', p.errs.length===0, p.errs);
+  await p.context().close();
+
+  console.log('\nafter sign-in Catalyst lands on /app/');
+  p=await page(()=>{ window.__API.mode.signedIn=!!sessionStorage.getItem('fake.signedin');
+    window.__API.mode.operator=true; window.__API.mode.noAcademy=false;
+    window.__API.mode.admin=function(path,body,respond){ return respond(200,{academies:[],users:[]}); }; });
+  await p.goto(BASE+'/?next=admin',{waitUntil:'load'}); await sleep(500);
+  ok('signed out, the sign-in page shows', await shown(p,'#login-container'));
+  await p.evaluate(()=>sessionStorage.setItem('fake.signedin','1'));   /* the user signs in… */
+  await p.goto(BASE+'/app/',{waitUntil:'load'});                        /* …and Catalyst sends them here */
+  await p.waitForURL(/admin\.html/,{timeout:8000}).catch(()=>{});
+  ok('/app/ forwards to the planner, which sends the operator on to the console', /admin\.html$/.test(p.url()), p.url());
+  await p.context().close();
+  p=await page(()=>{ window.__API.academy.language='pt'; });
+  await p.goto(BASE+'/app/',{waitUntil:'load'}); await sleep(900);
+  ok('a coordinator landing on /app/ gets the planner', !/\/app\//.test(p.url()) && await shown(p,'header.top'), p.url());
   await p.context().close();
 
   console.log('\nsigned in: the academy language rules');

@@ -1415,7 +1415,13 @@ function saveAcademy(next){
    that looks usable and saves nothing. The operator console has no sign-in of
    its own: it sends people here with ?next=admin, and this page sends
    operators back once they are in. */
+/* ?next=admin does not survive the sign-in round trip (Catalyst lands on
+   /app/, which forwards here without it), so it is also kept for this tab. */
 var WANTS_ADMIN=/[?&]next=admin\b/.test(location.search);
+try{
+  if(WANTS_ADMIN) sessionStorage.setItem("bandeja.next","admin");
+  else if(sessionStorage.getItem("bandeja.next")==="admin") WANTS_ADMIN=true;
+}catch(e){}
 var IS_OPERATOR=false, ME="";
 
 function markSvg(w,h,label){
@@ -1481,6 +1487,7 @@ function start(){
   return api("session").then(function(sess){
     IS_OPERATOR=!!sess.isOperator; ME=String(sess.email||"").toLowerCase();
     if(sess.academy&&sess.academy.language){ setLang(sess.academy.language); remember("bandeja.lang",LANG); }
+    try{ sessionStorage.removeItem("bandeja.next"); }catch(e){}
     if(IS_OPERATOR&&(WANTS_ADMIN||!sess.academy)){ location.replace("./admin.html"); return; }
     if(!sess.academy){
       storage="blocked";
