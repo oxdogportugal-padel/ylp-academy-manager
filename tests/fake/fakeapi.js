@@ -38,12 +38,15 @@
     if(opts.method==="POST"){ body=JSON.parse(opts.body||"{}"); path=body.path; }
     else { path=new URL(url,location.origin).searchParams.get("path"); }
     CALLS.push(path);
+    var asA=body.asAcademy||(opts.method!=="POST"?new URL(url,location.origin).searchParams.get("as"):null);
+    if(asA) MODE.asSeen=(MODE.asSeen||[]).concat([path]);
+    var acting=!!(MODE.operator&&asA);
 
     if(MODE.status) return respond(MODE.status,{error:MODE.code||"blocked",message:"forced"});
 
     if(path==="session"){
-      return respond(200,{email:"ana@hyve.pt",name:"Ana",isOperator:!!MODE.operator,role:"owner",
-        academy:MODE.noAcademy?null:JSON.parse(JSON.stringify(A))});
+      return respond(200,{email:"ana@hyve.pt",name:"Ana",isOperator:!!MODE.operator,role:"owner",actingAs:acting,
+        academy:(MODE.noAcademy&&!acting)?null:JSON.parse(JSON.stringify(A))});
     }
     if(path==="tutorial"){ A.tutorialDone=body.done!==false; return respond(200,{ok:true,tutorialDone:A.tutorialDone}); }
     if(MODE.admin&&path.indexOf("admin/")===0) return MODE.admin(path,body,respond);

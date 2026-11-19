@@ -7,6 +7,7 @@ const DB = {
 };
 let SEQ = 5361000000900000;
 const USERS = [];
+const RESETS = [];
 const INVITES = [];
 let CURRENT = null;                       // the signed-in user for this request
 
@@ -69,9 +70,19 @@ const adminApp = {
     getAllUsers: async () => USERS.slice(),
     registerUser: async (cfg, user) => {
       if (!cfg || cfg.zaid !== '30047977891') throw new Error('wrong or missing ZAID');
-      USERS.push({ email_id: user.email_id });
+      if (!cfg.platform_type) throw new Error('platform_type is required');
+      USERS.push({ email_id: user.email_id, user_id: String(++SEQ), is_confirmed: false });
       INVITES.push({ email: user.email_id, first: user.first_name, last: user.last_name, redirect: cfg.redirect_url });
       return { email_id: user.email_id };
+    },
+    deleteUser: async (id) => {
+      const i = USERS.findIndex((u) => String(u.user_id) === String(id));
+      if (i < 0) throw new Error('no such user ' + id);
+      USERS.splice(i, 1); return true;
+    },
+    resetPassword: async (email, cfg) => {
+      if (!cfg || !cfg.platform_type) throw new Error('platform_type is required');
+      RESETS.push({ email, redirect: cfg.redirect_url }); return 'sent';
     }
   })
 };
@@ -79,7 +90,7 @@ const userApp = { userManagement: () => ({ getCurrentUser: async () => CURRENT }
 
 module.exports = {
   initialize: (_req, opts) => (opts && opts.scope === 'admin' ? adminApp : userApp),
-  __test: { DB, USERS, INVITES, setUser: (u) => { CURRENT = u; },
+  __test: { DB, USERS, INVITES, RESETS, setUser: (u) => { CURRENT = u; },
             reset: () => { Object.keys(DB).forEach((k) => { DB[k].length = 0; });
-                           USERS.length = 0; INVITES.length = 0; CURRENT = null; } }
+                           USERS.length = 0; INVITES.length = 0; RESETS.length = 0; CURRENT = null; } }
 };

@@ -124,6 +124,58 @@ const shown=(p,sel)=>p.evaluate(s=>{const e=document.querySelector(s); return !!
   ok('a coordinator landing on /app/ gets the planner', !/\/app\//.test(p.url()) && await shown(p,'header.top'), p.url());
   await p.context().close();
 
+  console.log('\nsign out is always in reach');
+  for (const [label,vp] of [['computer',{viewport:{width:1280,height:900}}],['phone',{viewport:{width:390,height:844},isMobile:true,hasTouch:true}]]) {
+    p=await page(()=>{ window.__API.academy.language='pt'; }, vp);
+    await p.goto(BASE+'/',{waitUntil:'load'}); await sleep(800);
+    const b=await p.evaluate(()=>{const e=document.querySelector('#signOutBtn'); const r=e.getBoundingClientRect();
+      return {w:r.width,h:r.height,top:r.top,right:r.right,vw:innerWidth,label:e.getAttribute('aria-label'),
+              inHeader:!!e.closest('header.top'),
+              overlaps:[...document.querySelectorAll('.stat,.acadname > span:not(.grow)')].some(s=>{const q=s.getBoundingClientRect();
+                return q.width>0&&!(q.right<=r.left||q.left>=r.right||q.bottom<=r.top||q.top>=r.bottom);})};});
+    ok(`${label}: a sign-out button is in the header`, b.inHeader && b.w>0 && b.top<120 && b.right<=b.vw, b);
+    ok(`${label}: it is labelled in the academy's language`, b.label==='Sair', b);
+    ok(`${label}: it is big enough to tap`, b.h>=34, b);
+    ok(`${label}: it covers nothing else in the header`, !b.overlaps, b);
+    await p.locator('#signOutBtn').click(); await sleep(150);
+    ok(`${label}: it signs out back to the sign-in page`, (await p.evaluate(()=>window.__API.mode.signedOutTo||'')).endsWith('/'));
+    if(label==='phone') await p.screenshot({path:`${OUT}/signout-phone.png`});
+    await p.context().close();
+  }
+
+  console.log('\nan operator opens an academy from the console');
+  p=await page(()=>{ window.__API.mode.operator=true; window.__API.mode.noAcademy=true;
+    window.__API.academy.language='pt'; window.__API.academy.tutorialDone=false; });
+  await p.goto(BASE+'/?academy=777',{waitUntil:'load'}); await sleep(900);
+  ok('the planner opens instead of the console', !/admin/.test(p.url()) && await shown(p,'header.top'), p.url());
+  ok('every request names the academy', await p.evaluate(()=>(window.__API.mode.asSeen||[]).includes('data')&&(window.__API.mode.asSeen||[]).includes('session')));
+  ok('a strip says it is an operator view', await shown(p,'#opbar') && /operador/.test(await p.locator('#opbar').innerText()));
+  ok('the tour stays out of the way', !(await shown(p,'.tcard')));
+  await p.screenshot({path:`${OUT}/operator-view.png`});
+  await p.reload({waitUntil:'load'}); await sleep(800);
+  ok('a reload stays in that academy', await shown(p,'#opbar'));
+  await p.locator('#opbar [data-act="backToConsole"]').click();
+  await p.waitForURL(/admin\.html/,{timeout:8000}).catch(()=>{});
+  ok('"Back to console" returns to the console', /admin\.html$/.test(p.url()), p.url());
+  ok('and forgets the academy', await p.evaluate(()=>sessionStorage.getItem('bandeja.as'))===null);
+  await p.context().close();
+
+  p=await page(()=>{ window.__API.mode.operator=true; window.__API.mode.noAcademy=true;
+    window.__API.mode.admin=function(path,body,respond){
+      if(path==='admin/academies') return respond(200,{academies:[{id:'777',name:'Test Academy',plan:'TRIAL',maxClubs:1,maxUsers:3,clubsUsed:0,language:'pt',ownerEmail:'o@t.pt'}],
+        users:[{id:'55',academyId:'777',email:'o@t.pt',name:'Owner',role:'owner',status:'invited'}]});
+      if(path==='admin/user/resend'){ window.__resent=body.id; return respond(200,{ok:true,sent:'invite',email:'o@t.pt'}); }
+      return respond(404,{error:'?'}); }; });
+  await p.goto(BASE+'/admin.html',{waitUntil:'load'}); await sleep(900);
+  ok('each academy card has "Open planner" for that academy', await p.$eval('a[href*="academy="]',a=>a.getAttribute('href'))==='./?academy=777');
+  await p.locator('[data-act="users"]').click(); await sleep(200);
+  await p.locator('[data-act="resendInvite"]').click(); await sleep(400);
+  ok('Resend calls the API for that user', await p.evaluate(()=>window.__resent)==='55');
+  ok('and says what was sent', /New invitation sent to o@t\.pt/.test(await p.locator('#toastEl').innerText()));
+  await p.screenshot({path:`${OUT}/admin-resend.png`});
+  ok('no page errors in the console', p.errs.length===0, p.errs);
+  await p.context().close();
+
   console.log('\nsigned in: the academy language rules');
   for (const [lang,word,day] of [['pt','Calendário','Seg'],['es','Calendario','Lun'],['fr','Calendrier','Lun'],['en','Calendar','Mon']]) {
     p=await page(`window.__API.academy.language=${JSON.stringify(lang)};`);

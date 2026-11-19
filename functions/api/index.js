@@ -116,7 +116,11 @@ const q = (s) => `'${String(s === null || s === undefined ? '' : s).replace(/'/g
 
 /* ─────────── identity ─────────── */
 
-async function resolveCaller(req) {
+/* `asAcademy` is the one place an academy id from the browser is honoured, and
+   only for an operator (a PlatformAdmins row, checked here on the server): it
+   lets YLP open any academy's planner from the console to help or test. For
+   anyone else it is ignored and their membership decides, exactly as before. */
+async function resolveCaller(req, asAcademy) {
   const userApp = catalyst.initialize(req);
   let me = null;
   try { me = await userApp.userManagement().getCurrentUser(); } catch (e) { me = null; }
@@ -136,12 +140,14 @@ async function resolveCaller(req) {
      FROM AcademyUsers WHERE AcademyUsers.Email = ${q(email)}`);
   const live = memberships.filter((m) => (m.Status || 'invited') !== 'removed');
 
+  const actingAs = isOperator && /^\d+$/.test(String(asAcademy || ''));
   return {
     email,
     name: [me.first_name, me.last_name].filter(Boolean).join(' '),
     isOperator,
-    academyId: live.length ? sid(live[0].AcademyId) : null,
-    role: live.length ? (live[0].Role || 'coordinator') : null,
+    actingAs,
+    academyId: actingAs ? sid(asAcademy) : (live.length ? sid(live[0].AcademyId) : null),
+    role: actingAs ? 'owner' : (live.length ? (live[0].Role || 'coordinator') : null),
     app: adminApp,
     zcql
   };
@@ -463,7 +469,7 @@ async function handler(req, res) {
     const body = req.method === 'GET' ? {} : await getBody(req);
     path = body.path || url.searchParams.get('path') || 'session';
 
-    const me = await resolveCaller(req);
+    const me = await resolveCaller(req, body.asAcademy || url.searchParams.get('as'));
     if (!me) return sendJson(res, 401, { error: 'Not signed in' });
 
     const { zcql, app } = me;
@@ -471,8 +477,9 @@ async function handler(req, res) {
     /* ---- who am I, and what can I see ---- */
     if (path === 'session') {
       const academy = me.academyId ? await loadAcademy(zcql, me.academyId) : null;
+      if (me.actingAs && !academy) return sendJson(res, 404, { error: 'Academy not found' });
       return sendJson(res, 200, {
-        email: me.email, name: me.name, isOperator: me.isOperator,
+        email: me.email, name: me.name, isOperator: me.isOperator, actingAs: me.actingAs,
         role: me.role, academy: publicAcademy(academy, me.email)
       });
     }
@@ -571,6 +578,32 @@ async function handler(req, res) {
         return sendJson(res, 200, { id: sid(created && created.ROWID), invited: result.invited, reason: result.reason });
       }
 
+      /* Catalyst has no "resend invitation". Someone who never accepted gets a
+         fresh one (their unused login is removed and registered again, which
+         sends a new email); someone who did gets a set-a-new-password email.
+         Both return them to the app. */
+      if (path === 'admin/user/resend') {
+        const rows = await query(zcql,
+          `SELECT AcademyUsers.ROWID, AcademyUsers.Email, AcademyUsers.Name, AcademyUsers.Status
+           FROM AcademyUsers WHERE AcademyUsers.ROWID = ${num(body.id)}`);
+        if (!rows.length) return sendJson(res, 404, { error: 'User not found' });
+        const row = rows[0];
+        const email = String(row.Email || '').toLowerCase();
+        const um = app.userManagement();
+        const all = await um.getAllUsers().catch(() => []);
+        const existing = (all || []).find((u) => String(u.email_id || '').toLowerCase() === email);
+        let sent;
+        if (existing && existing.is_confirmed) {
+          await um.resetPassword(email, { platform_type: 'web', zaid: ZAID, redirect_url: APP_URL });
+          sent = 'reset';
+        } else {
+          if (existing) await um.deleteUser(String(existing.user_id));
+          await invite(app, email, row.Name);
+          sent = 'invite';
+        }
+        return sendJson(res, 200, { ok: true, sent, email });
+      }
+
       if (path === 'admin/user/delete') {
         await app.datastore().table('AcademyUsers').deleteRow(String(body.id));
         return sendJson(res, 200, { ok: true });
@@ -619,7 +652,8 @@ async function handler(req, res) {
     }
     const academy = await loadAcademy(zcql, me.academyId);
     if (!academy) return sendJson(res, 404, { error: 'Academy not found' });
-    if (academy.plan === 'SUSPENDED') {
+    /* an operator may still open a suspended academy to look into it */
+    if (academy.plan === 'SUSPENDED' && !me.actingAs) {
       return sendJson(res, 403, { error: 'suspended', message: 'This academy is suspended.' });
     }
 
@@ -631,6 +665,8 @@ async function handler(req, res) {
     /* The first-login tour. Finishing or skipping it records the caller's email
        on their academy, so it does not come back on the next device. */
     if (path === 'tutorial') {
+      /* an operator visiting an academy is not one of its users */
+      if (me.actingAs) return sendJson(res, 200, { ok: true, tutorialDone: true });
       const done = new Set(academy.tutorialDone);
       if (body.done === false) done.delete(me.email); else done.add(me.email);
       const settings = Object.assign({}, academy.settings, { tutorialDone: Array.from(done) });

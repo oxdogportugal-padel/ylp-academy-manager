@@ -41,7 +41,18 @@ button{font:inherit;cursor:pointer}
 input,select,textarea{font:inherit}
 .wrap{max-width:1240px;margin:0 auto;padding:0 16px}
 header.top{background:var(--head);color:var(--headInk)}
-.top .wrap{padding-top:14px;padding-bottom:0}
+.top .wrap{padding-top:14px;padding-bottom:0;position:relative}
+/* Sign out is always one tap away: top right on a computer, beside the mark on a phone. */
+.acadname .signout{display:inline-flex;align-items:center;gap:6px;background:transparent;color:inherit;border:1px solid rgba(255,255,255,.22);border-radius:9px;padding:8px 12px;font-size:13px;opacity:.85}
+.acadname .signout:hover{opacity:1;border-color:rgba(255,255,255,.6)}
+.acadname .signout svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+@media(min-width:768px){ .acadname .signout{position:absolute;top:14px;right:16px} .brandrow{padding-right:104px} }
+@media(max-width:767px){ .acadname .signout{padding:0;border:none;min-width:40px;min-height:40px;justify-content:center;order:3} .acadname .signout span{display:none} .acadname .signout svg{width:22px;height:22px} }
+/* An operator inside someone else's academy is told so on every screen. */
+#opbar{display:none;background:var(--honey);color:#2A1C04;font-size:13.5px;padding:8px 16px;text-align:center}
+#opbar.on{display:block}
+#opbar a, #opbar button{color:inherit;font-weight:700;margin-left:8px;background:none;border:none;text-decoration:underline;padding:0;font-size:inherit}
+body.gated #opbar{display:none!important}
 .brandrow{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap}
 .eyebrow{font-size:11px;letter-spacing:.06em;text-transform:uppercase;opacity:.55}
 /* The product mark stays quiet: the academy's own name is the headline. */
@@ -248,6 +259,7 @@ body.touring #bnav{z-index:71}
 <body class="gated">
 <div id="gate"></div>
 <div id="banner"></div>
+<div id="opbar"></div>
 <header class="top">
   <div class="wrap">
     <div class="brandrow">
@@ -259,6 +271,7 @@ body.touring #bnav{z-index:71}
         <div class="acadname"><span id="acadName">—</span>
           <button data-act="editAcademy" id="editAcBtn" title="Edit academy" aria-label="Edit academy">✎</button>
           <span class="grow"></span>
+          <button class="signout" data-act="signOut" id="signOutBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4"/><path d="M10 16l-4-4 4-4M6 12h10"/></svg><span id="signOutLbl">Sign out</span></button>
           <span class="hmark only-m"><svg viewBox="0 0 120 100" width="27" height="23" role="img" aria-label="Bandeja" focusable="false"><circle cx="60" cy="38" r="21" fill="currentColor"></circle><path d="M14 44 Q60 90 106 44" fill="none" stroke="currentColor" stroke-width="12" stroke-linecap="round"></path></svg></span>
         </div>
       </div>
@@ -295,6 +308,8 @@ var DAYS=DAYNAMES.en.s, DAYF=DAYNAMES.en.f;
    English; tests/unit/i18n.js fails the build if any key is missing. */
 var I18N={
  pt:{
+  "Operator view of {academy}. Changes here are real.":"Vista de operador de {academy}. As alterações aqui são reais.",
+  "Back to console":"Voltar à consola",
   "Padel academy planning":"Planeamento de academias de padel",
   "Pick a club.":"Escolha um clube.",
   "Pick a coach.":"Escolha um treinador.",
@@ -571,6 +586,8 @@ var I18N={
   "Clubs: {a} · Coaches: {b} · Players: {c} · Classes: {d}":"Clubes: {a} · Treinadores: {b} · Jogadores: {c} · Aulas: {d}"
  },
  es:{
+  "Operator view of {academy}. Changes here are real.":"Vista de operador de {academy}. Los cambios aquí son reales.",
+  "Back to console":"Volver a la consola",
   "Padel academy planning":"Planificación de academias de pádel",
   "Pick a club.":"Elige un club.",
   "Pick a coach.":"Elige un entrenador.",
@@ -847,6 +864,8 @@ var I18N={
   "Clubs: {a} · Coaches: {b} · Players: {c} · Classes: {d}":"Clubes: {a} · Entrenadores: {b} · Jugadores: {c} · Clases: {d}"
  },
  fr:{
+  "Operator view of {academy}. Changes here are real.":"Vue opérateur de {academy}. Les modifications ici sont réelles.",
+  "Back to console":"Retour à la console",
   "Padel academy planning":"Planification d'académies de padel",
   "Pick a club.":"Choisissez un club.",
   "Pick a coach.":"Choisissez un entraîneur.",
@@ -1323,8 +1342,8 @@ function api(path, payload){
   return sdk.auth.generateAuthToken().then(function(t){
     var token=(t&&(t.access_token||(t.content&&t.content.token)))||"";
     var url=FUNCTION_URL, opts={ headers:{ "Authorization":token, "Content-Type":"application/json" } };
-    if(payload){ opts.method="POST"; opts.body=JSON.stringify(Object.assign({path:path},payload)); }
-    else { opts.method="GET"; url+="?path="+encodeURIComponent(path); }
+    if(payload){ opts.method="POST"; opts.body=JSON.stringify(Object.assign({path:path},AS_ACADEMY?{asAcademy:AS_ACADEMY}:{},payload)); }
+    else { opts.method="GET"; url+="?path="+encodeURIComponent(path)+(AS_ACADEMY?"&as="+encodeURIComponent(AS_ACADEMY):""); }
     return fetch(url,opts).then(function(res){
       return res.text().then(function(txt){
         var body={}; try{ body=txt?JSON.parse(txt):{}; }catch(e){ body={error:txt.slice(0,200)}; }
@@ -1422,7 +1441,18 @@ try{
   if(WANTS_ADMIN) sessionStorage.setItem("bandeja.next","admin");
   else if(sessionStorage.getItem("bandeja.next")==="admin") WANTS_ADMIN=true;
 }catch(e){}
-var IS_OPERATOR=false, ME="";
+var IS_OPERATOR=false, ME="", ACTING=false;
+/* An operator opening an academy from the console arrives with ?academy=<id>.
+   It is kept for this tab so reloads stay in that academy. The server honours
+   it only for operators; for anyone else it is ignored. */
+var AS_ACADEMY=null;
+(function(){
+  var m=/[?&]academy=(\d+)\b/.exec(location.search);
+  try{
+    if(m){ AS_ACADEMY=m[1]; sessionStorage.setItem("bandeja.as",AS_ACADEMY); }
+    else AS_ACADEMY=sessionStorage.getItem("bandeja.as");
+  }catch(e){ AS_ACADEMY=m?m[1]:null; }
+})();
 
 function markSvg(w,h,label){
   return '<svg viewBox="0 0 120 100" width="'+w+'" height="'+h+'" '+(label?'role="img" aria-label="'+label+'"':'aria-hidden="true"')+' focusable="false">'+
@@ -1488,7 +1518,9 @@ function start(){
     IS_OPERATOR=!!sess.isOperator; ME=String(sess.email||"").toLowerCase();
     if(sess.academy&&sess.academy.language){ setLang(sess.academy.language); remember("bandeja.lang",LANG); }
     try{ sessionStorage.removeItem("bandeja.next"); }catch(e){}
-    if(IS_OPERATOR&&(WANTS_ADMIN||!sess.academy)){ location.replace("./admin.html"); return; }
+    ACTING=!!sess.actingAs;
+    if(!ACTING){ AS_ACADEMY=null; try{ sessionStorage.removeItem("bandeja.as"); }catch(e){} }
+    if(IS_OPERATOR&&!ACTING&&(WANTS_ADMIN||!sess.academy)){ location.replace("./admin.html"); return; }
     if(!sess.academy){
       storage="blocked";
       return gate("message",{title:t("No academy yet"),
@@ -1496,7 +1528,7 @@ function start(){
     }
     return loadAll().then(function(){
       openApp();
-      if(!ACADEMY.tutorialDone&&!recall("bandeja.tour."+ME)) tourStart();
+      if(!ACTING&&!ACADEMY.tutorialDone&&!recall("bandeja.tour."+ME)) tourStart();
     });
   }).catch(function(e){
     if(e&&e.status===401) return gate("login");
@@ -1526,7 +1558,10 @@ function boot(){
   window.addEventListener("focus",function(){ if(storage==="on") loadAll().catch(function(){}); });
 }
 
-function signOut(){ if(sdk) sdk.auth.signOut(location.origin+"/"); }
+function signOut(){
+  try{ sessionStorage.removeItem("bandeja.as"); sessionStorage.removeItem("bandeja.next"); }catch(e){}
+  if(sdk) sdk.auth.signOut(location.origin+"/");
+}
 
 /* Per-browser conveniences only; nothing here is relied on. */
 function remember(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
@@ -1608,6 +1643,10 @@ document.addEventListener("keydown",function(ev){
   else if(ev.key==="ArrowRight") A.tourNext();
   else if(ev.key==="ArrowLeft") A.tourBack();
 });
+A.backToConsole=function(){
+  try{ sessionStorage.removeItem("bandeja.as"); }catch(e){}
+  location.href="./admin.html";
+};
 A.gateLang=function(l){
   setLang(l); remember("bandeja.lang",l);
   if(GATE.mode) gate(GATE.mode,GATE.opts);
@@ -2234,6 +2273,12 @@ A.ppBook=async function(id){
 function render(){
   document.getElementById("acadName").textContent=S.academy.name||t("Academy");
   document.getElementById("byline").textContent=t("by YLP Solutions");
+  var so=document.getElementById("signOutBtn"); so.setAttribute("aria-label",t("Sign out")); so.title=t("Sign out");
+  document.getElementById("signOutLbl").textContent=t("Sign out");
+  var ob=document.getElementById("opbar");
+  ob.className=ACTING?"on":"";
+  ob.innerHTML=ACTING?esc(t("Operator view of {academy}. Changes here are real.",{academy:S.academy.name||""}))+
+    '<button data-act="backToConsole">'+t("Back to console")+'</button>':"";
   var eb=document.getElementById("editAcBtn"); eb.title=t("Edit academy"); eb.setAttribute("aria-label",eb.title);
   renderStats(); renderTabs();
   var v=document.getElementById("view");
@@ -2516,7 +2561,7 @@ function viewManage(){
         ? '<button class="btn" disabled title="'+esc(t("Only available on an empty academy"))+'">'+t("Load sample data")+'</button>'
         : '<button class="btn" data-act="loadDemo">'+t("Load sample data")+'</button>')+
       '<button class="btn" data-act="tourStart">'+t("Show the tour again")+'</button>'+
-      (IS_OPERATOR?'<a class="btn" href="./admin.html">'+t("Admin console")+'</a>':"")+
+      (IS_OPERATOR?'<button class="btn" data-act="backToConsole">'+t("Admin console")+'</button>':"")+
       '<button class="btn" data-act="feedback">'+t("Send feedback")+'</button>'+
       '<button class="btn" data-act="signOut">'+t("Sign out")+'</button>'+
       '<button class="btn danger" data-act="wipe">'+t("Delete all data")+'</button></div>'+

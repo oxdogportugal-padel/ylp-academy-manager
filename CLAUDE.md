@@ -50,6 +50,13 @@ string means a new entry in each of `I18N.pt`, `I18N.es` and `I18N.fr`;
 `tests/unit/i18n.js` fails until it has them. Plurals: write `seat(s)` and pass
 the count as `{n}` — the bracketed ending is dropped for exactly one.
 
+**One exception to "never take an academy id from the client": operators.**
+The console's "Open planner" sends `asAcademy` (`?academy=<id>` in the
+planner). `resolveCaller` honours it only when the caller is in
+`PlatformAdmins`; for anyone else it is ignored. Keep that check in
+`resolveCaller` and nowhere else, and keep the unit tests that prove a
+non-operator cannot read or write through it.
+
 **Nothing renders before sign-in.** The planner and the operator console stay
 behind the gate until the API has answered `session`. There is one sign-in
 page, the planner's; the console redirects there with `?next=admin`.

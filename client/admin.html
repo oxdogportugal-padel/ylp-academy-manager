@@ -90,6 +90,7 @@ label.f>span{display:block;font-size:12px;color:var(--ink2);margin-bottom:4px}
 #banner{display:none;background:var(--alertBg);color:var(--alertInk);padding:10px 16px;font-size:13.5px;border-bottom:1px solid var(--alert)}
 #banner.on{display:block}
 a{color:inherit}
+a.btn{text-decoration:none}
 .brand{display:flex;align-items:center;gap:7px;opacity:.62;margin-bottom:4px}
 .brand .wm{font-family:'Barlow Semi Condensed',sans-serif;font-weight:700;font-size:13px;letter-spacing:.14em;line-height:1}
 .brand .by{font-size:10.5px;letter-spacing:.04em;opacity:.72}
@@ -324,11 +325,12 @@ function usersModal(id){
         '<div class="grow"><div>'+esc(u.email)+'</div>'+
         '<div class="tiny muted">'+esc(u.name||"—")+' · '+esc(u.role)+'</div></div>'+
         '<span class="chip '+(u.status==="active"?"ok":"warn")+'">'+esc(u.status)+'</span>'+
+        '<button class="btn sm" data-act="resendInvite" data-id="'+u.id+'" data-a="'+id+'" title="Send the invitation again">Resend</button>'+
         '<button class="btn icon" data-act="editUser" data-id="'+u.id+'" data-a="'+id+'">✎</button>'+
         '<button class="btn icon" data-act="delUser" data-id="'+u.id+'" data-a="'+id+'">🗑</button></div>';
     }).join(""):'<div class="empty">Nobody added yet.</div>')+
     '<div class="mt"><button class="btn sm primary" data-act="newUser" data-id="'+id+'"'+(full?" disabled":"")+'>＋ Add user</button></div>'+
-    '<div class="note info mt">Adding someone sends them an invitation by email. They sign in on the same page as everyone else, and land in this academy.</div>',
+    '<div class="note info mt"><div>Adding someone sends them an invitation by email. They sign in on the same page as everyone else, and land in this academy. <b>Resend</b> sends a new invitation to someone who never accepted, or a set-a-password link to someone who did.</div></div>',
     '<button class="btn" data-act="closeModal">Done</button>',null);
 }
 
@@ -366,6 +368,20 @@ function userForm(u){
         .catch(function(e){ failed("save the user",e); });
     });
 }
+
+/* Catalyst has no "resend": the API sends a fresh invitation to someone who
+   never accepted, and a set-a-new-password email to someone who did. */
+A.resendInvite=function(uid,el){
+  var u=byId(S.users,uid); if(!u) return;
+  el.disabled=true; el.textContent="Sending…";
+  api("admin/user/resend",{id:uid})
+    .then(function(r){
+      toast(r.sent==="reset" ? "Password link sent to "+r.email+" — they had already accepted."
+                             : "New invitation sent to "+r.email+".");
+      el.textContent="Sent ✓";
+    })
+    .catch(function(e){ el.disabled=false; el.textContent="Resend"; failed("resend the invitation",e); });
+};
 
 A.delUser=function(uid,el){
   var aid=el.dataset.a;
@@ -408,6 +424,7 @@ function render(){
       '</div>'+
       '<div class="row mt">'+meter(clubs,a.maxClubs,"Clubs")+meter(us,a.maxUsers,"Users")+
         '<div class="grow"></div>'+
+        '<a class="btn sm" href="./?academy='+encodeURIComponent(a.id)+'" target="_blank" rel="noopener" title="Opens this academy\'s planner as you, in a new tab">Open planner</a>'+
         '<button class="btn sm" data-act="users" data-id="'+a.id+'">Users</button>'+
         '<button class="btn sm" data-act="editAcademy" data-id="'+a.id+'">Edit</button>'+
         '<button class="btn sm danger" data-act="delAcademy" data-id="'+a.id+'">Delete</button>'+

@@ -1,10 +1,11 @@
 const { sdk, api } = require('./_boot.js');
-const { DB, INVITES, setUser, reset } = sdk.__test;
+const { DB, USERS, INVITES, RESETS, setUser, reset } = sdk.__test;
 
 function call(method, payload, asUser) {
   setUser(asUser || null);
   return new Promise((resolve) => {
-    const req = { method, url: method === 'GET' ? `/execute?path=${payload.path}` : '/execute',
+    const qs = `path=${payload.path}` + (payload.asAcademy ? `&as=${payload.asAcademy}` : '');
+    const req = { method, url: method === 'GET' ? `/execute?${qs}` : '/execute',
                   headers: { host: 'x.catalystserverless.eu' },
                   body: method === 'GET' ? undefined : payload };
     const res = { writeHead(){}, end(b){ resolve(JSON.parse(b)); } };
@@ -165,6 +166,45 @@ function check(label, cond, detail) {
   check('a rules save keeps tour progress',
     (await call('GET', { path: 'data' }, OWNER_A)).academy.tutorialDone === true);
   check('and keeps the language', JSON.parse(acA().Settings).language === 'es');
+
+  console.log('\noperator opens an academy\'s planner');
+  const asA = await call('GET', { path: 'data', asAcademy: a.id }, OPERATOR);
+  check('an operator can open any academy', asA.academy && asA.academy.id === a.id && Array.isArray(asA.venues), asA.error);
+  const sessAs = await call('GET', { path: 'session', asAcademy: a.id }, OPERATOR);
+  check('the session says it is an operator visit', sessAs.actingAs === true && sessAs.academy.id === a.id, sessAs);
+  check('an operator can open a suspended academy to look into it',
+    (await call('GET', { path: 'data', asAcademy: b.id }, OPERATOR)).academy !== undefined);
+  check('an unknown academy is refused',
+    (await call('GET', { path: 'session', asAcademy: '999' }, OPERATOR)).error === 'Academy not found');
+  const sneak = await call('GET', { path: 'data', asAcademy: b.id }, OWNER_A);
+  check('a non-operator naming another academy still gets only their own',
+    sneak.academy && sneak.academy.id === a.id, sneak.academy);
+  await call('POST', { path: 'save', asAcademy: b.id, collection: 'players', record: { name: 'Sneaky', level: 3 } }, OWNER_A);
+  const sneaky = DB.Players.find(x => x.Name === 'Sneaky');
+  check('and cannot write into it — the row lands in their own academy', sneaky && String(sneaky.AcademyId) === String(a.id), sneaky);
+  const tutBefore = JSON.stringify(DB.Academies.find(r => String(r.ROWID) === String(a.id)).Settings);
+  await call('POST', { path: 'tutorial', asAcademy: a.id, done: true }, OPERATOR);
+  check('an operator visit leaves the tour list alone',
+    JSON.stringify(DB.Academies.find(r => String(r.ROWID) === String(a.id)).Settings) === tutBefore);
+
+  console.log('\nresending invitations');
+  const ruiRow = DB.AcademyUsers.find(u => u.Email === 'rui@hyve.pt');
+  const nInv = INVITES.length;
+  const oldId = USERS.find(u => u.email_id === 'rui@hyve.pt').user_id;
+  const r1 = await call('POST', { path: 'admin/user/resend', id: ruiRow.ROWID }, OPERATOR);
+  check('someone who never accepted gets a fresh invitation', r1.sent === 'invite' && INVITES.length === nInv + 1, r1);
+  check('their unused login was replaced, not duplicated',
+    USERS.filter(u => u.email_id === 'rui@hyve.pt').length === 1 && USERS.find(u => u.email_id === 'rui@hyve.pt').user_id !== oldId);
+  check('the fresh invitation also returns them to the app', /onslate\.eu\/$/.test(INVITES[INVITES.length - 1].redirect || ''));
+  USERS.find(u => u.email_id === 'ana@hyve.pt').is_confirmed = true;
+  const ana = DB.AcademyUsers.find(u => u.Email === 'ana@hyve.pt');
+  const nUsers = USERS.length;
+  const r2 = await call('POST', { path: 'admin/user/resend', id: ana.ROWID }, OPERATOR);
+  check('someone who already accepted gets a set-a-password email instead', r2.sent === 'reset' && RESETS[0].email === 'ana@hyve.pt', r2);
+  check('their login is left alone', USERS.length === nUsers && USERS.some(u => u.email_id === 'ana@hyve.pt' && u.is_confirmed));
+  check('the reset email returns them to the app too', /onslate\.eu\/$/.test(RESETS[0].redirect || ''));
+  check('a non-operator cannot resend', (await call('POST', { path: 'admin/user/resend', id: ana.ROWID }, OWNER_A)).error === 'Not an operator');
+  check('an unknown user is a clear 404', (await call('POST', { path: 'admin/user/resend', id: '1' }, OPERATOR)).error === 'User not found');
 
   console.log(`\n${pass} passed, ${fail} failed`);
   process.exit(fail ? 1 : 0);
