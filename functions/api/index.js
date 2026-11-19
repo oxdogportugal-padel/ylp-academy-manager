@@ -18,6 +18,14 @@ const catalyst = require('zcatalyst-sdk-node');
    fails against the wrong one, which is the usual post-promotion surprise. */
 const ZAID = '30047977891';
 
+/* Where an invited person lands after setting their password. Without it
+   Catalyst sends them to the project's own domain, where nothing is deployed
+   (the app lives on Slate), and they see Catalyst's "this page doesn't exist"
+   placeholder. `redirect_url` is part of ICatalystSignupConfig in the SDK's own
+   types (zcatalyst-sdk-node 3.4.0, lib/utils/pojo/common.d.ts). Like the ZAID,
+   this changes in Production. */
+const APP_URL = 'https://padel-planner-slate-cfmfcikl.onslate.eu/';
+
 /* Interface languages an academy can run in. The first is the default for an
    academy that never chose one. */
 const LANGUAGES = ['pt', 'es', 'fr', 'en'];
@@ -431,7 +439,7 @@ async function invite(app, email, name) {
 
   const parts = String(name || '').trim().split(/\s+/);
   await app.userManagement().registerUser(
-    { platform_type: 'web', zaid: ZAID },
+    { platform_type: 'web', zaid: ZAID, redirect_url: APP_URL },
     { email_id: email,
       first_name: parts[0] || email.split('@')[0],
       last_name: parts.slice(1).join(' ') || '-' }

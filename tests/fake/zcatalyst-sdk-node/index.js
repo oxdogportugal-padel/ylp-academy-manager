@@ -70,7 +70,7 @@ const adminApp = {
     registerUser: async (cfg, user) => {
       if (!cfg || cfg.zaid !== '30047977891') throw new Error('wrong or missing ZAID');
       USERS.push({ email_id: user.email_id });
-      INVITES.push({ email: user.email_id, first: user.first_name, last: user.last_name });
+      INVITES.push({ email: user.email_id, first: user.first_name, last: user.last_name, redirect: cfg.redirect_url });
       return { email_id: user.email_id };
     }
   })

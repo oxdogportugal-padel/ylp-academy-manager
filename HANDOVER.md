@@ -173,8 +173,10 @@ not linked to Git).
 
 1. **Portuguese edition of the guide** — the screenshots can already be
    Portuguese; the prose in `manual/build.py` is English.
-2. **Promote to Production** — a console action, not a CLI one — and change the
-   ZAID.
+2. **Promote to Production** — a console action, not a CLI one — and change
+   both `ZAID` and `APP_URL` at the top of `functions/api/index.js`. `APP_URL`
+   is where invitations send people after they set a password; without it they
+   land on the empty project domain.
 
 Deferred and agreed as post-trial: calendar auto-fit to the earliest and latest
 class, level names instead of numbers, archive and undo on delete (a `Status`

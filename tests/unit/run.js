@@ -43,6 +43,8 @@ function check(label, cond, detail) {
   check('academy B created', !!b.id, b);
   check('owner A invited by email', a.invited === true && INVITES[0].email === 'ana@hyve.pt', INVITES);
   check('owner B invited by email', b.invited === true && INVITES[1].email === 'bruno@gaia.pt', INVITES);
+  check('the invitation returns people to the app on Slate, not the empty project domain',
+    INVITES.every(i => /^https:\/\/[^/]+\.onslate\.eu\/$/.test(i.redirect || '')), INVITES.map(i => i.redirect));
   check('owner recorded on the academy row', DB.AcademyUsers.filter(u => u.Role === 'owner').length === 2);
   check('creating an academy without an owner email is refused',
     (await call('POST', { path: 'admin/academy', academy: { name: 'No Owner' } }, OPERATOR)).error !== undefined);
