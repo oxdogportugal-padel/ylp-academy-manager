@@ -57,6 +57,16 @@ planner). `resolveCaller` honours it only when the caller is in
 `resolveCaller` and nowhere else, and keep the unit tests that prove a
 non-operator cannot read or write through it.
 
+**Roles are enforced in the function.** `owner` and `coordinator` may write;
+`coach` and `viewer` are read-only (`canWrite` in `functions/api/index.js`).
+The planner hides the controls for read-only users (`WRITE_ACTS` in
+`index.html`) — a new action that changes data belongs in that list too — but
+the server's 403 is what counts.
+
+**Every change is audited.** `save`, `delete`, `academy` and every `admin/*`
+write call `audit()`, which writes `AuditLog` and never blocks the change if
+the log write fails. A new write path gets an `audit()` call too.
+
 **Nothing renders before sign-in.** The planner and the operator console stay
 behind the gate until the API has answered `session`. There is one sign-in
 page, the planner's; the console redirects there with `?next=admin`.

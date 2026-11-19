@@ -169,6 +169,11 @@ redirect after login, and the operator console. Slate app `padel-planner-slate`
 is served at https://padel-planner-slate-cfmfcikl.onslate.eu/ (upload-type,
 not linked to Git).
 
+Added 19 Nov 2026: roles enforced on the server (coach and viewer are
+read-only), a feedback inbox in the console, an `AuditLog` table with an
+Activity view per academy, Open planner for operators, Resend invitation, and
+a sign-out button in the planner header.
+
 ## Still outstanding
 
 1. **Portuguese edition of the guide** — the screenshots can already be

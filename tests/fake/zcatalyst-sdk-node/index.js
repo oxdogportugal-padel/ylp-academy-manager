@@ -3,7 +3,7 @@
    registerUser sends an invite. */
 const DB = {
   Academies: [], Clubs: [], Coaches: [], ClubCoaches: [], Players: [], Classes: [],
-  ClassEnrollments: [], Requests: [], RequestWindows: [], AcademyUsers: [], PlatformAdmins: [], Feedback: []
+  ClassEnrollments: [], Requests: [], RequestWindows: [], AcademyUsers: [], PlatformAdmins: [], Feedback: [], AuditLog: []
 };
 let SEQ = 5361000000900000;
 const USERS = [];
@@ -41,7 +41,7 @@ function matches(row, where) {
 function table(name) {
   if (!DB[name]) throw new Error('fake sdk: unknown table ' + name);
   return {
-    insertRow: async (row) => { const r = { ...row, ROWID: String(++SEQ) }; DB[name].push(r); return wire(r); },
+    insertRow: async (row) => { const r = { ...row, ROWID: String(++SEQ), CREATEDTIME: new Date(Date.now() + SEQ % 1000).toISOString().replace('T', ' ').slice(0, 19) }; DB[name].push(r); return wire(r); },
     updateRow: async (row) => {
       const hit = DB[name].find((r) => String(r.ROWID) === String(row.ROWID));
       if (!hit) throw new Error('no such row ' + row.ROWID);

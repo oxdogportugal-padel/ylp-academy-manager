@@ -206,6 +206,58 @@ function check(label, cond, detail) {
   check('a non-operator cannot resend', (await call('POST', { path: 'admin/user/resend', id: ana.ROWID }, OWNER_A)).error === 'Not an operator');
   check('an unknown user is a clear 404', (await call('POST', { path: 'admin/user/resend', id: '1' }, OPERATOR)).error === 'User not found');
 
+  console.log('\nroles: owners and coordinators change, coaches and viewers look');
+  const COACH = { email_id: 'rui@hyve.pt', first_name: 'Rui' };          // added above as role coach
+  const VIEW  = { email_id: 'vera@hyve.pt', first_name: 'Vera' };
+  DB.AcademyUsers.push({ ROWID: '880001', AcademyId: a.id, Email: 'vera@hyve.pt', Role: 'viewer', Status: 'active' });
+  const coachData = await call('GET', { path: 'data' }, COACH);
+  check('a coach can read the academy', Array.isArray(coachData.classes) && coachData.role === 'coach', coachData.role);
+  const nP = DB.Players.length;
+  check('a coach cannot create', (await call('POST', { path: 'save', collection: 'players', record: { name: 'X', level: 2 } }, COACH)).error === 'read-only');
+  check('a viewer cannot create', (await call('POST', { path: 'save', collection: 'players', record: { name: 'Y', level: 2 } }, VIEW)).error === 'read-only');
+  check('nothing was written', DB.Players.length === nP);
+  const somePlayer = DB.Players.find(x => String(x.AcademyId) === String(a.id));
+  check('a viewer cannot delete', (await call('POST', { path: 'delete', collection: 'players', id: somePlayer.ROWID }, VIEW)).error === 'read-only');
+  check('the row is still there', DB.Players.some(x => x.ROWID === somePlayer.ROWID));
+  check('a coach cannot change the rules', (await call('POST', { path: 'academy', name: 'Hacked', rules: {} }, COACH)).error === 'read-only');
+  check('a viewer can still send feedback', (await call('POST', { path: 'feedback', message: 'looks good' }, VIEW)).ok === true);
+  const created = await call('POST', { path: 'save', collection: 'players', record: { name: 'Owner OK', level: 4 } }, OWNER_A);
+  check('an owner still can', !!created.id, created);
+  DB.AcademyUsers.push({ ROWID: '880002', AcademyId: a.id, Email: 'cora@hyve.pt', Role: 'coordinator', Status: 'active' });
+  check('a coordinator still can', !!(await call('POST', { path: 'save', collection: 'players', record: { name: 'Coord OK', level: 4 } }, { email_id: 'cora@hyve.pt' })).id);
+  check('an operator in the academy can',
+    !!(await call('POST', { path: 'save', asAcademy: a.id, collection: 'players', record: { name: 'Op OK', level: 4 } }, OPERATOR)).id);
+
+  console.log('\naudit log');
+  const logA = (await call('POST', { path: 'admin/audit', academyId: a.id }, OPERATOR)).entries || [];
+  const find = (fn) => logA.find(fn);
+  check('a create is logged with who and what',
+    !!find(e => e.action === 'create' && e.target === 'players' && /Owner OK/.test(e.summary) && e.email === 'ana@hyve.pt' && e.role === 'owner'), logA.slice(0, 3));
+  check('an operator change is marked as operator',
+    !!find(e => /Op OK/.test(e.summary) && e.role === 'operator' && e.email === 'info@youlovepadel.pt'));
+  check('refused writes leave no trace', !find(e => e.email === 'rui@hyve.pt' || e.email === 'vera@hyve.pt'));
+  await call('POST', { path: 'delete', collection: 'players', id: created.id }, OWNER_A);
+  const afterDel = (await call('POST', { path: 'admin/audit', academyId: a.id }, OPERATOR)).entries;
+  check('a delete says what was deleted', afterDel[0].action === 'delete' && /Owner OK/.test(afterDel[0].summary), afterDel[0]);
+  check('rule changes say which rules', !!afterDel.find(e => e.action === 'settings' && /levelTolerance/.test(e.summary)), afterDel.filter(e => e.action === 'settings'));
+  check('operator console actions are logged too', !!afterDel.find(e => e.action === 'admin:academy' && e.role === 'operator'));
+  check('only this academy\'s entries come back', afterDel.every(e => e.academyId === a.id));
+  check('newest first', afterDel.every((e, i) => i === 0 || String(afterDel[i - 1].at) >= String(e.at)));
+  check('a non-operator cannot read the log', (await call('POST', { path: 'admin/audit', academyId: a.id }, OWNER_A)).error === 'Not an operator');
+  const sdkMod = require('./_boot.js').sdk;
+  const realTable = sdkMod.__test.DB.AuditLog;
+  delete sdkMod.__test.DB.AuditLog;                                            // the table goes missing…
+  const still = await call('POST', { path: 'save', collection: 'players', record: { name: 'No Log', level: 3 } }, OWNER_A);
+  sdkMod.__test.DB.AuditLog = realTable;
+  check('…and a change still goes through', !!still.id, still);
+
+  console.log('\nfeedback inbox');
+  const fb = (await call('GET', { path: 'admin/feedback' }, OPERATOR)).feedback;
+  check('feedback is listed with its context', fb.length >= 1 && fb[0].message && 'context' in fb[0], fb[0]);
+  const fst = await call('POST', { path: 'admin/feedback/status', id: fb[0].id, status: 'done' }, OPERATOR);
+  check('it can be marked done', fst.status === 'done' && DB.Feedback.find(f => f.ROWID === fb[0].id).Status === 'done');
+  check('a non-operator cannot', (await call('POST', { path: 'admin/feedback/status', id: fb[0].id, status: 'new' }, OWNER_A)).error === 'Not an operator');
+
   console.log(`\n${pass} passed, ${fail} failed`);
   process.exit(fail ? 1 : 0);
 })();

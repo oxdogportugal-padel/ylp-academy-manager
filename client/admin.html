@@ -147,7 +147,8 @@ var FUNCTION_URL = "https://ylp-academy-manager-20105401867.development.catalyst
 /* Interface languages an academy can run in. Mirrors LANGUAGES in the API. */
 var LANGS={pt:"Português",es:"Español",fr:"Français",en:"English"};
 
-var S={ academies:[], users:[] };
+var S={ academies:[], users:[], feedback:[] };
+var VIEW="academies";   /* or "feedback" */
 var sdk=null, me=null, state="loading";
 
 function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
@@ -211,8 +212,10 @@ function toast(m){
 
 /* ── load ─────────────────────────────────────────────── */
 function load(){
-  return api("admin/academies").then(function(d){
-    S.academies=d.academies||[]; S.users=d.users||[];
+  return Promise.all([api("admin/academies"),
+                      api("admin/feedback").catch(function(){ return {feedback:[]}; })]).then(function(res){
+    var d=res[0];
+    S.academies=d.academies||[]; S.users=d.users||[]; S.feedback=res[1].feedback||[];
     state="ready"; banner(null); render();
   }).catch(function(e){
     if(e.status===403){ location.replace("./"); return; }
@@ -426,6 +429,7 @@ function render(){
         '<div class="grow"></div>'+
         '<a class="btn sm" href="./?academy='+encodeURIComponent(a.id)+'" target="_blank" rel="noopener" title="Opens this academy\'s planner as you, in a new tab">Open planner</a>'+
         '<button class="btn sm" data-act="users" data-id="'+a.id+'">Users</button>'+
+        '<button class="btn sm" data-act="activity" data-id="'+a.id+'">Activity</button>'+
         '<button class="btn sm" data-act="editAcademy" data-id="'+a.id+'">Edit</button>'+
         '<button class="btn sm danger" data-act="delAcademy" data-id="'+a.id+'">Delete</button>'+
       '</div>'+
@@ -434,7 +438,13 @@ function render(){
     '</div>';
   }).join("");
 
-  el.innerHTML=
+  var unread=S.feedback.filter(function(f){return f.status==="new";}).length;
+  var tabs='<div class="row mb" style="gap:6px">'+
+    '<button class="btn sm'+(VIEW==="academies"?" primary":"")+'" data-act="view" data-id="academies">Academies</button>'+
+    '<button class="btn sm'+(VIEW==="feedback"?" primary":"")+'" data-act="view" data-id="feedback">Feedback'+
+      (unread?' <span class="chip warn" style="padding:0 7px">'+unread+' new</span>':'')+'</button></div>';
+  if(VIEW==="feedback"){ el.innerHTML=tabs+feedbackView(); return; }
+  el.innerHTML=tabs+
     '<div class="row mb" style="justify-content:space-between">'+
       '<div><h2 style="font-size:22px">Academies · '+S.academies.length+'</h2>'+
       '<div class="muted small">Each one is a tenant: its own clubs, coaches, players and classes.</div></div>'+
@@ -442,6 +452,63 @@ function render(){
     '</div>'+
     (S.academies.length?rows:'<div class="empty">No academies yet. Create the first one.</div>');
 }
+
+/* ── feedback inbox ───────────────────────────────────────
+   What people send from "Send feedback" in the planner, newest first, with the
+   academy, the screen they were on and the shape of their data at the time. */
+function academyName(id){ var a=byId(S.academies,id); return a?a.name:(id?"Academy "+id:"No academy yet"); }
+function when(t){ return esc(String(t||"").replace("T"," ").slice(0,16)); }
+function feedbackView(){
+  if(!S.feedback.length) return '<div class="empty">No feedback yet. It arrives here from "Send feedback" in the planner.</div>';
+  return S.feedback.map(function(f){
+    var ctx=""; try{ var c=JSON.parse(f.context||"{}");
+      ctx=["clubs","coaches","players","classes","waiting"].filter(function(k){return c[k]!=null;}).map(function(k){return c[k]+" "+k;}).join(" · ");
+    }catch(e){}
+    var chip=f.status==="new"?"warn":f.status==="done"?"ok":"";
+    return '<div class="card pad mb"'+(f.status==="new"?' style="border-color:var(--honey)"':'')+'>'+
+      '<div class="row" style="justify-content:space-between">'+
+        '<div class="grow"><b>'+esc(academyName(f.academyId))+'</b> · <span class="muted small">'+esc(f.email)+'</span>'+
+        '<div class="tiny muted">'+when(f.at)+(f.screen?' · on '+esc(f.screen):'')+(ctx?' · '+esc(ctx):'')+'</div></div>'+
+        '<span class="chip '+chip+'">'+esc(f.status)+'</span></div>'+
+      '<p style="margin:10px 0 0;white-space:pre-wrap">'+esc(f.message)+'</p>'+
+      '<div class="row mt" style="gap:6px">'+
+        (f.status!=="read"?'<button class="btn sm" data-act="fbStatus" data-id="'+f.id+'" data-s="read">Mark read</button>':'')+
+        (f.status!=="done"?'<button class="btn sm" data-act="fbStatus" data-id="'+f.id+'" data-s="done">Done</button>':'')+
+        (f.status!=="new"?'<button class="btn sm" data-act="fbStatus" data-id="'+f.id+'" data-s="new">Mark unread</button>':'')+
+      '</div></div>';
+  }).join("");
+}
+A.view=function(v){ VIEW=v; render(); };
+A.fbStatus=function(id,el){
+  var f=byId(S.feedback,id); if(!f) return;
+  var prev=f.status; f.status=el.dataset.s; render();
+  api("admin/feedback/status",{id:id,status:el.dataset.s})
+    .catch(function(e){ f.status=prev; render(); failed("update the feedback",e); });
+};
+
+/* ── activity (audit log) ─────────────────────────────────
+   Every change in an academy: who, as what, and what. Changes YLP made from
+   this console or through "Open planner" are marked operator. */
+var ACTION_LABEL={ create:"added", update:"changed", "delete":"deleted", settings:"changed settings",
+  "admin:academy":"edited academy", "admin:create":"created academy", "admin:delete":"deleted academy",
+  "admin:user":"edited user", "admin:add-user":"added user", "admin:remove-user":"removed user", "admin:resend":"resent invitation" };
+A.activity=function(id){
+  var a=byId(S.academies,id);
+  openModal("Activity — "+a.name,'<div class="empty">Loading…</div>','<button class="btn" data-act="closeModal">Close</button>',null);
+  api("admin/audit",{academyId:id}).then(function(d){
+    var list=d.entries||[];
+    var body=list.length? list.map(function(e){
+      return '<div class="listrow" style="align-items:flex-start">'+
+        '<div class="grow"><div><b>'+esc(e.email)+'</b> '+
+          '<span class="chip'+(e.role==="operator"?" warn":"")+'" style="padding:1px 7px">'+esc(e.role)+'</span> '+
+          esc(ACTION_LABEL[e.action]||e.action)+(e.target&&e.target!=="academy"?' <span class="muted">'+esc(e.target)+'</span>':'')+'</div>'+
+          (e.summary?'<div class="small">'+esc(e.summary)+'</div>':'')+
+          '<div class="tiny muted">'+when(e.at)+'</div></div></div>';
+    }).join("") : '<div class="empty">Nothing recorded yet. Every change from now on appears here.</div>';
+    var box=document.querySelector("#modalRoot .pad"); if(box) box.innerHTML=
+      '<div class="tiny muted mb">Latest '+list.length+' change(s), newest first.</div>'+body;
+  }).catch(function(e){ closeModal(); failed("read the activity",e); });
+};
 
 /* ── events ───────────────────────────────────────────── */
 document.addEventListener("click",function(ev){

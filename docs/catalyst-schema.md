@@ -15,6 +15,10 @@ connector; no CLI involved.
 
 ## Table IDs
 
+`AuditLog` (`5361000000083035`) and `Feedback` (`5361000000050159`) were added
+after the first ten; `PlatformAdmins` is `5361000000049539`,
+`AcademyUsers` `5361000000046793`.
+
 | Table | Table ID |
 |---|---|
 | Academies | `5361000000046005` |
@@ -45,6 +49,14 @@ strips both before sending rules to the browser and carries them over on every
 rules save, so an owner cannot change or erase them.
 This is the column the September project was missing, and it's what keeps level
 scale, tolerance, class size, durations and coach caps out of the code.
+
+**AuditLog** — AcademyId bigint (empty for platform-level actions) ·
+Email varchar(255) req · Role varchar(20) req (`owner`, `coordinator`, or
+`operator` for YLP staff) · Action varchar(40) req (`create`, `update`,
+`delete`, `settings`, or `admin:*`) · Target varchar(40) · TargetId
+varchar(40) · Summary text. One row per change, written by the function only;
+App User has no permissions on it. Read through `admin/audit` in the console.
+Created 19 Nov 2026 through the connector.
 
 **Clubs** — AcademyId bigint req indexed · Name varchar(255) req ·
 Courts int req default 2 · Status varchar(20) req default `active`

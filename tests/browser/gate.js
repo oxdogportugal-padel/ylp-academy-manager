@@ -176,6 +176,73 @@ const shown=(p,sel)=>p.evaluate(s=>{const e=document.querySelector(s); return !!
   ok('no page errors in the console', p.errs.length===0, p.errs);
   await p.context().close();
 
+  console.log('\ncoaches and viewers get a read-only planner');
+  p=await page(()=>{ window.__API.academy.language='pt'; window.__API.mode.role='viewer';
+    const D=window.__API.db;
+    D.venues.push({id:'1',name:'Riverside',courts:2}); D.coaches.push({id:'2',name:'Alex Reed',certLevel:3,venueIds:['1']});
+    D.players.push({id:'3',name:'A. Silva',level:3});
+    D.classes.push({id:'4',venueId:'1',coachId:'2',day:0,start:'18:00',duration:90,level:3,capacity:null,playerIds:['3']});
+    D.requests.push({id:'5',name:'B. Costa',level:3,venueId:'1',sessions:1,windows:[{day:1,from:'18:00',to:'21:00'}],placed:[]}); });
+  await p.goto(BASE+'/',{waitUntil:'load'}); await sleep(900);
+  ok('a viewer sees the week', await p.locator('.ev').count()===1);
+  ok('marked "Só leitura" in the header', /Só leitura/.test(await p.locator('#roChip').innerText()));
+  const WRITES=['newClass','editClass','delClass','moveClass','newVenue','editVenue','delVenue','newPlayer','editPlayer','delPlayer',
+    'importPlayers','newRequest','editRequest','delRequest','ppBook','ppWait','loadDemo','wipe','editAcademy','addToClass','unenrol'];
+  const visibleWrites=async()=>p.evaluate(W=>W.filter(a=>[...document.querySelectorAll(`[data-act="${a}"]`)].some(e=>e.getBoundingClientRect().width>0)),WRITES);
+  const roSeen=new Set();
+  for(const [v,sub] of [['calendar'],['place'],['waitlist'],['manage','academy'],['manage','venues'],['manage','coaches'],['manage','players'],['manage','classes']]){
+    await p.locator(`#tabs [data-id="${v}"]`).click(); await sleep(120);
+    if(sub){ await p.locator(`[data-act="sub"][data-id="${sub}"]`).click(); await sleep(120); }
+    (await visibleWrites()).forEach(a=>roSeen.add(v+'/'+(sub||'')+':'+a));
+  }
+  await p.locator('#tabs [data-id="calendar"]').click(); await sleep(150);
+  await p.locator('.ev').first().click(); await sleep(250);
+  (await visibleWrites()).forEach(a=>roSeen.add('class detail:'+a));
+  ok('no editing control is visible anywhere', roSeen.size===0, [...roSeen]);
+  ok('the class still opens to show who is in it', /A\. Silva/.test(await p.locator('#modalBox').innerText()));
+  await p.screenshot({path:`${OUT}/viewer-class.png`});
+  await p.locator('[data-act="closeModal"]').first().click(); await sleep(100);
+    const evBox=await p.locator('.ev').first().boundingBox();
+  await p.mouse.move(evBox.x+evBox.width/2,evBox.y+8); await p.mouse.down(); await p.mouse.move(evBox.x+evBox.width/2,evBox.y+120,{steps:6}); await p.mouse.up(); await sleep(200);
+  ok('classes cannot be dragged', await p.evaluate(()=>!window.__API.calls.includes('save')));
+  await p.locator('#tabs [data-id="manage"]').click(); await sleep(120);
+  await p.locator('[data-act="sub"][data-id="academy"]').click(); await sleep(120);
+  ok('"Send feedback" and "Sair" are still there', await shown(p,'#signOutBtn') && await shown(p,'[data-act="feedback"]'));
+  await p.screenshot({path:`${OUT}/viewer-manage.png`});
+  ok('no page errors', p.errs.length===0, p.errs);
+  await p.context().close();
+
+  console.log('\nconsole: feedback inbox and activity');
+  p=await page(()=>{ window.__API.mode.operator=true; window.__API.mode.noAcademy=true;
+    window.__fb=[{id:'71',academyId:'777',email:'vera@hyve.pt',screen:'calendar',message:'Can coaches see only their classes?',context:'{"clubs":1,"classes":9}',status:'new',at:'2026-11-19 10:02:00'},
+                 {id:'72',academyId:'777',email:'ana@hyve.pt',screen:'place',message:'Love the waiting list.',context:'',status:'done',at:'2026-11-18 09:00:00'}];
+    window.__API.mode.admin=function(path,body,respond){
+      if(path==='admin/academies') return respond(200,{academies:[{id:'777',name:'The Hyve',plan:'TRIAL',maxClubs:1,maxUsers:3,clubsUsed:1,language:'pt',ownerEmail:'ana@hyve.pt'}],users:[]});
+      if(path==='admin/feedback') return respond(200,{feedback:window.__fb});
+      if(path==='admin/feedback/status'){ window.__fbSet=[body.id,body.status]; return respond(200,{ok:true,status:body.status}); }
+      if(path==='admin/audit'){ window.__auditFor=body.academyId; return respond(200,{entries:[
+        {id:'1',academyId:'777',email:'info@youlovepadel.pt',role:'operator',action:'update',target:'classes',summary:'Mon 18:30 · 90 min · level 3',at:'2026-11-19 11:00:00'},
+        {id:'2',academyId:'777',email:'ana@hyve.pt',role:'owner',action:'create',target:'players',summary:'A. Silva · level 3',at:'2026-11-19 10:00:00'}]}); }
+      return respond(404,{error:'?'}); }; });
+  await p.goto(BASE+'/admin.html',{waitUntil:'load'}); await sleep(900);
+  ok('the Feedback tab shows how many are new', /Feedback\s*1 new/.test(await p.locator('[data-act="view"][data-id="feedback"]').innerText()));
+  await p.locator('[data-act="view"][data-id="feedback"]').click(); await sleep(200);
+  const fbText=await p.locator('main').innerText();
+  ok('each message shows academy, sender, screen and message', /The Hyve/.test(fbText)&&/vera@hyve\.pt/.test(fbText)&&/on calendar/.test(fbText)&&/only their classes/.test(fbText), fbText.slice(0,300));
+  ok('with the shape of their data', /1 clubs · 9 classes/.test(fbText));
+  await p.screenshot({path:`${OUT}/admin-feedback.png`});
+  await p.locator('[data-act="fbStatus"][data-id="71"][data-s="done"]').click(); await sleep(200);
+  ok('"Done" is saved', JSON.stringify(await p.evaluate(()=>window.__fbSet))==='["71","done"]');
+  ok('and the new count drops', !/new/.test(await p.locator('[data-act="view"][data-id="feedback"]').innerText()));
+  await p.locator('[data-act="view"][data-id="academies"]').click(); await sleep(150);
+  await p.locator('[data-act="activity"]').click(); await sleep(400);
+  const act=await p.locator('#modalRoot').innerText();
+  ok('Activity lists the academy\'s changes', await p.evaluate(()=>window.__auditFor)==='777' && /A\. Silva/.test(act) && /Mon 18:30/.test(act), act.slice(0,300));
+  ok('operator changes are marked', await p.locator('#modalRoot .chip.warn',{hasText:'operator'}).count()===1);
+  await p.screenshot({path:`${OUT}/admin-activity.png`});
+  ok('no page errors in the console', p.errs.length===0, p.errs);
+  await p.context().close();
+
   console.log('\nsigned in: the academy language rules');
   for (const [lang,word,day] of [['pt','Calendário','Seg'],['es','Calendario','Lun'],['fr','Calendrier','Lun'],['en','Calendar','Mon']]) {
     p=await page(`window.__API.academy.language=${JSON.stringify(lang)};`);

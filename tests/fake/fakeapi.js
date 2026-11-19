@@ -51,7 +51,7 @@
     if(path==="tutorial"){ A.tutorialDone=body.done!==false; return respond(200,{ok:true,tutorialDone:A.tutorialDone}); }
     if(MODE.admin&&path.indexOf("admin/")===0) return MODE.admin(path,body,respond);
     if(path==="data"){
-      return respond(200,Object.assign({academy:JSON.parse(JSON.stringify(A)),role:"owner"},
+      return respond(200,Object.assign({academy:JSON.parse(JSON.stringify(A)),role:MODE.role||"owner"},
         JSON.parse(JSON.stringify(DB))));
     }
     if(path==="save"){

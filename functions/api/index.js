@@ -460,6 +460,59 @@ async function seatsUsed(zcql, academyId) {
   return rows.filter((r) => (r.Status || 'invited') !== 'removed').length;
 }
 
+/* ─────────── roles ───────────
+   owner and coordinator change things; coach and viewer only look. An
+   operator who opened the academy from the console acts as an owner. The
+   planner hides the controls too, but this is the check that counts. */
+const WRITER_ROLES = ['owner', 'coordinator'];
+const canWrite = (me) => !!(me.actingAs || WRITER_ROLES.includes(me.role));
+const READ_ONLY = { error: 'read-only', message: 'Your role can view this academy but not change it.' };
+
+/* ─────────── audit log ───────────
+   One row per change: who, in which academy, as what, and a line a person can
+   read. Operator visits are marked as such. Writing the log must never stop
+   the change it describes, so a failure here is logged and swallowed. */
+async function audit(app, me, academyId, action, target, targetId, summary) {
+  try {
+    await app.datastore().table('AuditLog').insertRow({
+      AcademyId: academyId ? num(academyId) : null,
+      Email: me.email,
+      Role: (me.actingAs || (me.isOperator && String(action).startsWith('admin'))) ? 'operator' : (me.role || '—'),
+      Action: String(action).slice(0, 40),
+      Target: target ? String(target).slice(0, 40) : null,
+      TargetId: targetId ? String(targetId).slice(0, 40) : null,
+      Summary: summary ? String(summary).slice(0, 2000) : null
+    });
+  } catch (e) {
+    console.error('audit log write failed:', e && e.message);
+  }
+}
+
+const DAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+function describe(collection, r) {
+  if (!r) return '';
+  if (collection === 'classes') {
+    return `${DAY_NAMES[num(r.day)] || '?'} ${r.start || ''} · ${r.duration || ''} min · level ${r.level}` +
+      (Array.isArray(r.playerIds) ? ` · ${r.playerIds.length} player(s)` : '');
+  }
+  if (collection === 'requests') return `${r.name || ''} · level ${r.level} · ${num(r.sessions)}×/week`;
+  if (collection === 'venues') return `${r.name || ''} · ${num(r.courts)} court(s)`;
+  if (collection === 'coaches') return `${r.name || ''} · L${num(r.certLevel)}`;
+  return `${r.name || ''}${r.level !== undefined ? ' · level ' + r.level : ''}`;
+}
+/* What a row was, read just before it is deleted, so the log can say it. */
+async function describeStored(zcql, collection, id) {
+  const cols = { venues: ['Clubs', 'Name'], coaches: ['Coaches', 'Name'], players: ['Players', 'Name'],
+                 requests: ['Requests', 'PlayerName'], classes: ['Classes', 'StartTime'] }[collection];
+  if (!cols) return '';
+  const [table, col] = cols;
+  const extra = table === 'Classes' ? `, ${table}.DayOfWeek, ${table}.Level` : '';
+  const rows = await query(zcql, `SELECT ${table}.${col}${extra} FROM ${table} WHERE ${table}.ROWID = ${num(id)}`).catch(() => []);
+  if (!rows.length) return '';
+  const r = rows[0];
+  return table === 'Classes' ? `${DAY_NAMES[num(r.DayOfWeek)] || '?'} ${r.StartTime} · level ${r.Level}` : String(r[col] || '');
+}
+
 /* ─────────── routing ─────────── */
 
 async function handler(req, res) {
@@ -508,6 +561,8 @@ async function handler(req, res) {
           const settings = Object.assign({}, current.settings,
             { language: a.language ? pickLanguage(a.language) : current.language });
           await ds.updateRow(Object.assign({ ROWID: a.id, Settings: JSON.stringify(settings) }, row));
+          await audit(app, me, a.id, 'admin:academy', 'academy', a.id,
+            `${row.Name} · ${row.PlanStatus} · ${row.MaxClubs} club(s), ${row.MaxUsers} user(s) · ${settings.language}`);
           return sendJson(res, 200, { id: sid(a.id), invited: false });
         }
 
@@ -531,6 +586,7 @@ async function handler(req, res) {
           Role: 'owner', Status: 'invited'
         });
         const result = await invite(app, owner, a.ownerName);
+        await audit(app, me, academyId, 'admin:create', 'academy', academyId, `${row.Name} · owner ${owner}`);
         return sendJson(res, 200, { id: academyId, owner, invited: result.invited, reason: result.reason });
       }
 
@@ -544,7 +600,9 @@ async function handler(req, res) {
         const users = await query(zcql,
           `SELECT AcademyUsers.ROWID FROM AcademyUsers WHERE AcademyUsers.AcademyId = ${num(id)}`);
         if (users.length) await app.datastore().table('AcademyUsers').deleteRows(users.map((u) => sid(u.ROWID)));
+        const gone = await loadAcademy(zcql, id);
         await app.datastore().table('Academies').deleteRow(String(id));
+        await audit(app, me, id, 'admin:delete', 'academy', id, gone ? gone.name : '');
         return sendJson(res, 200, { ok: true });
       }
 
@@ -561,6 +619,7 @@ async function handler(req, res) {
         if (u.id) {
           await ds.updateRow({ ROWID: u.id, AcademyId: u.academyId, Email: email,
             Name: u.name || '', Role: u.role || 'coordinator', Status: u.status || 'invited' });
+          await audit(app, me, u.academyId, 'admin:user', 'user', u.id, `${email} · ${u.role || 'coordinator'} · ${u.status || 'invited'}`);
           return sendJson(res, 200, { id: sid(u.id), invited: false });
         }
 
@@ -575,6 +634,7 @@ async function handler(req, res) {
         const created = await ds.insertRow({ AcademyId: u.academyId, Email: email,
           Name: u.name || '', Role: u.role || 'coordinator', Status: 'invited' });
         const result = await invite(app, email, u.name);
+        await audit(app, me, u.academyId, 'admin:add-user', 'user', created && created.ROWID, `${email} · ${u.role || 'coordinator'}`);
         return sendJson(res, 200, { id: sid(created && created.ROWID), invited: result.invited, reason: result.reason });
       }
 
@@ -601,11 +661,14 @@ async function handler(req, res) {
           await invite(app, email, row.Name);
           sent = 'invite';
         }
+        await audit(app, me, null, 'admin:resend', 'user', body.id, `${email} · ${sent === 'reset' ? 'password link' : 'new invitation'}`);
         return sendJson(res, 200, { ok: true, sent, email });
       }
 
       if (path === 'admin/user/delete') {
+        const who = await query(zcql, `SELECT AcademyUsers.Email, AcademyUsers.AcademyId FROM AcademyUsers WHERE AcademyUsers.ROWID = ${num(body.id)}`);
         await app.datastore().table('AcademyUsers').deleteRow(String(body.id));
+        await audit(app, me, who.length ? who[0].AcademyId : null, 'admin:remove-user', 'user', body.id, who.length ? who[0].Email : '');
         return sendJson(res, 200, { ok: true });
       }
 
@@ -613,13 +676,34 @@ async function handler(req, res) {
       if (path === 'admin/feedback') {
         const rows = await query(zcql,
           `SELECT Feedback.ROWID, Feedback.AcademyId, Feedback.Email, Feedback.Screen,
-                  Feedback.Message, Feedback.Status, Feedback.CREATEDTIME FROM Feedback`);
+                  Feedback.Message, Feedback.Context, Feedback.Status, Feedback.CREATEDTIME FROM Feedback`);
         return sendJson(res, 200, {
           feedback: rows.map((r) => ({
             id: sid(r.ROWID), academyId: sid(r.AcademyId), email: r.Email,
-            screen: r.Screen || '', message: r.Message || '',
+            screen: r.Screen || '', message: r.Message || '', context: r.Context || '',
             status: r.Status || 'new', at: r.CREATEDTIME
           })).sort((a, b) => String(b.at).localeCompare(String(a.at)))
+        });
+      }
+
+      if (path === 'admin/feedback/status') {
+        const status = ['new', 'read', 'done'].includes(body.status) ? body.status : 'read';
+        await app.datastore().table('Feedback').updateRow({ ROWID: String(body.id), Status: status });
+        return sendJson(res, 200, { ok: true, status });
+      }
+
+      /* Newest first; one academy, or everything when none is named. */
+      if (path === 'admin/audit') {
+        const where = body.academyId ? ` WHERE AuditLog.AcademyId = ${num(body.academyId)}` : '';
+        const rows = await query(zcql,
+          `SELECT AuditLog.ROWID, AuditLog.AcademyId, AuditLog.Email, AuditLog.Role, AuditLog.Action,
+                  AuditLog.Target, AuditLog.TargetId, AuditLog.Summary, AuditLog.CREATEDTIME FROM AuditLog${where}`);
+        return sendJson(res, 200, {
+          entries: rows.map((r) => ({
+            id: sid(r.ROWID), academyId: sid(r.AcademyId), email: r.Email, role: r.Role,
+            action: r.Action, target: r.Target || '', targetId: r.TargetId || '',
+            summary: r.Summary || '', at: r.CREATEDTIME
+          })).sort((x, y) => String(y.at).localeCompare(String(x.at)) || Number(y.id) - Number(x.id)).slice(0, 300)
         });
       }
 
@@ -677,19 +761,24 @@ async function handler(req, res) {
     }
 
     if (path === 'save') {
-      const id = await saveRecord(app, zcql, me.academyId, academy, body.collection, body.record || {});
+      if (!canWrite(me)) return sendJson(res, 403, READ_ONLY);
+      const rec = body.record || {};
+      const creating = !rec.id || !/^\d+$/.test(String(rec.id));
+      const id = await saveRecord(app, zcql, me.academyId, academy, body.collection, rec);
+      await audit(app, me, me.academyId, creating ? 'create' : 'update', body.collection, id, describe(body.collection, rec));
       return sendJson(res, 200, { id });
     }
 
     if (path === 'delete') {
+      if (!canWrite(me)) return sendJson(res, 403, READ_ONLY);
+      const was = TABLES[body.collection] ? await describeStored(zcql, body.collection, body.id) : '';
       await deleteRecord(app, zcql, me.academyId, body.collection, body.id);
+      await audit(app, me, me.academyId, 'delete', body.collection, body.id, was);
       return sendJson(res, 200, { ok: true });
     }
 
     if (path === 'academy') {
-      if (me.role !== 'owner' && me.role !== 'coordinator') {
-        return sendJson(res, 403, { error: 'Only an owner or coordinator can change academy settings.' });
-      }
+      if (!canWrite(me)) return sendJson(res, 403, READ_ONLY);
       /* Only rule keys come from the client; the reserved ones are carried over
          from what is stored, whatever the request says. */
       const incoming = body.rules && typeof body.rules === 'object' ? body.rules : academy.rules;
@@ -700,6 +789,10 @@ async function handler(req, res) {
         Name: body.name || academy.name,
         Settings: JSON.stringify(settings)
       });
+      const changed = Object.keys(settings).filter((k) => JSON.stringify(settings[k]) !== JSON.stringify(academy.settings[k]));
+      await audit(app, me, me.academyId, 'settings', 'academy', me.academyId,
+        (body.name && body.name !== academy.name ? `renamed to "${body.name}"` : '') +
+        (changed.length ? (body.name && body.name !== academy.name ? '; ' : '') + 'rules: ' + changed.join(', ') : ''));
       return sendJson(res, 200, { ok: true });
     }
 
