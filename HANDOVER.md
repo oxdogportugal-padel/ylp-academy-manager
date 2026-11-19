@@ -164,13 +164,16 @@ Language and tour progress live in `Academies.Settings` under keys the server
 protects (`language`, `tutorialDone`) — no schema change was needed. See
 `docs/catalyst-schema.md`.
 
+Deployed to Development on 19 Nov 2026 and confirmed working: sign-in, the
+redirect after login, and the operator console. Slate app `padel-planner-slate`
+is served at https://padel-planner-slate-cfmfcikl.onslate.eu/ (upload-type,
+not linked to Git).
+
 ## Still outstanding
 
-1. **Deploy.** Function and client both changed; they must ship together, the
-   client calls the new `session` and `tutorial` paths.
-2. **Portuguese edition of the guide** — the screenshots can already be
+1. **Portuguese edition of the guide** — the screenshots can already be
    Portuguese; the prose in `manual/build.py` is English.
-3. **Promote to Production** — a console action, not a CLI one — and change the
+2. **Promote to Production** — a console action, not a CLI one — and change the
    ZAID.
 
 Deferred and agreed as post-trial: calendar auto-fit to the earliest and latest
@@ -194,6 +197,13 @@ column already exists on every table), full keyboard and ARIA support.
   undefined and the app silently runs local-only. That cost an afternoon.
 - A Slate upload can report success in the list while having actually failed —
   check the duration. 20 minutes means failed; ~30 seconds means it worked.
+- After sign-in, Catalyst sends the browser to **`/app/`**, its default,
+  whatever `login_redirect` says. `client/app/index.html` exists only to
+  forward that to the root; keep it in every Slate upload or login ends on a
+  404. `?next=admin` does not survive the detour, so it is kept in
+  sessionStorage.
+- The embedded Zoho sign-in arrives as an iframe with a small fixed height
+  that cuts the form off; `#login-container iframe` is resized in CSS.
 - Data care: `players` carries guardian contact and a consent timestamp. No real
   player data in any demo, screenshot or shared environment before the DPA with
   the academy exists.
