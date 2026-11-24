@@ -16,9 +16,10 @@
   window.catalyst={
     auth:{
       isUserAuthenticated:function(){
+        if(MODE.hangAuth) return new Promise(function(){});
         return MODE.signedIn ? Promise.resolve({content:{email_id:"ana@hyve.pt"}}) : Promise.reject(new Error("not signed in"));
       },
-      generateAuthToken:function(){ return Promise.resolve({access_token:"tok_abc"}); },
+      generateAuthToken:function(){ return MODE.hangToken ? new Promise(function(){}) : Promise.resolve({access_token:"tok_abc"}); },
       signIn:function(id,opts){
         MODE.signInCalls=(MODE.signInCalls||[]).concat([{id:id,redirect:opts&&opts.login_redirect}]);
         /* like the real widget: an iframe that arrives with a small fixed height */
@@ -38,6 +39,7 @@
     if(opts.method==="POST"){ body=JSON.parse(opts.body||"{}"); path=body.path; }
     else { path=new URL(url,location.origin).searchParams.get("path"); }
     CALLS.push(path);
+    if(MODE.hangPath===path) return new Promise(function(){});
     var asA=body.asAcademy||(opts.method!=="POST"?new URL(url,location.origin).searchParams.get("as"):null);
     if(asA) MODE.asSeen=(MODE.asSeen||[]).concat([path]);
     var acting=!!(MODE.operator&&asA);

@@ -168,9 +168,39 @@ function waitForSdk(ms){
   });
 }
 
+/* ── no endless splash ── each opening step has a time limit; a stall or a
+   script error replaces the dots with a sentence naming the step. */
+/* time limits in ms; a test may shorten them through window.__BANDEJA_LIMITS */
+var LIMITS=Object.assign({auth:15000,token:15000,fetch:30000,watchdog:45000},window.__BANDEJA_LIMITS||{});
+var STEP="loading the sign-in service";
+function within(p,ms){
+  return new Promise(function(resolve,reject){
+    var done=false, timer=setTimeout(function(){ if(done) return; done=true;
+      var e=new Error("timeout"); e.code="timeout"; reject(e); },ms);
+    Promise.resolve(p).then(function(v){ if(done) return; done=true; clearTimeout(timer); resolve(v); },
+                            function(e){ if(done) return; done=true; clearTimeout(timer); reject(e); });
+  });
+}
+function stalled(detail){
+  var g=document.getElementById("gate");
+  if(!document.body.classList.contains("gated")||g.dataset.stalled) return;
+  g.dataset.stalled="1";
+  g.innerHTML='<div style="max-width:420px;text-align:center;color:#EBEEE9;padding:0 16px">'+
+    '<h2 style="font-size:22px;margin-bottom:8px">The console is taking too long to open</h2>'+
+    '<p class="small" style="color:#94A6B0">It stopped while '+esc(STEP)+(detail?' ('+esc(detail)+')':'')+
+    '. Try again; if it keeps happening, note this message.</p>'+
+    '<div class="row" style="justify-content:center;margin-top:14px">'+
+      '<button class="btn honey" data-act="retry">Try again</button>'+
+      '<a class="btn" href="./">Open the planner</a></div></div>';
+}
+window.addEventListener("error",function(ev){ stalled(String(ev&&ev.message||"error").slice(0,160)); });
+window.addEventListener("unhandledrejection",function(ev){ stalled(String(ev&&ev.reason&&ev.reason.message||"error").slice(0,160)); });
+setTimeout(function(){ stalled(); },LIMITS.watchdog);
+
 function api(path,payload){
   if(!sdk) return Promise.reject(new Error("The Catalyst SDK is not loaded."));
-  return sdk.auth.generateAuthToken().then(function(t){
+  if(document.body.classList.contains("gated")) STEP=path==="session"?"asking who you are":"loading "+path.replace("admin/","");
+  return within(sdk.auth.generateAuthToken(),LIMITS.token).then(function(t){
     var token=(t&&(t.access_token||(t.content&&t.content.token)))||"";
     var url=FUNCTION_URL, opts={ headers:{ "Authorization":token, "Content-Type":"application/json" } };
     if(payload){ opts.method="POST"; opts.body=JSON.stringify(Object.assign({path:path},payload)); }
@@ -241,6 +271,7 @@ function n(id){var x=parseInt(v(id),10);return isNaN(x)?0:x;}
 
 /* ── actions ──────────────────────────────────────────── */
 var A={};
+A.retry=function(){ location.reload(); };
 A.scrim=function(id,el,ev){ if(ev&&ev.target&&ev.target.classList.contains("scrim")) closeModal(); };
 A.closeModal=closeModal;
 A.saveModal=function(){ if(onSave) onSave(); };
@@ -528,13 +559,14 @@ document.addEventListener("click",function(ev){
 waitForSdk().then(function(c){
   if(!c){ location.replace("./?next=admin"); return; }
   sdk=c;
-  return sdk.auth.isUserAuthenticated().then(function(){
+  STEP="checking your sign-in";
+  return within(sdk.auth.isUserAuthenticated(),LIMITS.auth).then(function(){
     return api("session").then(function(sess){
       me=sess.email||"";
       if(!sess.isOperator){ location.replace("./"); return; }
       return load();
     });
-  },function(){ location.replace("./?next=admin"); })
+  },function(e){ if(e&&e.code==="timeout") return stalled(); location.replace("./?next=admin"); })
   .catch(function(e){
     if(e && e.status===401){ location.replace("./?next=admin"); return; }
     if(e && e.status===403){ location.replace("./"); return; }

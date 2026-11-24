@@ -21,7 +21,10 @@ while ((m = re.exec(html))) keys.add(JSON.parse('"' + (m[1] !== undefined ? m[1]
 ['Calendar', 'Place a player', 'Place', 'Waiting list', 'Waiting', 'Manage',
  'Academy', 'Clubs', 'Coaches', 'Players', 'Classes',
  'Player', 'Level', 'Club', 'Wants', 'Booked', 'Availability', 'Day', 'Time', 'Seats', 'Coach',
- 'save', 'delete'].forEach((k) => keys.add(k));
+ 'save', 'delete',
+ /* STEP_LABEL: the opening steps named when the splash stalls */
+ 'loading the sign-in service', 'checking your sign-in', 'getting a sign-in token',
+ 'asking who you are', 'loading your academy', 'drawing the planner'].forEach((k) => keys.add(k));
 ok('found the strings', keys.size > 250, keys.size);
 
 const ph = (s) => (s.match(/\{\w+\}/g) || []).sort().join(',');

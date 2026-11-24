@@ -310,6 +310,15 @@ var DAYS=DAYNAMES.en.s, DAYF=DAYNAMES.en.f;
    English; tests/unit/i18n.js fails the build if any key is missing. */
 var I18N={
  pt:{
+  "Bandeja is taking too long to open":"O Bandeja está a demorar demasiado a abrir",
+  "It stopped while {step}.":"Parou enquanto estava a {step}.",
+  "Try again. If it keeps happening, send this message to YLP Solutions.":"Tente de novo. Se continuar a acontecer, envie esta mensagem à YLP Solutions.",
+  "loading the sign-in service":"carregar o serviço de entrada",
+  "checking your sign-in":"verificar a sua sessão",
+  "getting a sign-in token":"obter um token de sessão",
+  "asking who you are":"perguntar quem é",
+  "loading your academy":"carregar a sua academia",
+  "drawing the planner":"desenhar o planeador",
   "Your role can view this academy but not change it.":"O seu perfil pode ver esta academia, mas não alterá-la.",
   "Nothing has been set up in this academy yet.":"Ainda nada foi configurado nesta academia.",
   "View only":"Só leitura",
@@ -591,6 +600,15 @@ var I18N={
   "Clubs: {a} · Coaches: {b} · Players: {c} · Classes: {d}":"Clubes: {a} · Treinadores: {b} · Jogadores: {c} · Aulas: {d}"
  },
  es:{
+  "Bandeja is taking too long to open":"Bandeja está tardando demasiado en abrirse",
+  "It stopped while {step}.":"Se detuvo mientras estaba {step}.",
+  "Try again. If it keeps happening, send this message to YLP Solutions.":"Vuelve a intentarlo. Si sigue pasando, envía este mensaje a YLP Solutions.",
+  "loading the sign-in service":"cargando el servicio de acceso",
+  "checking your sign-in":"comprobando tu sesión",
+  "getting a sign-in token":"obteniendo un token de sesión",
+  "asking who you are":"preguntando quién eres",
+  "loading your academy":"cargando tu academia",
+  "drawing the planner":"dibujando el planificador",
   "Your role can view this academy but not change it.":"Tu perfil puede ver esta academia, pero no modificarla.",
   "Nothing has been set up in this academy yet.":"Aún no se ha configurado nada en esta academia.",
   "View only":"Solo lectura",
@@ -872,6 +890,15 @@ var I18N={
   "Clubs: {a} · Coaches: {b} · Players: {c} · Classes: {d}":"Clubes: {a} · Entrenadores: {b} · Jugadores: {c} · Clases: {d}"
  },
  fr:{
+  "Bandeja is taking too long to open":"Bandeja met trop de temps à s'ouvrir",
+  "It stopped while {step}.":"Arrêt pendant l'étape : {step}.",
+  "Try again. If it keeps happening, send this message to YLP Solutions.":"Réessayez. Si cela se reproduit, envoyez ce message à YLP Solutions.",
+  "loading the sign-in service":"chargement du service de connexion",
+  "checking your sign-in":"vérification de votre connexion",
+  "getting a sign-in token":"obtention d'un jeton de connexion",
+  "asking who you are":"identification",
+  "loading your academy":"chargement de votre académie",
+  "drawing the planner":"affichage du planificateur",
   "Your role can view this academy but not change it.":"Votre rôle permet de consulter cette académie, pas de la modifier.",
   "Nothing has been set up in this academy yet.":"Rien n'a encore été configuré dans cette académie.",
   "View only":"Lecture seule",
@@ -1333,6 +1360,41 @@ function sid(v){ return v==null ? null : String(v); }
 function num(v){ var n=Number(v); return isNaN(n)?0:n; }
 
 /* init.js loads asynchronously, so poll rather than assume. */
+/* ── no endless splash ──
+   Every step of opening the planner has a time limit, and the step in
+   progress is kept in STEP, so a stall shows a sentence naming where it
+   stopped (and a way to try again) instead of the dots forever. */
+/* time limits in ms; a test may shorten them through window.__BANDEJA_LIMITS */
+var LIMITS=Object.assign({auth:15000,token:15000,fetch:30000,watchdog:45000},window.__BANDEJA_LIMITS||{});
+var STEP="start";
+var STEP_LABEL={sdk:"loading the sign-in service",auth:"checking your sign-in",token:"getting a sign-in token",
+  session:"asking who you are",data:"loading your academy",render:"drawing the planner"};
+function stepName(){ var k=String(STEP).split(":")[0]; return t(STEP_LABEL[k]||k); }
+function within(p,ms,step){
+  return new Promise(function(resolve,reject){
+    var done=false, timer=setTimeout(function(){
+      if(done) return; done=true;
+      var e=new Error("timeout"); e.code="timeout"; e.step=step; reject(e);
+    },ms);
+    Promise.resolve(p).then(function(v){ if(done) return; done=true; clearTimeout(timer); resolve(v); },
+                            function(e){ if(done) return; done=true; clearTimeout(timer); reject(e); });
+  });
+}
+function stalled(detail){
+  /* only while the dots are up: the first, most specific message stays */
+  if(GATE.mode!=="splash") return;
+  storage="error";
+  gate("message",{title:t("Bandeja is taking too long to open"),
+    msg:t("It stopped while {step}.",{step:stepName()})+(detail?" ("+detail+")":"")+" "+
+        t("Try again. If it keeps happening, send this message to YLP Solutions."),retry:true});
+}
+window.addEventListener("error",function(ev){
+  if(GATE.mode==="splash") stalled(String(ev&&ev.message||"error").slice(0,160));
+});
+window.addEventListener("unhandledrejection",function(ev){
+  if(GATE.mode==="splash") stalled(String(ev&&ev.reason&&ev.reason.message||ev&&ev.reason||"error").slice(0,160));
+});
+
 function waitForSdk(timeoutMs){
   var deadline=Date.now()+(timeoutMs||10000);
   return new Promise(function(resolve){
@@ -1350,12 +1412,20 @@ function waitForSdk(timeoutMs){
    and a cookie would not travel. */
 function api(path, payload){
   if(!sdk) return Promise.reject(new Error("The Catalyst SDK is not loaded."));
-  return sdk.auth.generateAuthToken().then(function(t){
+  var opening=GATE.mode==="splash";
+  if(opening) STEP="token:"+path;
+  return within(sdk.auth.generateAuthToken(),LIMITS.token,"token").then(function(t){
+    if(opening) STEP=(path==="data"?"data":path==="session"?"session":path);
     var token=(t&&(t.access_token||(t.content&&t.content.token)))||"";
     var url=FUNCTION_URL, opts={ headers:{ "Authorization":token, "Content-Type":"application/json" } };
     if(payload){ opts.method="POST"; opts.body=JSON.stringify(Object.assign({path:path},AS_ACADEMY?{asAcademy:AS_ACADEMY}:{},payload)); }
     else { opts.method="GET"; url+="?path="+encodeURIComponent(path)+(AS_ACADEMY?"&as="+encodeURIComponent(AS_ACADEMY):""); }
-    return fetch(url,opts).then(function(res){
+    /* a request the network never answers would otherwise wait forever */
+    var ctl=window.AbortController?new AbortController():null;
+    if(ctl) opts.signal=ctl.signal;
+    var killer=setTimeout(function(){ if(ctl) ctl.abort(); },LIMITS.fetch);
+    return within(fetch(url,opts),LIMITS.fetch+1000,STEP).then(function(res){
+      clearTimeout(killer);
       return res.text().then(function(txt){
         var body={}; try{ body=txt?JSON.parse(txt):{}; }catch(e){ body={error:txt.slice(0,200)}; }
         if(!res.ok){
@@ -1552,11 +1622,13 @@ function start(){
         msg:t("This account is not attached to any academy. Ask your administrator to add you.")});
     }
     return loadAll().then(function(){
+      STEP="render";
       openApp();
       if(!ACTING&&!ACADEMY.tutorialDone&&!recall("bandeja.tour."+ME)) tourStart();
     });
   }).catch(function(e){
     if(e&&e.status===401) return gate("login");
+    if(e&&(e.code==="timeout"||e.name==="AbortError")) return stalled();
     storage="blocked";
     if(e&&e.code==="no-academy") return gate("message",{title:t("No academy yet"),
       msg:t("This account is not attached to any academy. Ask your administrator to add you.")});
@@ -1572,12 +1644,18 @@ function boot(){
   setLang(saved||browserLang());
   gate("splash");
   storage="loading";
+  STEP="sdk";
+  setTimeout(function(){ if(GATE.mode==="splash") stalled(); },LIMITS.watchdog);
   waitForSdk().then(function(c){
     if(!c){ storage="nosdk";
       return gate("message",{title:t("Cannot connect"),
         msg:t("The sign-in service did not load. Check your connection and try again."),retry:true}); }
     sdk=c; booted=true;
-    return sdk.auth.isUserAuthenticated().then(start,function(){ gate("login"); });
+    STEP="auth";
+    return within(sdk.auth.isUserAuthenticated(),LIMITS.auth,"auth").then(start,function(e){
+      if(e&&e.code==="timeout") return stalled();
+      gate("login");
+    });
   });
   setInterval(function(){ if(!document.hidden&&storage==="on") loadAll().catch(function(){}); },30000);
   window.addEventListener("focus",function(){ if(storage==="on") loadAll().catch(function(){}); });

@@ -243,6 +243,36 @@ const shown=(p,sel)=>p.evaluate(s=>{const e=document.querySelector(s); return !!
   ok('no page errors in the console', p.errs.length===0, p.errs);
   await p.context().close();
 
+  console.log('\nno endless splash');
+  const LIM='window.__BANDEJA_LIMITS={auth:600,token:600,fetch:700,watchdog:4000};';
+  for (const [label,setup,expect] of [
+    ['the sign-in check never answers', 'window.__API.mode.hangAuth=true;', /verificar a sua sessão/],
+    ['the token never comes',           'window.__API.mode.hangToken=true;', /obter um token/],
+    ['the server never answers "session"', 'window.__API.mode.hangPath="session";', /perguntar quem é/],
+    ['the server never answers "data"',    'window.__API.mode.hangPath="data";',    /carregar a sua academia/] ]) {
+    p=await page(LIM+'window.__API.academy.language="pt";localStorage.setItem("bandeja.lang","pt");'+setup);
+    await p.goto(BASE+'/',{waitUntil:'load'}); await sleep(2500);
+    const txt=await p.locator('#gate').innerText();
+    ok(`${label}: a message replaces the dots`, !(await shown(p,'.gsplash')) && /demorar demasiado, txt.slice(0,200));
+    ok(`${label}: and it names the step`, expect.test(txt), txt.slice(0,200));
+    ok(`${label}: with a way to try again`, await shown(p,'#gate [data-act="reloadNow"]'));
+    if(label.includes('data')) await p.screenshot({path:`${OUT}/stalled.png`});
+    await p.context().close();
+  }
+  p=await page('window.__BANDEJA_LIMITS={auth:60000,token:60000,fetch:60000,watchdog:60000};window.__API.mode.hangAuth=true; setTimeout(function(){ throw new Error("boom in startup"); },1500);');
+  await p.goto(BASE+'/',{waitUntil:'load'}); await sleep(2500);
+  ok('a script error during startup shows instead of the dots', /boom in startup/.test(await p.locator('#gate').innerText()));
+  await p.context().close();
+  p=await page(LIM+'window.__API.mode.operator=true; window.__API.mode.hangPath="admin/academies";');
+  await p.goto(BASE+'/admin.html',{waitUntil:'load'}); await sleep(5500);
+  const at=await p.locator('#gate').innerText();
+  ok('the console does the same', /taking too long/.test(at) && /loading (academies|feedback)/.test(at) && await shown(p,'#gate [data-act="retry"]'), at.slice(0,200));
+  await p.context().close();
+  p=await page(LIM+'window.__API.academy.language="pt";');
+  await p.goto(BASE+'/',{waitUntil:'load'}); await sleep(5000);
+  ok('a normal start is never interrupted by the watchdog', await shown(p,'header.top') && !(await shown(p,'#gate')));
+  await p.context().close();
+
   console.log('\nsigned in: the academy language rules');
   for (const [lang,word,day] of [['pt','Calendário','Seg'],['es','Calendario','Lun'],['fr','Calendrier','Lun'],['en','Calendar','Mon']]) {
     p=await page(`window.__API.academy.language=${JSON.stringify(lang)};`);
