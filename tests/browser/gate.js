@@ -253,7 +253,7 @@ const shown=(p,sel)=>p.evaluate(s=>{const e=document.querySelector(s); return !!
     p=await page(LIM+'window.__API.academy.language="pt";localStorage.setItem("bandeja.lang","pt");'+setup);
     await p.goto(BASE+'/',{waitUntil:'load'}); await sleep(2500);
     const txt=await p.locator('#gate').innerText();
-    ok(`${label}: a message replaces the dots`, !(await shown(p,'.gsplash')) && /demorar demasiado, txt.slice(0,200));
+    ok(`${label}: a message replaces the dots`, !(await shown(p,'.gsplash')) && /demorar demasiado/.test(txt), txt.slice(0,200));
     ok(`${label}: and it names the step`, expect.test(txt), txt.slice(0,200));
     ok(`${label}: with a way to try again`, await shown(p,'#gate [data-act="reloadNow"]'));
     if(label.includes('data')) await p.screenshot({path:`${OUT}/stalled.png`});
