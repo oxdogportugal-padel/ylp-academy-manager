@@ -174,6 +174,11 @@ read-only), a feedback inbox in the console, an `AuditLog` table with an
 Activity view per academy, Open planner for operators, Resend invitation, and
 a sign-out button in the planner header.
 
+Added 24 Nov 2026: coaches linked to sign-in emails see only their own
+classes; players carry under-18, guardian and consent (stamped by the server,
+logged, warned about in Manage). New columns on Coaches and Players — see
+`docs/catalyst-schema.md`.
+
 ## Still outstanding
 
 1. **Portuguese edition of the guide** — the screenshots can already be

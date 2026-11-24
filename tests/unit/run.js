@@ -258,6 +258,72 @@ function check(label, cond, detail) {
   check('it can be marked done', fst.status === 'done' && DB.Feedback.find(f => f.ROWID === fb[0].id).Status === 'done');
   check('a non-operator cannot', (await call('POST', { path: 'admin/feedback/status', id: fb[0].id, status: 'new' }, OWNER_A)).error === 'Not an operator');
 
+  console.log('\ncoaches see only their own classes');
+  const COACH_U = { email_id: 'rui@hyve.pt', first_name: 'Rui' };
+  let cv = await call('GET', { path: 'data' }, COACH_U);
+  check('a coach not linked to a coach record sees nothing, and is told why',
+    cv.coachUnlinked === true && cv.classes.length === 0 && cv.players.length === 0, cv);
+  const venueA = DB.Clubs.find(c => String(c.AcademyId) === String(a.id)).ROWID;
+  const c1 = await call('POST', { path: 'save', collection: 'coaches', record: { name: 'Rui T', certLevel: 3, email: 'Rui@Hyve.pt ', venueIds: [venueA] } }, OWNER_A);
+  const c2 = await call('POST', { path: 'save', collection: 'coaches', record: { name: 'Other', certLevel: 3, venueIds: [venueA] } }, OWNER_A);
+  check('the email is stored lower-case and trimmed', DB.Coaches.find(c => c.ROWID === c1.id).Email === 'rui@hyve.pt');
+  check('two coaches cannot share an email',
+    (await call('POST', { path: 'save', collection: 'coaches', record: { name: 'Dup', certLevel: 1, email: 'rui@hyve.pt' } }, OWNER_A)).error === 'email-taken');
+  check('a bad email is refused',
+    (await call('POST', { path: 'save', collection: 'coaches', record: { name: 'Bad', certLevel: 1, email: 'not-an-email' } }, OWNER_A)).error === 'bad-email');
+  check('re-saving a coach with its own email is fine',
+    !!(await call('POST', { path: 'save', collection: 'coaches', record: { id: c1.id, name: 'Rui T', certLevel: 3, email: 'rui@hyve.pt', venueIds: [venueA] } }, OWNER_A)).id);
+  const pIn  = await call('POST', { path: 'save', collection: 'players', record: { name: 'In Rui', level: 5 } }, OWNER_A);
+  const pOut = await call('POST', { path: 'save', collection: 'players', record: { name: 'Not Rui', level: 5 } }, OWNER_A);
+  const kMine  = await call('POST', { path: 'save', collection: 'classes', record: { venueId: venueA, coachId: c1.id, day: 2, start: '18:00', duration: 60, level: 5, playerIds: [pIn.id] } }, OWNER_A);
+  const kOther = await call('POST', { path: 'save', collection: 'classes', record: { venueId: venueA, coachId: c2.id, day: 3, start: '18:00', duration: 60, level: 5, playerIds: [pOut.id] } }, OWNER_A);
+  cv = await call('GET', { path: 'data' }, COACH_U);
+  check('the coach gets their own classes only', cv.classes.length === 1 && cv.classes[0].id === kMine.id, cv.classes.map(k => k.id));
+  check('and only the players in them', cv.players.length === 1 && cv.players[0].id === pIn.id, cv.players.map(x => x.name));
+  check('the waiting list is not sent to a coach', cv.requests.length === 0);
+  check('nor the other coaches', cv.coaches.length === 1 && cv.coaches[0].id === c1.id);
+  check('the planner is told which coach this is', cv.coachId === c1.id);
+  const ownerView = await call('GET', { path: 'data' }, OWNER_A);
+  check('the owner still sees everything', ownerView.classes.some(k => k.id === kOther.id) && ownerView.coachId === null);
+  check('a coach still cannot write', (await call('POST', { path: 'save', collection: 'classes', record: { id: kMine.id, venueId: venueA, coachId: c1.id, day: 2, start: '19:00', duration: 60, level: 5, playerIds: [] } }, COACH_U)).error === 'read-only');
+
+  console.log('\nplayers under 18: guardian and consent');
+  const noGuardian = await call('POST', { path: 'save', collection: 'players', record: { name: 'Kid', level: 2, minor: true } }, OWNER_A);
+  check('a minor without a guardian is refused', noGuardian.error === 'guardian-required', noGuardian);
+  const kid = await call('POST', { path: 'save', collection: 'players', record: { name: 'Kid', level: 2, minor: true,
+    guardianName: 'Parent P', guardianContact: '+351 900 000 000', consentGiven: true, consentMethod: 'signed form',
+    consent: { at: '1999-01-01 00:00:00', by: 'forged@x.pt', method: 'forged' }, _consent: { at: 'forged', by: 'forged', method: 'forged' } } }, OWNER_A);
+  const kidRow = () => DB.Players.find(x => x.ROWID === kid.id);
+  check('with a guardian it saves', !!kid.id, kid);
+  check('consent is stamped by the server, with who recorded it',
+    /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(kidRow().ConsentAt) && kidRow().ConsentBy === 'ana@hyve.pt' && kidRow().ConsentMethod === 'signed form', kidRow());
+  check('a stamp sent by the browser is ignored', kidRow().ConsentAt !== '1999-01-01 00:00:00' && kidRow().ConsentBy !== 'forged@x.pt');
+  const stamp = kidRow().ConsentAt;
+  await call('POST', { path: 'save', collection: 'players', record: { id: kid.id, name: 'Kid', level: 2.5, minor: true,
+    guardianName: 'Parent P', guardianContact: '+351 900 000 000', consentGiven: true, consentMethod: 'signed form' } }, { email_id: 'cora@hyve.pt' });
+  check('editing the player keeps the original stamp', kidRow().ConsentAt === stamp && kidRow().ConsentBy === 'ana@hyve.pt');
+  await call('POST', { path: 'save', collection: 'players', record: { id: kid.id, name: 'Kid', level: 2.5, minor: true,
+    guardianName: 'Parent P', guardianContact: '+351 900 000 000', consentGiven: false } }, OWNER_A);
+  check('withdrawing consent clears it', !kidRow().ConsentAt && !kidRow().ConsentBy);
+  const logK = (await call('POST', { path: 'admin/audit', academyId: a.id }, OPERATOR)).entries.filter(e => e.action === 'consent');
+  check('recording and withdrawing are both in the audit log',
+    logK.some(e => /consent recorded · signed form/.test(e.summary)) && logK.some(e => /consent withdrawn/.test(e.summary)), logK);
+  check('the audit log never holds guardian details',
+    !(await call('POST', { path: 'admin/audit', academyId: a.id }, OPERATOR)).entries.some(e => /900 000|Parent P/.test(e.summary)));
+  await call('POST', { path: 'save', collection: 'players', record: { id: kid.id, name: 'Kid', level: 2.5, minor: false,
+    guardianName: 'Parent P', guardianContact: '+351 900 000 000' } }, OWNER_A);
+  check('a player no longer marked under 18 keeps no guardian details', !kidRow().GuardianName && !kidRow().GuardianContact);
+
+  console.log('\nwho sees contact details');
+  await call('POST', { path: 'save', collection: 'players', record: { id: pIn.id, name: 'In Rui', level: 5, contact: 'inrui@mail.pt',
+    minor: true, guardianName: 'G', guardianContact: '911', consentGiven: true, consentMethod: 'email' } }, OWNER_A);
+  const asViewer = await call('GET', { path: 'data' }, { email_id: 'vera@hyve.pt' });
+  const vIn = asViewer.players.find(x => x.id === pIn.id);
+  check('a viewer gets no contact or guardian details', vIn && !vIn.contact && !vIn.guardianContact && !vIn.guardianName, vIn);
+  check('but can see that consent exists', vIn.consent && !!vIn.consent.at && !vIn.consent.by, vIn.consent);
+  const cIn = (await call('GET', { path: 'data' }, COACH_U)).players.find(x => x.id === pIn.id);
+  check('the player\'s own coach does get the guardian contact', cIn && cIn.guardianContact === '911', cIn);
+
   console.log(`\n${pass} passed, ${fail} failed`);
   process.exit(fail ? 1 : 0);
 })();

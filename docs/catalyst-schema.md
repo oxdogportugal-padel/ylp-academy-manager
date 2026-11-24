@@ -62,7 +62,9 @@ Created 19 Nov 2026 through the connector.
 Courts int req default 2 · Status varchar(20) req default `active`
 
 **Coaches** — AcademyId bigint req indexed · Name varchar(255) req ·
-CertLevel int req default 1 · Status varchar(20) req default `active`
+CertLevel int req default 1 · Status varchar(20) req default `active` ·
+Email varchar(255) indexed (added 24 Nov 2026: the coach's sign-in email; a
+user with role `coach` and this email sees only this coach's classes)
 
 CertLevel means nothing on its own — `Academies.Settings.coachCertification`
 maps each level to the highest player level it may teach.
@@ -72,7 +74,12 @@ CoachId bigint req indexed
 
 **Players** — AcademyId bigint req indexed · Name varchar(255) req indexed ·
 Level double(1dp) req · Contact varchar(255) · Notes text · Status varchar(20)
-req default `active`
+req default `active` · added 24 Nov 2026: Minor int (1 = under 18) ·
+GuardianName varchar(255) · GuardianContact varchar(255) · ConsentAt
+varchar(30) (`YYYY-MM-DD HH:MM:SS`, UTC) · ConsentBy varchar(255) (email of
+who recorded it) · ConsentMethod varchar(40) (`signed form`, `email`,
+`in person`, `other`). The consent columns are written only from the
+server's own stamp, never from the request.
 
 **Classes** — AcademyId bigint req indexed · ClubId bigint req indexed ·
 CoachId bigint req indexed · FieldNumber int · DayOfWeek int req (0 = Monday) ·

@@ -192,9 +192,12 @@ async function readAll(zcql, academyId) {
   const where = `AcademyId = ${num(academyId)}`;
   const [clubs, coaches, clubCoaches, players, classes, enrols, reqs, wins] = await Promise.all([
     query(zcql, `SELECT Clubs.ROWID, Clubs.Name, Clubs.Courts, Clubs.Status FROM Clubs WHERE Clubs.${where}`),
-    query(zcql, `SELECT Coaches.ROWID, Coaches.Name, Coaches.CertLevel, Coaches.Status FROM Coaches WHERE Coaches.${where}`),
+    query(zcql, `SELECT Coaches.ROWID, Coaches.Name, Coaches.CertLevel, Coaches.Email, Coaches.Status FROM Coaches WHERE Coaches.${where}`),
     query(zcql, `SELECT ClubCoaches.ROWID, ClubCoaches.ClubId, ClubCoaches.CoachId FROM ClubCoaches WHERE ClubCoaches.${where}`),
-    query(zcql, `SELECT Players.ROWID, Players.Name, Players.Level, Players.Contact, Players.Notes, Players.Status FROM Players WHERE Players.${where}`),
+    query(zcql, `SELECT Players.ROWID, Players.Name, Players.Level, Players.Contact, Players.Notes, Players.Status,
+                        Players.Minor, Players.GuardianName, Players.GuardianContact,
+                        Players.ConsentAt, Players.ConsentBy, Players.ConsentMethod
+                 FROM Players WHERE Players.${where}`),
     query(zcql, `SELECT Classes.ROWID, Classes.ClubId, Classes.CoachId, Classes.FieldNumber, Classes.DayOfWeek,
                         Classes.StartTime, Classes.DurationMinutes, Classes.Level, Classes.Capacity, Classes.Status
                  FROM Classes WHERE Classes.${where}`),
@@ -233,10 +236,14 @@ async function readAll(zcql, academyId) {
   return {
     venues: clubs.filter(alive).map((c) => ({ id: sid(c.ROWID), name: c.Name, courts: num(c.Courts) })),
     coaches: coaches.filter(alive).map((c) => ({
-      id: sid(c.ROWID), name: c.Name, certLevel: num(c.CertLevel), venueIds: venuesByCoach[sid(c.ROWID)] || []
+      id: sid(c.ROWID), name: c.Name, certLevel: num(c.CertLevel), venueIds: venuesByCoach[sid(c.ROWID)] || [],
+      email: c.Email || ''
     })),
     players: players.filter(alive).map((p) => ({
-      id: sid(p.ROWID), name: p.Name, level: num(p.Level), contact: p.Contact || '', notes: p.Notes || ''
+      id: sid(p.ROWID), name: p.Name, level: num(p.Level), contact: p.Contact || '', notes: p.Notes || '',
+      minor: num(p.Minor) === 1,
+      guardianName: p.GuardianName || '', guardianContact: p.GuardianContact || '',
+      consent: p.ConsentAt ? { at: p.ConsentAt, by: p.ConsentBy || '', method: p.ConsentMethod || '' } : null
     })),
     classes: classes.filter(alive).map((k) => ({
       id: sid(k.ROWID), venueId: sid(k.ClubId), coachId: sid(k.CoachId),
@@ -267,10 +274,19 @@ function toRow(collection, o, academyId) {
     case 'venues':
       return { AcademyId: academyId, Name: o.name, Courts: num(o.courts), Status: 'active' };
     case 'coaches':
-      return { AcademyId: academyId, Name: o.name, CertLevel: num(o.certLevel), Status: 'active' };
-    case 'players':
+      return { AcademyId: academyId, Name: o.name, CertLevel: num(o.certLevel),
+               Email: String(o.email || '').trim().toLowerCase(), Status: 'active' };
+    case 'players': {
+      /* consent fields come from the server's own stamp (o._consent), never
+         straight from the browser */
+      const c = o._consent || { at: '', by: '', method: '' };
       return { AcademyId: academyId, Name: o.name, Level: num(o.level),
-               Contact: o.contact || '', Notes: o.notes || '', Status: 'active' };
+               Contact: o.contact || '', Notes: o.notes || '', Status: 'active',
+               Minor: o.minor ? 1 : 0,
+               GuardianName: o.minor ? String(o.guardianName || '').trim() : '',
+               GuardianContact: o.minor ? String(o.guardianContact || '').trim() : '',
+               ConsentAt: c.at, ConsentBy: c.by, ConsentMethod: c.method };
+    }
     case 'classes':
       return { AcademyId: academyId, ClubId: o.venueId, CoachId: o.coachId,
                FieldNumber: o.field === null || o.field === undefined ? null : num(o.field),
@@ -467,6 +483,37 @@ async function seatsUsed(zcql, academyId) {
 const WRITER_ROLES = ['owner', 'coordinator'];
 const canWrite = (me) => !!(me.actingAs || WRITER_ROLES.includes(me.role));
 const READ_ONLY = { error: 'read-only', message: 'Your role can view this academy but not change it.' };
+
+/* ─────────── what each role is sent ───────────
+   owner, coordinator and operators get everything. A viewer gets the week
+   without anyone's contact details. A coach gets only their own classes —
+   matched by the login email on their coach record — the clubs those are at
+   and the players in them (with guardian contact: they may need it at the
+   court); the waiting list and the rest of the academy are not sent at all. */
+const CONSENT_METHODS = ['signed form', 'email', 'in person', 'other'];
+function stripContacts(p) {
+  return Object.assign({}, p, { contact: '', notes: '', guardianName: '', guardianContact: '',
+    consent: p.consent ? { at: p.consent.at, by: '', method: '' } : null });
+}
+function viewFor(me, data) {
+  if (me.actingAs || WRITER_ROLES.includes(me.role)) return Object.assign({ coachId: null }, data);
+  if (me.role !== 'coach') return Object.assign({}, data, { coachId: null, players: data.players.map(stripContacts) });
+  const mine = data.coaches.find((c) => c.email && c.email === me.email);
+  if (!mine) {
+    return { venues: [], coaches: [], players: [], classes: [], requests: [], coachId: null, coachUnlinked: true };
+  }
+  const classes = data.classes.filter((k) => k.coachId === mine.id);
+  const playerIds = new Set(); classes.forEach((k) => (k.playerIds || []).forEach((id) => playerIds.add(id)));
+  const venueIds = new Set(classes.map((k) => k.venueId).concat(mine.venueIds || []));
+  return {
+    coachId: mine.id,
+    venues: data.venues.filter((v) => venueIds.has(v.id)),
+    coaches: [mine],
+    players: data.players.filter((x) => playerIds.has(x.id)),
+    classes,
+    requests: []
+  };
+}
 
 /* ─────────── audit log ───────────
    One row per change: who, in which academy, as what, and a line a person can
@@ -742,8 +789,8 @@ async function handler(req, res) {
     }
 
     if (path === 'data') {
-      const data = await readAll(zcql, me.academyId);
-      return sendJson(res, 200, Object.assign({ academy: publicAcademy(academy, me.email), role: me.role }, data));
+      const data = viewFor(me, await readAll(zcql, me.academyId));
+      return sendJson(res, 200, Object.assign({ academy: publicAcademy(academy, me.email), role: me.actingAs ? 'owner' : me.role }, data));
     }
 
     /* The first-login tour. Finishing or skipping it records the caller's email
@@ -762,10 +809,43 @@ async function handler(req, res) {
 
     if (path === 'save') {
       if (!canWrite(me)) return sendJson(res, 403, READ_ONLY);
-      const rec = body.record || {};
+      const rec = Object.assign({}, body.record || {});
       const creating = !rec.id || !/^\d+$/.test(String(rec.id));
+      let consentChange = null;
+      if (body.collection === 'players') {
+        if (rec.minor && (!String(rec.guardianName || '').trim() || !String(rec.guardianContact || '').trim())) {
+          return sendJson(res, 400, { error: 'guardian-required',
+            message: 'A player under 18 needs a guardian name and contact.' });
+        }
+        const prev = creating ? [] : await query(zcql,
+          `SELECT Players.ConsentAt, Players.ConsentBy, Players.ConsentMethod FROM Players
+           WHERE Players.ROWID = ${num(rec.id)} AND Players.AcademyId = ${num(me.academyId)}`);
+        const had = prev.length && prev[0].ConsentAt ? prev[0] : null;
+        const method = CONSENT_METHODS.includes(rec.consentMethod) ? rec.consentMethod : 'other';
+        if (rec.consentGiven) {
+          rec._consent = (had && had.ConsentMethod === method)
+            ? { at: had.ConsentAt, by: had.ConsentBy || '', method }
+            : { at: new Date().toISOString().slice(0, 19).replace('T', ' '), by: me.email, method };
+          if (!had || had.ConsentMethod !== method) consentChange = `consent recorded · ${method}`;
+        } else {
+          rec._consent = { at: '', by: '', method: '' };
+          if (had) consentChange = 'consent withdrawn';
+        }
+      }
+      if (body.collection === 'coaches' && rec.email) {
+        const email = String(rec.email).trim().toLowerCase();
+        if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+          return sendJson(res, 400, { error: 'bad-email', message: 'That does not look like an email address.' });
+        }
+        const clash = await query(zcql,
+          `SELECT Coaches.ROWID FROM Coaches WHERE Coaches.AcademyId = ${num(me.academyId)} AND Coaches.Email = ${q(email)}`);
+        if (clash.some((c) => creating || sid(c.ROWID) !== sid(rec.id))) {
+          return sendJson(res, 409, { error: 'email-taken', message: 'Another coach in this academy already uses that email.' });
+        }
+      }
       const id = await saveRecord(app, zcql, me.academyId, academy, body.collection, rec);
       await audit(app, me, me.academyId, creating ? 'create' : 'update', body.collection, id, describe(body.collection, rec));
+      if (consentChange) await audit(app, me, me.academyId, 'consent', 'players', id, `${rec.name || ''} · ${consentChange}`);
       return sendJson(res, 200, { id });
     }
 

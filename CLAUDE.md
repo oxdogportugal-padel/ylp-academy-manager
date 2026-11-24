@@ -63,6 +63,18 @@ The planner hides the controls for read-only users (`WRITE_ACTS` in
 `index.html`) — a new action that changes data belongs in that list too — but
 the server's 403 is what counts.
 
+**What each role receives is decided in `viewFor`.** Owners, coordinators and
+operators get everything; viewers get no contact or guardian details; a coach
+gets only the classes of the coach record whose `Email` is their sign-in
+email, those classes' players and clubs, and no waiting list. Filter there,
+on the server, never only in the planner.
+
+**Consent is stamped by the server.** `ConsentAt`/`ConsentBy` come from the
+function when `consentGiven` turns on (or its method changes), and are cleared
+when it turns off; anything the browser sends for them is ignored. A player
+marked under 18 cannot be saved without a guardian name and contact. Guardian
+details never go into `AuditLog` summaries.
+
 **Every change is audited.** `save`, `delete`, `academy` and every `admin/*`
 write call `audit()`, which writes `AuditLog` and never blocks the change if
 the log write fails. A new write path gets an `audit()` call too.

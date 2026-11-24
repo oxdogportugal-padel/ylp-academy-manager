@@ -273,6 +273,61 @@ const shown=(p,sel)=>p.evaluate(s=>{const e=document.querySelector(s); return !!
   ok('a normal start is never interrupted by the watchdog', await shown(p,'header.top') && !(await shown(p,'#gate')));
   await p.context().close();
 
+  console.log('\na coach sees only their own classes');
+  const SEED=`const D=window.__API.db;
+    D.venues.push({id:'1',name:'Riverside',courts:2});
+    D.coaches.push({id:'21',name:'Rui T',certLevel:3,venueIds:['1'],email:'rui@hyve.pt'},{id:'22',name:'Other Coach',certLevel:3,venueIds:['1'],email:''});
+    D.players.push({id:'31',name:'Mine Player',level:3,minor:true,guardianName:'G',guardianContact:'911',consent:null},{id:'32',name:'Not Mine',level:3});
+    D.classes.push({id:'41',venueId:'1',coachId:'21',day:0,start:'18:00',duration:60,level:3,capacity:null,playerIds:['31']},
+                   {id:'42',venueId:'1',coachId:'22',day:1,start:'19:00',duration:60,level:3,capacity:null,playerIds:['32']});
+    D.requests.push({id:'51',name:'Waiting W',level:3,venueId:'1',sessions:1,windows:[{day:1,from:'18:00',to:'21:00'}],placed:[]});`;
+  p=await page(`window.__API.academy.language='pt';window.__API.mode.role='coach';window.__API.mode.coachId='21';`+SEED);
+  await p.goto(BASE+'/',{waitUntil:'load'}); await sleep(900);
+  ok('only Calendar and Manage are offered', JSON.stringify(await p.$$eval('#tabs [data-act="tab"]',b=>b.map(x=>x.dataset.id)))==='["calendar","manage"]');
+  ok('on the phone tab bar too', JSON.stringify(await p.$$eval('#bnav [data-act="tab"]',b=>b.map(x=>x.dataset.id)))==='["calendar","manage"]');
+  ok('their class is on the calendar, the other is not', await p.locator('.ev').count()===1);
+  await p.locator('#tabs [data-id="manage"]').click(); await sleep(150);
+  await p.locator('[data-act="sub"][data-id="players"]').click(); await sleep(150);
+  const coachPlayers=await p.locator('main').innerText();
+  ok('only the players in their classes', /Mine Player/.test(coachPlayers) && !/Not Mine/.test(coachPlayers));
+  await p.screenshot({path:`${OUT}/coach-players.png`});
+  await p.context().close();
+  p=await page(`window.__API.academy.language='pt';window.__API.mode.role='coach';`+SEED);
+  await p.goto(BASE+'/',{waitUntil:'load'}); await sleep(900);
+  ok('an unlinked coach is told why the week is empty', /ainda não está associada a um treinador/.test(await p.locator('main').innerText()));
+  await p.screenshot({path:`${OUT}/coach-unlinked.png`});
+  await p.context().close();
+
+  console.log('\nplayers under 18: guardian and consent in the planner');
+  p=await page(`window.__API.academy.language='pt';`+SEED);
+  await p.goto(BASE+'/',{waitUntil:'load'}); await sleep(900);
+  await p.locator('#tabs [data-id="manage"]').click(); await sleep(150);
+  ok('Manage warns about under-18s without consent', /1 jogador menor de 18 anos sem consentimento/.test(await p.locator('main').innerText()));
+  await p.locator('.sub [data-act="sub"][data-id="players"]').click(); await sleep(150);
+  ok('the list marks them', await p.locator('.chip.bad',{hasText:'sem consentimento'}).count()===1 && await p.locator('.chip',{hasText:'<18'}).count()===1);
+  await p.locator('[data-act="newPlayer"]').click(); await sleep(200);
+  ok('guardian fields stay hidden for an adult', !(await shown(p,'#pGuardian')));
+  await p.fill('#pName','Teen T'); await p.check('#pMinor'); await sleep(100);
+  ok('ticking "Menor de 18 anos" shows them', await shown(p,'#pGuardian'));
+  await p.locator('[data-act="saveModal"]').click(); await sleep(200);
+  ok('saving without a guardian is stopped', /encarregado de educação/.test(await p.locator('#toastEl').innerText()) && await shown(p,'#modalBox'));
+  await p.fill('#pGName','Parent T'); await p.fill('#pGContact','912 000 000');
+  await p.check('#pConsent'); await sleep(100);
+  ok('ticking consent asks how it was given', await shown(p,'#pConsentMethod'));
+  await p.selectOption('#pConsentMethod','email');
+  await p.screenshot({path:`${OUT}/player-minor.png`});
+  await p.locator('[data-act="saveModal"]').click(); await sleep(500);
+  const saved=await p.evaluate(()=>window.__API.db.players.find(x=>x.name==='Teen T'));
+  ok('the player is saved with guardian and consent', saved && saved.minor===true && saved.guardianName==='Parent T' && saved.consentGiven===true && saved.consentMethod==='email', saved);
+  await p.locator('[data-act="sub"][data-id="coaches"]').click(); await sleep(150);
+  ok('a coach with a sign-in email is marked linked', await p.locator('.chip.ok',{hasText:'entrada associada'}).count()===1);
+  await p.locator('[data-act="newCoach"]').click(); await sleep(200);
+  await p.fill('#cName','Dup Coach'); await p.fill('#cEmail','RUI@hyve.pt');
+  await p.locator('[data-act="saveModal"]').click(); await sleep(200);
+  ok('two coaches cannot share an email', /já usa esse email/.test(await p.locator('#toastEl').innerText()));
+  ok('no page errors', p.errs.length===0, p.errs);
+  await p.context().close();
+
   console.log('\nsigned in: the academy language rules');
   for (const [lang,word,day] of [['pt','Calendário','Seg'],['es','Calendario','Lun'],['fr','Calendrier','Lun'],['en','Calendar','Mon']]) {
     p=await page(`window.__API.academy.language=${JSON.stringify(lang)};`);

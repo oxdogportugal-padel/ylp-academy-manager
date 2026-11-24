@@ -546,7 +546,9 @@ document.addEventListener("click",function(ev){
   var el=ev.target.closest("[data-act]");
   if(!el) return;
   var fn=A[el.dataset.act];
-  if(fn){ ev.preventDefault(); fn(el.dataset.id,el,ev); }
+  /* The scrim wraps every modal, so it is the nearest action for any click
+     inside one; cancelling that click would stop checkboxes from ticking. */
+  if(fn){ if(el.dataset.act!=="scrim") ev.preventDefault(); fn(el.dataset.id,el,ev); }
 });
 
 /* ── boot ─────────────────────────────────────────────

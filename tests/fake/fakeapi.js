@@ -53,8 +53,20 @@
     if(path==="tutorial"){ A.tutorialDone=body.done!==false; return respond(200,{ok:true,tutorialDone:A.tutorialDone}); }
     if(MODE.admin&&path.indexOf("admin/")===0) return MODE.admin(path,body,respond);
     if(path==="data"){
-      return respond(200,Object.assign({academy:JSON.parse(JSON.stringify(A)),role:MODE.role||"owner"},
-        JSON.parse(JSON.stringify(DB))));
+      var out=JSON.parse(JSON.stringify(DB));
+      /* mirrors viewFor() in the function: a coach gets only their own classes */
+      if(MODE.role==="coach"){
+        if(!MODE.coachId) out={venues:[],coaches:[],players:[],classes:[],requests:[],coachUnlinked:true};
+        else {
+          var ks=out.classes.filter(function(k){return k.coachId===MODE.coachId;}), pids={}, vids={};
+          ks.forEach(function(k){ vids[k.venueId]=1; (k.playerIds||[]).forEach(function(i){pids[i]=1;}); });
+          out={coachId:MODE.coachId,classes:ks,requests:[],
+               coaches:out.coaches.filter(function(c){return c.id===MODE.coachId;}),
+               venues:out.venues.filter(function(v){return vids[v.id];}),
+               players:out.players.filter(function(x){return pids[x.id];})};
+        }
+      }
+      return respond(200,Object.assign({academy:JSON.parse(JSON.stringify(A)),role:MODE.role||"owner"},out));
     }
     if(path==="save"){
       if(MODE.failSave) return respond(500,{error:"Save refused by test"});
