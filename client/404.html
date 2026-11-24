@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bandeja</title>
+<!-- If the host does not add the trailing slash to a folder, /admin lands
+     here: send it to /admin/ (and /app to the planner). Anything else gets a
+     plain way back to the planner. -->
+<script>
+(function(){
+  var p=location.pathname.replace(/\/+$/,"");
+  if(/\/admin$/.test(p)) return location.replace(p+"/"+location.search+location.hash);
+  if(/\/app$/.test(p))   return location.replace(p.replace(/\/app$/,"/")+location.search+location.hash);
+})();
+</script>
+<style>
+html,body{margin:0;height:100%;background:#12222B;color:#EBEEE9;font-family:system-ui,-apple-system,Segoe UI,sans-serif}
+main{min-height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;text-align:center;padding:0 16px}
+svg{color:#E09A2B}
+a{color:#12222B;background:#E09A2B;border-radius:9px;padding:10px 16px;text-decoration:none;font-weight:600}
+p{color:#94A6B0;margin:0}
+</style>
+</head>
+<body>
+<main>
+  <svg viewBox="0 0 120 100" width="64" height="53" aria-hidden="true"><circle cx="60" cy="38" r="21" fill="currentColor"></circle><path d="M14 44 Q60 90 106 44" fill="none" stroke="currentColor" stroke-width="12" stroke-linecap="round"></path></svg>
+  <p>Esta página não existe. · This page does not exist.</p>
+  <a href="/">Bandeja</a>
+</main>
+</body>
+</html>

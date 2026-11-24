@@ -144,9 +144,10 @@ Worth settling early, because `CLAUDE.md` is what steers every future session.
 - **Sign-in gate.** `index.html` shows nothing of the planner until the API has
   confirmed who you are and returned an academy: a splash, the sign-in box, or
   a one-sentence refusal (no academy, suspended, cannot connect).
-- **One sign-in, for the console too.** `admin.html` has no login of its own.
+- **One sign-in, for the console too.** The console (`/admin/`, file
+  `client/admin/index.html`; the old `/admin.html` forwards there) has no login of its own.
   Signed out it redirects to `/?next=admin`; after sign-in the planner sends
-  operators back to the console. Non-operators who open `/admin.html` are sent
+  operators back to the console. Non-operators who open `/admin/` are sent
   to the planner. The server's 403 on `admin/*` is still what keeps them out.
 - **Four languages, chosen per academy.** Portuguese (default), Spanish,
   French, English. The operator picks it when creating an academy and can

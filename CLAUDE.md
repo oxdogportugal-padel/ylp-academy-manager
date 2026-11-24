@@ -81,7 +81,9 @@ the log write fails. A new write path gets an `audit()` call too.
 
 **Nothing renders before sign-in.** The planner and the operator console stay
 behind the gate until the API has answered `session`. There is one sign-in
-page, the planner's; the console redirects there with `?next=admin`.
+page, the planner's; the console (`/admin/`, `client/admin/index.html`)
+redirects there with `?next=admin`. `client/admin.html` and `client/404.html`
+only forward old or slash-less addresses to `/admin/`.
 
 ---
 

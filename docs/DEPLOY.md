@@ -73,7 +73,7 @@ git diff
 
 You should see **new** `catalyst.json` and `.catalystrc` (and perhaps a
 change to `client/.catalyst/slate-config.toml`) and **no** changes to
-`functions/api/index.js`, `client/index.html` or `client/admin.html`. If code
+`functions/api/index.js`, `client/index.html` or `client/admin/index.html`. If code
 was touched, undo it with `git checkout -- <file>` before committing.
 
 ```bash
@@ -121,5 +121,5 @@ Open the repository's **Actions** tab: the run tests, then deploys.
 ## Releasing by hand still works
 
 The zip uploads used so far remain a fallback: the function folder with
-`node_modules`, and the `client` folder's `index.html`, `admin.html` and
-`app/index.html`.
+`node_modules`, and the `client` folder's `index.html`, `admin.html`,
+`404.html`, `admin/index.html` and `app/index.html`.

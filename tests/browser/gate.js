@@ -11,7 +11,9 @@ const srv=http.createServer((req,res)=>{
   if(url==='/__catalyst/sdk/init.js'){res.writeHead(200,{'Content-Type':'application/javascript'});return res.end('/*stub*/');}
   let f=path.join(root,url==='/'?'index.html':url);
   if(url!=='/'&&url.endsWith('/')) f=path.join(f,'index.html');
-  if(!fs.existsSync(f)){res.writeHead(404);return res.end('nope');}
+  /* like a host that does not add the slash to a folder: 404.html answers */
+  if(fs.existsSync(f)&&fs.statSync(f).isDirectory()){ res.writeHead(404,{'Content-Type':'text/html; charset=utf-8'}); return res.end(fs.readFileSync(path.join(root,'404.html'))); }
+  if(!fs.existsSync(f)){res.writeHead(404,{'Content-Type':'text/html; charset=utf-8'});return res.end(fs.readFileSync(path.join(root,'404.html')));}
   res.writeHead(200,{'Content-Type':'text/html; charset=utf-8'}); res.end(fs.readFileSync(f));
 });
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
@@ -69,7 +71,7 @@ const shown=(p,sel)=>p.evaluate(s=>{const e=document.querySelector(s); return !!
 
   console.log('\nthe operator console has no sign-in of its own');
   p=await page(()=>{ window.__API.mode.signedIn=false; });
-  await p.goto(BASE+'/admin.html',{waitUntil:'load'});
+  await p.goto(BASE+'/admin',{waitUntil:'load'});
   await p.waitForURL(/\?next=admin/,{timeout:8000}).catch(()=>{});
   ok('signed out, /admin goes to the shared sign-in', /\/\?next=admin$/.test(p.url()), p.url());
   await sleep(500);
@@ -78,7 +80,7 @@ const shown=(p,sel)=>p.evaluate(s=>{const e=document.querySelector(s); return !!
   await p.context().close();
 
   p=await page(()=>{ window.__API.mode.operator=false; });
-  await p.goto(BASE+'/admin.html',{waitUntil:'load'});
+  await p.goto(BASE+'/admin/',{waitUntil:'load'});
   await p.waitForURL(u=>!/admin/.test(String(u)),{timeout:8000}).catch(()=>{});
   ok('a signed-in non-operator is sent to the planner', !/admin/.test(p.url()), p.url());
   await p.context().close();
@@ -91,8 +93,8 @@ const shown=(p,sel)=>p.evaluate(s=>{const e=document.querySelector(s); return !!
         return respond(200,{id:'9',invited:true,owner:body.academy.ownerEmail}); }
       return respond(404,{error:'?'}); }; });
   await p.goto(BASE+'/?next=admin',{waitUntil:'load'});
-  await p.waitForURL(/admin\.html/,{timeout:8000}).catch(()=>{});
-  ok('an operator signing in with next=admin lands on the console', /admin\.html$/.test(p.url()), p.url());
+  await p.waitForURL(/\/admin\/$/,{timeout:8000}).catch(()=>{});
+  ok('an operator signing in with next=admin lands on the console', /\/admin\/$/.test(p.url()), p.url());
   await sleep(700);
   ok('the console shows once the operator is confirmed', await shown(p,'header.top'));
   await p.locator('[data-act="newAcademy"]').click(); await sleep(200);
@@ -108,6 +110,20 @@ const shown=(p,sel)=>p.evaluate(s=>{const e=document.querySelector(s); return !!
   ok('no page errors in the console', p.errs.length===0, p.errs);
   await p.context().close();
 
+  console.log('\nthe console lives at /admin');
+  p=await page(()=>{ window.__API.mode.operator=true; window.__API.mode.noAcademy=true;
+    window.__API.mode.admin=function(path,body,respond){ return respond(200,path==='admin/feedback'?{feedback:[]}:{academies:[],users:[]}); }; });
+  await p.goto(BASE+'/admin',{waitUntil:'load'}); await p.waitForURL(/\/admin\/$/,{timeout:8000}).catch(()=>{}); await sleep(700);
+  ok('/admin (no slash) opens the console at /admin/', /\/admin\/$/.test(p.url()) && await shown(p,'header.top'), p.url());
+  await p.goto(BASE+'/admin.html',{waitUntil:'load'}); await p.waitForURL(/\/admin\/$/,{timeout:8000}).catch(()=>{}); await sleep(700);
+  ok('the old /admin.html still arrives there', /\/admin\/$/.test(p.url()), p.url());
+  await p.goto(BASE+'/admin.html?x=1',{waitUntil:'load'}); await p.waitForURL(/\/admin\/\?x=1$/,{timeout:8000}).catch(()=>{});
+  ok('keeping its query string', /\/admin\/\?x=1$/.test(p.url()), p.url());
+  await p.goto(BASE+'/nothing-here',{waitUntil:'load'}); await sleep(300);
+  ok('any other unknown address gets a way back', /não existe/.test(await p.locator('body').innerText()));
+  ok('no page errors', p.errs.length===0, p.errs);
+  await p.context().close();
+
   console.log('\nafter sign-in Catalyst lands on /app/');
   p=await page(()=>{ window.__API.mode.signedIn=!!sessionStorage.getItem('fake.signedin');
     window.__API.mode.operator=true; window.__API.mode.noAcademy=false;
@@ -116,8 +132,8 @@ const shown=(p,sel)=>p.evaluate(s=>{const e=document.querySelector(s); return !!
   ok('signed out, the sign-in page shows', await shown(p,'#login-container'));
   await p.evaluate(()=>sessionStorage.setItem('fake.signedin','1'));   /* the user signs in… */
   await p.goto(BASE+'/app/',{waitUntil:'load'});                        /* …and Catalyst sends them here */
-  await p.waitForURL(/admin\.html/,{timeout:8000}).catch(()=>{});
-  ok('/app/ forwards to the planner, which sends the operator on to the console', /admin\.html$/.test(p.url()), p.url());
+  await p.waitForURL(/\/admin\/$/,{timeout:8000}).catch(()=>{});
+  ok('/app/ forwards to the planner, which sends the operator on to the console', /\/admin\/$/.test(p.url()), p.url());
   await p.context().close();
   p=await page(()=>{ window.__API.academy.language='pt'; });
   await p.goto(BASE+'/app/',{waitUntil:'load'}); await sleep(900);
@@ -155,8 +171,8 @@ const shown=(p,sel)=>p.evaluate(s=>{const e=document.querySelector(s); return !!
   await p.reload({waitUntil:'load'}); await sleep(800);
   ok('a reload stays in that academy', await shown(p,'#opbar'));
   await p.locator('#opbar [data-act="backToConsole"]').click();
-  await p.waitForURL(/admin\.html/,{timeout:8000}).catch(()=>{});
-  ok('"Back to console" returns to the console', /admin\.html$/.test(p.url()), p.url());
+  await p.waitForURL(/\/admin\/$/,{timeout:8000}).catch(()=>{});
+  ok('"Back to console" returns to the console', /\/admin\/$/.test(p.url()), p.url());
   ok('and forgets the academy', await p.evaluate(()=>sessionStorage.getItem('bandeja.as'))===null);
   await p.context().close();
 
@@ -166,8 +182,8 @@ const shown=(p,sel)=>p.evaluate(s=>{const e=document.querySelector(s); return !!
         users:[{id:'55',academyId:'777',email:'o@t.pt',name:'Owner',role:'owner',status:'invited'}]});
       if(path==='admin/user/resend'){ window.__resent=body.id; return respond(200,{ok:true,sent:'invite',email:'o@t.pt'}); }
       return respond(404,{error:'?'}); }; });
-  await p.goto(BASE+'/admin.html',{waitUntil:'load'}); await sleep(900);
-  ok('each academy card has "Open planner" for that academy', await p.$eval('a[href*="academy="]',a=>a.getAttribute('href'))==='./?academy=777');
+  await p.goto(BASE+'/admin/',{waitUntil:'load'}); await sleep(900);
+  ok('each academy card has "Open planner" for that academy', await p.$eval('a[href*="academy="]',a=>a.getAttribute('href'))==='../?academy=777');
   await p.locator('[data-act="users"]').click(); await sleep(200);
   await p.locator('[data-act="resendInvite"]').click(); await sleep(400);
   ok('Resend calls the API for that user', await p.evaluate(()=>window.__resent)==='55');
@@ -224,7 +240,7 @@ const shown=(p,sel)=>p.evaluate(s=>{const e=document.querySelector(s); return !!
         {id:'1',academyId:'777',email:'info@youlovepadel.pt',role:'operator',action:'update',target:'classes',summary:'Mon 18:30 · 90 min · level 3',at:'2026-11-19 11:00:00'},
         {id:'2',academyId:'777',email:'ana@hyve.pt',role:'owner',action:'create',target:'players',summary:'A. Silva · level 3',at:'2026-11-19 10:00:00'}]}); }
       return respond(404,{error:'?'}); }; });
-  await p.goto(BASE+'/admin.html',{waitUntil:'load'}); await sleep(900);
+  await p.goto(BASE+'/admin/',{waitUntil:'load'}); await sleep(900);
   ok('the Feedback tab shows how many are new', /Feedback\s*1 new/.test(await p.locator('[data-act="view"][data-id="feedback"]').innerText()));
   await p.locator('[data-act="view"][data-id="feedback"]').click(); await sleep(200);
   const fbText=await p.locator('main').innerText();
@@ -264,7 +280,7 @@ const shown=(p,sel)=>p.evaluate(s=>{const e=document.querySelector(s); return !!
   ok('a script error during startup shows instead of the dots', /boom in startup/.test(await p.locator('#gate').innerText()));
   await p.context().close();
   p=await page(LIM+'window.__API.mode.operator=true; window.__API.mode.hangPath="admin/academies";');
-  await p.goto(BASE+'/admin.html',{waitUntil:'load'}); await sleep(5500);
+  await p.goto(BASE+'/admin/',{waitUntil:'load'}); await sleep(5500);
   const at=await p.locator('#gate').innerText();
   ok('the console does the same', /taking too long/.test(at) && /loading (academies|feedback)/.test(at) && await shown(p,'#gate [data-act="retry"]'), at.slice(0,200));
   await p.context().close();

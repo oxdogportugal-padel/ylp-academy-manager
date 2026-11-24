@@ -1692,7 +1692,7 @@ function start(){
     try{ sessionStorage.removeItem("bandeja.next"); }catch(e){}
     ACTING=!!sess.actingAs;
     if(!ACTING){ AS_ACADEMY=null; try{ sessionStorage.removeItem("bandeja.as"); }catch(e){} }
-    if(IS_OPERATOR&&!ACTING&&(WANTS_ADMIN||!sess.academy)){ location.replace("./admin.html"); return; }
+    if(IS_OPERATOR&&!ACTING&&(WANTS_ADMIN||!sess.academy)){ location.replace("./admin/"); return; }
     if(!sess.academy){
       storage="blocked";
       return gate("message",{title:t("No academy yet"),
@@ -1826,7 +1826,7 @@ document.addEventListener("keydown",function(ev){
 });
 A.backToConsole=function(){
   try{ sessionStorage.removeItem("bandeja.as"); }catch(e){}
-  location.href="./admin.html";
+  location.href="./admin/";
 };
 A.gateLang=function(l){
   setLang(l); remember("bandeja.lang",l);
