@@ -179,6 +179,12 @@ classes; players carry under-18, guardian and consent (stamped by the server,
 logged, warned about in Manage). New columns on Coaches and Players — see
 `docs/catalyst-schema.md`.
 
+**Automatic deploys (26 Nov 2026).** `main` now exists on GitHub and every
+push runs all suites on GitHub Actions; green pushes to `main` deploy the
+function and the Slate app once Catalyst is connected — a one-time step on a
+computer, in `docs/DEPLOY.md`. Make `main` the default branch in the
+repository settings.
+
 ## Still outstanding
 
 1. **Portuguese edition of the guide** — the screenshots can already be

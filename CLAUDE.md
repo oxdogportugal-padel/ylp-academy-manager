@@ -138,8 +138,10 @@ bundler to the POC; the single file is why it deploys in seconds.
 
 ## Deploying
 
+- Push to `main`: GitHub Actions runs every suite and, when green and
+  Catalyst is connected, deploys the function and Slate app (`docs/DEPLOY.md`).
 - `catalyst serve` to run locally before anything else.
-- `catalyst deploy` to ship.
+- `catalyst deploy` to ship by hand.
 - `catalyst login` is interactive and must be run by a human.
 - Promoting development to production is a console action, not a CLI one.
 - Test against the development environment. Never point local work at

@@ -1,5 +1,8 @@
 node_modules/
 tests/out/
-.catalyst/
+# Catalyst keeps local state in .catalyst/; the Slate app's config is the one
+# file in it a deploy from GitHub needs.
+**/.catalyst/*
+!client/.catalyst/slate-config.toml
 *.log
 dist/

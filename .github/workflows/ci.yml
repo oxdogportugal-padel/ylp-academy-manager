@@ -1,0 +1,78 @@
+# Tests every push and pull request. On main, once Catalyst is connected (see
+# docs/DEPLOY.md), a green run also deploys the function and the Slate app.
+name: test-and-deploy
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Keep the real Catalyst SDK out of the browser tests
+        # The suites stand in for Catalyst with tests/fake/fakeapi.js; the real
+        # SDK from Zoho's CDN would replace that stand-in once it loads.
+        run: echo "0.0.0.0 static.zohocdn.com" | sudo tee -a /etc/hosts
+      - name: Install Playwright for the browser suites
+        run: |
+          npm install --no-save --prefix tests playwright@1.63.0
+          npx --prefix tests playwright install --with-deps chromium
+      - name: Run every suite
+        run: node tests/run-all.js
+      - name: Keep screenshots when something fails
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-screenshots
+          path: tests/out/
+          if-no-files-found: ignore
+
+  deploy:
+    needs: test
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      CATALYST_TOKEN: ${{ secrets.CATALYST_TOKEN }}
+      ZCATALYST_NON_INTERACTIVE: "true"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Is Catalyst connected?
+        id: ready
+        run: |
+          if [ -z "$CATALYST_TOKEN" ]; then
+            echo "::notice::CATALYST_TOKEN secret not set — skipping deploy. See docs/DEPLOY.md."
+            echo "go=false" >> "$GITHUB_OUTPUT"
+          elif [ ! -f .catalystrc ] || [ ! -f catalyst.json ]; then
+            echo "::notice::.catalystrc / catalyst.json not committed yet — skipping deploy. See docs/DEPLOY.md."
+            echo "go=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "go=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Install the Catalyst CLI
+        if: steps.ready.outputs.go == 'true'
+        run: npm install -g zcatalyst-cli@1.29.1
+      - name: Install the function's dependencies
+        if: steps.ready.outputs.go == 'true'
+        working-directory: functions/api
+        run: npm ci --omit=dev
+      - name: Deploy the function
+        if: steps.ready.outputs.go == 'true'
+        run: catalyst deploy --only functions:api --dc eu --token "$CATALYST_TOKEN" --non-interactive
+      - name: Deploy the Slate app
+        if: steps.ready.outputs.go == 'true'
+        run: catalyst deploy slate padel-planner-slate -m "${GITHUB_SHA::7} $(git log -1 --format=%s | cut -c1-80)" --dc eu --token "$CATALYST_TOKEN" --non-interactive
