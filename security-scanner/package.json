@@ -1,19 +1,18 @@
 {
-  "name": "siteguard-security-scanner",
+  "name": "siteguard",
   "version": "1.0.0",
   "private": true,
-  "description": "Passive website security auditor with severity-ranked reports, scheduled audits, e-mail reports and an issue history log.",
-  "type": "commonjs",
-  "main": "src/server.js",
-  "engines": { "node": ">=22.13" },
+  "description": "Website security auditor on Zoho Catalyst: severity-ranked reports, issue history, scheduled e-mail audits.",
+  "engines": { "node": ">=20" },
   "scripts": {
-    "start": "node src/server.js",
-    "dev": "BILLING_DEV_MODE=true node --watch src/server.js",
-    "scan": "node src/cli.js",
-    "test": "node --test test/*.test.js"
+    "dev": "node scripts/dev-server.js",
+    "sync": "node scripts/sync-shared.js",
+    "gen-schema": "node scripts/gen-schema.js",
+    "scan": "node scripts/scan.js",
+    "test": "node --test test/*.test.js",
+    "predeploy": "npm run sync && npm test"
   },
-  "dependencies": {
-    "express": "^5.1.0",
-    "nodemailer": "^7.0.0"
+  "devDependencies": {
+    "express": "^4.21.2"
   }
 }

@@ -1,101 +1,85 @@
 'use strict';
+// End-to-end flow through the real API + audit lifecycle + scheduler, with the
+// in-memory store standing in for the Catalyst Data Store.
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const fs = require('node:fs');
-const os = require('node:os');
-const path = require('node:path');
-const { openDatabase } = require('../src/db');
-const { createAuditService } = require('../src/audits');
-const { createScheduler } = require('../src/scheduler');
-const { createMailer } = require('../src/mailer');
-const { createApp } = require('../src/app');
-const { verifyStripeSignature } = require('../src/billing');
+const { createApi } = require('../shared/core/api');
+const { createRepo } = require('../shared/repo/repo');
+const { createMemoryDriver } = require('../shared/repo/memory-driver');
+const { runAudit } = require('../shared/core/lifecycle');
+const { runDueSchedules, failStaleAudits, emailScheduledAudit, nextRun } = require('../shared/core/scheduler');
+const { verifyStripeSignature, applyStripeEvent } = require('../shared/core/billing');
 const { createFixtureSite } = require('./fixture-site');
 
 const ONLY = ['transport', 'headers', 'cookies', 'cors', 'exposure', 'content', 'methods'];
 
 async function setup() {
-  const outboxDir = fs.mkdtempSync(path.join(os.tmpdir(), 'sg-outbox-'));
-  const db = openDatabase(':memory:');
-  const config = {
-    appUrl: 'http://app.test', production: false,
-    billing: { devMode: true, stripeSecretKey: '', stripePriceId: '', stripeWebhookSecret: 'whsec_test' },
+  const repo = createRepo(createMemoryDriver());
+  const jobs = [];
+  const sent = [];
+  const mailer = { async send(m) { sent.push(m); } };
+  const runJob = async (auditId) => {
+    const a = await runAudit({ repo, auditId, scannerOptions: { allowPrivate: true, timeoutMs: 3000, only: ONLY } });
+    if (a?.status === 'completed' && a.trigger === 'scheduled') await emailScheduledAudit({ repo, mailer, auditId, appUrl: 'https://app.test' });
   };
-  const audits = createAuditService({ db, scannerOptions: { allowPrivate: true, timeoutMs: 3000, only: ONLY }, concurrency: 2 });
-  const mailer = createMailer({ host: '', from: 'SiteGuard <r@example.com>', outboxDir });
-  const scheduler = createScheduler({ db, audits, mailer, appUrl: config.appUrl, log: { error() {} } });
-  const app = createApp({ db, config, audits });
+  const submitAuditJob = async (_req, auditId) => { jobs.push(runJob(auditId)); };
+  const app = createApi({
+    repoFor: () => repo,
+    authenticate: async (req) => (req.headers['x-test-user'] ? { catalystUserId: req.headers['x-test-user'], email: `${req.headers['x-test-user']}@example.com` } : null),
+    submitAuditJob,
+    config: { appUrl: 'https://app.test', billing: { devMode: true } },
+  });
   const server = await new Promise((r) => { const s = app.listen(0, '127.0.0.1', () => r(s)); });
   const base = `http://127.0.0.1:${server.address().port}`;
-
-  function client() {
-    let cookie = '';
-    return async function call(method, url, body) {
-      const res = await fetch(base + url, {
-        method,
-        headers: { ...(body ? { 'Content-Type': 'application/json' } : {}), ...(cookie ? { Cookie: cookie } : {}) },
-        body: body ? JSON.stringify(body) : undefined,
-      });
-      const sc = res.headers.get('set-cookie');
-      if (sc) cookie = sc.split(';')[0];
-      const data = await res.json().catch(() => null);
-      return { status: res.status, data };
-    };
-  }
-
-  async function waitForAudit(call, id) {
-    for (let i = 0; i < 100; i += 1) {
-      const r = await call('GET', `/api/audits/${id}`);
-      if (['completed', 'failed'].includes(r.data.audit.status)) return r.data;
-      await new Promise((res) => setTimeout(res, 100));
-    }
-    throw new Error('audit did not finish');
-  }
-
-  return { db, server, mailer, scheduler, client, waitForAudit, outboxDir, close: () => new Promise((r) => server.close(r)) };
+  const as = (user) => async (method, url, body) => {
+    const res = await fetch(base + url, { method, headers: { ...(user ? { 'X-Test-User': user } : {}), ...(body ? { 'Content-Type': 'application/json' } : {}) }, body: body ? JSON.stringify(body) : undefined });
+    return { status: res.status, data: await res.json().catch(() => null) };
+  };
+  const settle = async () => { while (jobs.length) await jobs.shift(); };
+  return { repo, sent, as, settle, submitAuditJob, close: () => new Promise((r) => server.close(r)) };
 }
 
-test('full flow: free report, issue log across audits (detected -> fixed -> reopened), Pro gating, schedules and e-mail', async () => {
+test('full flow: ranked free report, issue log (detected -> fixed -> reopened), Pro gating, schedules and e-mail', async () => {
   const env = await setup();
   const site = await createFixtureSite();
   try {
-    const alice = env.client();
-    assert.equal((await alice('POST', '/api/auth/signup', { email: 'alice@example.com', password: 'correct horse' })).status, 201);
-    assert.equal((await alice('GET', '/api/me')).data.user.plan, 'free');
+    const alice = env.as('1001');
+    assert.equal((await env.as(null)('GET', '/api/me')).status, 401);
+    // Catalyst calls arrive under /server/<function>/...; the prefix is stripped.
+    assert.equal((await alice('GET', '/server/siteguard_api/api/me')).data.user.plan, 'free');
 
-    // --- first audit (free plan): ranked list, no details
     const scan = await alice('POST', '/api/scan', { url: site.url });
     assert.equal(scan.status, 202);
     const { targetId } = scan.data;
-    const r1 = await env.waitForAudit(alice, scan.data.auditId);
+    assert.ok(['queued', 'running'].includes((await alice('GET', `/api/audits/${scan.data.auditId}`)).data.audit.status));
+    await env.settle();
+    const r1 = (await alice('GET', `/api/audits/${scan.data.auditId}`)).data;
     assert.equal(r1.audit.status, 'completed');
     assert.equal(r1.detailed, false);
     assert.equal(r1.findings[0].severity, 'critical');
-    assert.equal(r1.findings[0].remediation, undefined, 'free plan gets no remediation');
-    assert.equal(r1.findings[0].evidence, undefined, 'free plan gets no evidence');
-    assert.ok(r1.changes.new.length === r1.findings.length, 'first audit: all findings are new');
+    assert.equal(r1.findings[0].remediation, undefined);
+    assert.equal(r1.findings[0].evidence, undefined);
+    assert.equal(r1.changes.new.length, r1.findings.length);
 
-    // Pro-only endpoints are refused
     assert.equal((await alice('PUT', `/api/targets/${targetId}/schedule`, { frequency: 'weekly' })).status, 402);
     assert.equal((await alice('GET', `/api/audits/${r1.audit.id}/export.json`)).status, 402);
 
-    // --- site owner fixes the .env exposure and adds a CSP
-    site.state.exposeEnv = false;
-    site.state.csp = true;
+    // the owner fixes .env and adds a CSP
+    site.state.exposeEnv = false; site.state.csp = true;
     const a2 = await alice('POST', `/api/targets/${targetId}/audits`);
-    const r2 = await env.waitForAudit(alice, a2.data.auditId);
-    const fixed = r2.changes.resolved.map((i) => i.checkId).sort();
-    assert.deepEqual(fixed, ['exposure.env', 'headers.clickjacking', 'headers.csp_missing']);
+    await env.settle();
+    const r2 = (await alice('GET', `/api/audits/${a2.data.auditId}`)).data;
+    assert.deepEqual(r2.changes.resolved.map((i) => i.checkId).sort(), ['exposure.env', 'headers.clickjacking', 'headers.csp_missing']);
     assert.equal(r2.changes.new.length, 0);
     assert.equal(r2.previousAudit.id, r1.audit.id);
 
-    // --- the .env file comes back
+    // .env comes back
     site.state.exposeEnv = true;
     const a3 = await alice('POST', `/api/targets/${targetId}/audits`);
-    const r3 = await env.waitForAudit(alice, a3.data.auditId);
+    await env.settle();
+    const r3 = (await alice('GET', `/api/audits/${a3.data.auditId}`)).data;
     assert.deepEqual(r3.changes.reopened.map((i) => i.checkId), ['exposure.env']);
 
-    // --- issue log shows when each issue was detected and fixed
     const log = (await alice('GET', `/api/targets/${targetId}/issues`)).data;
     const envIssue = log.find((i) => i.checkId === 'exposure.env');
     assert.equal(envIssue.status, 'open');
@@ -103,96 +87,87 @@ test('full flow: free report, issue log across audits (detected -> fixed -> reop
     assert.deepEqual(envIssue.history.map((h) => [h.event, h.auditId]), [['detected', r1.audit.id], ['resolved', r2.audit.id], ['reopened', r3.audit.id]]);
     const csp = log.find((i) => i.checkId === 'headers.csp_missing');
     assert.equal(csp.status, 'resolved');
-    assert.equal(csp.firstDetectedAuditId, r1.audit.id);
     assert.equal(csp.resolvedAuditId, r2.audit.id);
-    assert.ok(csp.resolvedAt);
-    assert.equal(log[0].status, 'open', 'open issues listed first');
+    assert.equal(log[0].status, 'open');
 
-    // --- a failed audit must not mark issues as fixed
-    const before = env.db.get(`SELECT COUNT(*) c FROM issues WHERE status='open'`).c;
+    // a failed audit must not mark issues as fixed
+    const openBefore = await env.repo.countIssues(targetId, 'open');
     await new Promise((r) => site.server.close(r));
     const a4 = await alice('POST', `/api/targets/${targetId}/audits`);
-    const r4 = await env.waitForAudit(alice, a4.data.auditId);
-    assert.equal(r4.audit.status, 'failed');
-    assert.equal(env.db.get(`SELECT COUNT(*) c FROM issues WHERE status='open'`).c, before);
+    await env.settle();
+    assert.equal((await alice('GET', `/api/audits/${a4.data.auditId}`)).data.audit.status, 'failed');
+    assert.equal(await env.repo.countIssues(targetId, 'open'), openBefore);
     await new Promise((r) => site.server.listen(Number(new URL(site.url).port), '127.0.0.1', r));
 
-    // --- upgrade to Pro: detailed report, export, schedule
+    // Pro: details, export, schedule (first audit + e-mail right away)
     await alice('POST', '/api/billing/dev-set-plan', { plan: 'pro' });
     const detailed = (await alice('GET', `/api/audits/${r3.audit.id}`)).data;
-    assert.equal(detailed.detailed, true);
-    assert.ok(detailed.findings[0].remediation && detailed.findings[0].description && detailed.findings[0].evidence);
+    assert.ok(detailed.detailed && detailed.findings[0].remediation && detailed.findings[0].evidence);
     assert.equal((await alice('GET', `/api/audits/${r3.audit.id}/export.json`)).status, 200);
-
     assert.equal((await alice('PUT', `/api/targets/${targetId}/schedule`, { frequency: 'hourly' })).status, 400);
-    assert.equal((await alice('PUT', `/api/targets/${targetId}/schedule`, { frequency: 'weekly', recipients: 'not-an-email' })).status, 400);
-    assert.equal((await alice('PUT', `/api/targets/${targetId}/schedule`, { frequency: 'weekly', recipients: 'alice@example.com, ops@example.com' })).status, 200);
-
-    // scheduler: new schedule is due immediately, runs an audit and e-mails the report
+    assert.equal((await alice('PUT', `/api/targets/${targetId}/schedule`, { frequency: 'weekly', recipients: 'nope' })).status, 400);
     site.state.exposeGit = false;
-    const ran = await env.scheduler.tick(new Date(Date.now() + 1000));
-    assert.equal(ran, 1);
-    const scheduled = env.db.get(`SELECT * FROM audits WHERE trigger='scheduled'`);
-    assert.equal(scheduled.status, 'completed');
-    const sched = env.db.get('SELECT * FROM schedules WHERE target_id = ?', targetId);
-    const days = (Date.parse(sched.next_run_at) - Date.now()) / 864e5;
-    assert.ok(days > 6 && days <= 7.01, `next run in ~7 days, got ${days}`);
-    assert.equal(env.mailer.sent.length, 1);
-    assert.equal(env.mailer.sent[0].to, 'alice@example.com, ops@example.com');
-    assert.match(env.mailer.sent[0].subject, /grade F/);
-    assert.match(env.mailer.sent[0].subject, /1 fixed/);
-    const eml = fs.readFileSync(path.join(env.outboxDir, fs.readdirSync(env.outboxDir)[0]), 'utf8').replace(/=\r?\n/g, ''); // undo quoted-printable soft breaks
-    assert.match(eml, /Fixed since last audit/);
-    assert.match(eml, /How to fix/);
-    assert.equal(env.db.get('SELECT status FROM email_log').status, 'sent');
+    assert.equal((await alice('PUT', `/api/targets/${targetId}/schedule`, { frequency: 'weekly', recipients: 'alice@example.com, ops@example.com' })).status, 200);
+    await env.settle();
+    assert.equal(env.sent.length, 1);
+    assert.deepEqual(env.sent[0].to, ['alice@example.com', 'ops@example.com']);
+    assert.match(env.sent[0].subject, /grade F/);
+    assert.match(env.sent[0].subject, /1 fixed/);
+    assert.match(env.sent[0].html, /Fixed since last audit/);
+    assert.match(env.sent[0].html, /How to fix/);
+    const schedule = await env.repo.getSchedule(targetId);
+    const days = (Date.parse(schedule.nextRunAt) - Date.now()) / 864e5;
+    assert.ok(days > 6.9 && days <= 7.01, `next run in ~7 days, got ${days}`);
 
-    // not due again until next week
-    assert.equal(await env.scheduler.tick(new Date(Date.now() + 864e5)), 0);
+    // scheduler: nothing due tomorrow; due in 8 days -> one audit + one more e-mail
+    const submit = (id) => env.submitAuditJob(null, id);
+    assert.deepEqual(await runDueSchedules({ repo: env.repo, submitAuditJob: submit, at: new Date(Date.now() + 864e5) }), []);
+    const queued = await runDueSchedules({ repo: env.repo, submitAuditJob: submit, at: new Date(Date.now() + 8 * 864e5) });
+    assert.equal(queued.length, 1);
+    await env.settle();
+    assert.equal(env.sent.length, 2);
 
-    // downgrade: schedules are paused (slot skipped, no audit, no mail)
+    // downgrade: schedule paused (slot skipped, no audit, no mail)
     await alice('POST', '/api/billing/dev-set-plan', { plan: 'free' });
-    await env.scheduler.tick(new Date(Date.now() + 8 * 864e5));
-    assert.equal(env.db.get(`SELECT COUNT(*) c FROM audits WHERE trigger='scheduled'`).c, 1);
-    assert.equal(env.mailer.sent.length, 1);
+    assert.deepEqual(await runDueSchedules({ repo: env.repo, submitAuditJob: submit, at: new Date(Date.now() + 30 * 864e5) }), []);
+    assert.equal(env.sent.length, 2);
 
-    // --- tenant isolation: another user cannot see alice's data
-    const bob = env.client();
-    await bob('POST', '/api/auth/signup', { email: 'bob@example.com', password: 'hunter2hunter2' });
+    // isolation between users
+    const bob = env.as('2002');
     assert.equal((await bob('GET', `/api/targets/${targetId}`)).status, 404);
     assert.equal((await bob('GET', `/api/audits/${r1.audit.id}`)).status, 404);
     assert.equal((await bob('GET', `/api/targets/${targetId}/issues`)).status, 404);
+    assert.equal((await bob('DELETE', `/api/targets/${targetId}`)).status, 404);
     assert.deepEqual((await bob('GET', '/api/targets')).data, []);
+
+    // deleting a site removes its whole history
+    assert.equal((await alice('DELETE', `/api/targets/${targetId}`)).status, 200);
+    for (const t of ['audits', 'issues', 'issueEvents', 'findings', 'schedules', 'targets']) assert.equal(env.repo.driver.data[t].length, 0, t);
   } finally {
     await site.close().catch(() => {});
     await env.close();
   }
 });
 
-test('auth, validation and free-plan limits', async () => {
+test('validation, free-plan limits and stale audit cleanup', async () => {
   const env = await setup();
   try {
-    const c = env.client();
-    assert.equal((await c('GET', '/api/targets')).status, 401);
-    assert.equal((await c('POST', '/api/auth/signup', { email: 'bad', password: 'longenough' })).status, 400);
-    assert.equal((await c('POST', '/api/auth/signup', { email: 'a@b.co', password: 'short' })).status, 400);
-    assert.equal((await c('POST', '/api/auth/signup', { email: 'a@b.co', password: 'longenough' })).status, 201);
-    assert.equal((await c('POST', '/api/auth/signup', { email: 'A@B.co', password: 'longenough' })).status, 409);
-    await c('POST', '/api/auth/logout');
-    assert.equal((await c('POST', '/api/auth/login', { email: 'a@b.co', password: 'wrong-password' })).status, 401);
-    assert.equal((await c('POST', '/api/auth/login', { email: 'a@b.co', password: 'longenough' })).status, 200);
-
+    const c = env.as('3003');
     assert.equal((await c('POST', '/api/targets', { url: 'ftp://example.com' })).status, 400);
+    assert.equal((await c('POST', '/api/targets', { url: `https://example.com/${'a'.repeat(300)}` })).status, 400);
     for (const u of ['one.example', 'two.example', 'three.example']) assert.equal((await c('POST', '/api/targets', { url: u })).status, 201);
-    assert.equal((await c('POST', '/api/targets', { url: 'one.example' })).status, 201, 're-adding returns the existing site');
-    assert.equal((await c('POST', '/api/targets', { url: 'four.example' })).status, 402, 'free plan site limit');
+    assert.equal((await c('POST', '/api/targets', { url: 'one.example' })).status, 201);
+    assert.equal((await c('POST', '/api/targets', { url: 'four.example' })).status, 402);
+    assert.equal((await c('GET', '/api/targets/abc')).status, 404);
 
-    // CSRF guard: form-encoded POSTs are refused
-    const res = await fetch(`http://127.0.0.1:${env.server.address().port}/api/targets`, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: 'url=x.com' });
-    assert.equal(res.status, 415);
+    const [t] = await env.repo.listTargets((await env.repo.upsertUser({ catalystUserId: '3003' })).id);
+    const stuck = await env.repo.insertAudit({ targetId: t.id, ownerId: t.ownerId, trigger: 'manual' });
+    assert.equal(await failStaleAudits({ repo: env.repo, at: new Date(Date.now() + 60 * 60 * 1000) }), 1);
+    assert.equal((await env.repo.getAudit(stuck.id)).status, 'failed');
   } finally { await env.close(); }
 });
 
-test('Stripe webhook signature verification', () => {
+test('Stripe webhook: signature verification and plan changes', async () => {
   const crypto = require('node:crypto');
   const body = '{"type":"x"}';
   const t = Math.floor(Date.now() / 1000);
@@ -200,10 +175,17 @@ test('Stripe webhook signature verification', () => {
   assert.equal(verifyStripeSignature(body, `t=${t},v1=${sig}`, 'whsec_test'), true);
   assert.equal(verifyStripeSignature(body, `t=${t},v1=${'0'.repeat(64)}`, 'whsec_test'), false);
   assert.equal(verifyStripeSignature(body, `t=${t - 1000},v1=${sig}`, 'whsec_test'), false);
+  assert.equal(verifyStripeSignature(body, `t=${t},v1=${sig}`, ''), false);
+
+  const repo = createRepo(createMemoryDriver());
+  const u = await repo.upsertUser({ catalystUserId: '42', email: 'x@example.com' });
+  await applyStripeEvent(repo, { type: 'checkout.session.completed', data: { object: { client_reference_id: u.id, customer: 'cus_1', subscription: 'sub_1' } } });
+  assert.equal((await repo.getUser(u.id)).plan, 'pro');
+  await applyStripeEvent(repo, { type: 'customer.subscription.deleted', data: { object: { id: 'sub_1', customer: 'cus_1' } } });
+  assert.equal((await repo.getUser(u.id)).plan, 'free');
 });
 
 test('monthly schedules clamp to the end of short months', () => {
-  const { nextRun } = require('../src/scheduler');
   assert.equal(nextRun('2026-01-31T09:00:00.000Z', 'monthly'), '2026-02-28T09:00:00.000Z');
   assert.equal(nextRun('2026-03-15T09:00:00.000Z', 'monthly'), '2026-04-15T09:00:00.000Z');
   assert.equal(nextRun('2026-03-15T09:00:00.000Z', 'weekly'), '2026-03-22T09:00:00.000Z');

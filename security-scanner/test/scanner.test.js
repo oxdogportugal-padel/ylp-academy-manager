@@ -1,11 +1,11 @@
 'use strict';
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { runScan, normalizeTargetUrl, scoreFindings } = require('../src/scanner');
-const { isPrivateAddress } = require('../src/scanner/net-guard');
-const { evaluateCertificate } = require('../src/scanner/checks/tls');
-const { detectLibrary, vulnerableRule } = require('../src/scanner/checks/content');
-const { SEVERITY_RANK } = require('../src/scanner/catalog');
+const { runScan, normalizeTargetUrl, scoreFindings } = require('../shared/scanner');
+const { isPrivateAddress } = require('../shared/scanner/net-guard');
+const { evaluateCertificate } = require('../shared/scanner/checks/tls');
+const { detectLibrary, vulnerableRule } = require('../shared/scanner/checks/content');
+const { SEVERITY_RANK } = require('../shared/scanner/catalog');
 const { createFixtureSite } = require('./fixture-site');
 
 test('scans an insecure site and ranks findings from most to least severe', async () => {

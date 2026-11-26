@@ -1,0 +1,387 @@
+[
+  {
+    "table_name": "AppUsers",
+    "columns": [
+      {
+        "column_name": "CatalystUserId",
+        "data_type": "varchar",
+        "max_length": 50,
+        "is_mandatory": false
+      },
+      {
+        "column_name": "Email",
+        "data_type": "varchar",
+        "max_length": 255,
+        "is_mandatory": false
+      },
+      {
+        "column_name": "Plan",
+        "data_type": "varchar",
+        "max_length": 10,
+        "is_mandatory": false
+      },
+      {
+        "column_name": "StripeCustomerId",
+        "data_type": "varchar",
+        "max_length": 100,
+        "is_mandatory": false
+      },
+      {
+        "column_name": "StripeSubscriptionId",
+        "data_type": "varchar",
+        "max_length": 100,
+        "is_mandatory": false
+      },
+      {
+        "column_name": "CreatedAt",
+        "data_type": "varchar",
+        "max_length": 30,
+        "is_mandatory": false
+      }
+    ]
+  },
+  {
+    "table_name": "Targets",
+    "columns": [
+      {
+        "column_name": "OwnerId",
+        "data_type": "bigint",
+        "is_mandatory": false
+      },
+      {
+        "column_name": "Url",
+        "data_type": "varchar",
+        "max_length": 255,
+        "is_mandatory": false
+      },
+      {
+        "column_name": "CreatedAt",
+        "data_type": "varchar",
+        "max_length": 30,
+        "is_mandatory": false
+      }
+    ]
+  },
+  {
+    "table_name": "Audits",
+    "columns": [
+      {
+        "column_name": "TargetId",
+        "data_type": "bigint",
+        "is_mandatory": false
+      },
+      {
+        "column_name": "OwnerId",
+        "data_type": "bigint",
+        "is_mandatory": false
+      },
+      {
+        "column_name": "TriggerType",
+        "data_type": "varchar",
+        "max_length": 20,
+        "is_mandatory": false
+      },
+      {
+        "column_name": "Status",
+        "data_type": "varchar",
+        "max_length": 20,
+        "is_mandatory": false
+      },
+      {
+        "column_name": "FinalUrl",
+        "data_type": "text",
+        "is_mandatory": false
+      },
+      {
+        "column_name": "Score",
+        "data_type": "int",
+        "is_mandatory": false
+      },
+      {
+        "column_name": "Grade",
+        "data_type": "varchar",
+        "max_length": 2,
+        "is_mandatory": false
+      },
+      {
+        "column_name": "Counts",
+        "data_type": "text",
+        "is_mandatory": false
+      },
+      {
+        "column_name": "Meta",
+        "data_type": "text",
+        "is_mandatory": false
+      },
+      {
+        "column_name": "ErrorMessage",
+        "data_type": "text",
+        "is_mandatory": false
+      },
+      {
+        "column_name": "CreatedAt",
+        "data_type": "varchar",
+        "max_length": 30,
+        "is_mandatory": false
+      },
+      {
+        "column_name": "StartedAt",
+        "data_type": "varchar",
+        "max_length": 30,
+        "is_mandatory": false
+      },
+      {
+        "column_name": "FinishedAt",
+        "data_type": "varchar",
+        "max_length": 30,
+        "is_mandatory": false
+      }
+    ]
+  },
+  {
+    "table_name": "Issues",
+    "columns": [
+      {
+        "column_name": "TargetId",
+        "data_type": "bigint",
+        "is_mandatory": false
+      },
+      {
+        "column_name": "Fingerprint",
+        "data_type": "varchar",
+        "max_length": 255,
+        "is_mandatory": false
+      },
+      {
+        "column_name": "CheckId",
+        "data_type": "varchar",
+        "max_length": 60,
+        "is_mandatory": false
+      },
+      {
+        "column_name": "IssueKey",
+        "data_type": "varchar",
+        "max_length": 255,
+        "is_mandatory": false
+      },
+      {
+        "column_name": "Severity",
+        "data_type": "varchar",
+        "max_length": 10,
+        "is_mandatory": false
+      },
+      {
+        "column_name": "Title",
+        "data_type": "varchar",
+        "max_length": 255,
+        "is_mandatory": false
+      },
+      {
+        "column_name": "Status",
+        "data_type": "varchar",
+        "max_length": 10,
+        "is_mandatory": false
+      },
+      {
+        "column_name": "FirstDetectedAuditId",
+        "data_type": "bigint",
+        "is_mandatory": false
+      },
+      {
+        "column_name": "FirstDetectedAt",
+        "data_type": "varchar",
+        "max_length": 30,
+        "is_mandatory": false
+      },
+      {
+        "column_name": "LastSeenAuditId",
+        "data_type": "bigint",
+        "is_mandatory": false
+      },
+      {
+        "column_name": "LastSeenAt",
+        "data_type": "varchar",
+        "max_length": 30,
+        "is_mandatory": false
+      },
+      {
+        "column_name": "ResolvedAuditId",
+        "data_type": "bigint",
+        "is_mandatory": false
+      },
+      {
+        "column_name": "ResolvedAt",
+        "data_type": "varchar",
+        "max_length": 30,
+        "is_mandatory": false
+      },
+      {
+        "column_name": "TimesReopened",
+        "data_type": "int",
+        "is_mandatory": false
+      }
+    ]
+  },
+  {
+    "table_name": "IssueEvents",
+    "columns": [
+      {
+        "column_name": "IssueId",
+        "data_type": "bigint",
+        "is_mandatory": false
+      },
+      {
+        "column_name": "TargetId",
+        "data_type": "bigint",
+        "is_mandatory": false
+      },
+      {
+        "column_name": "AuditId",
+        "data_type": "bigint",
+        "is_mandatory": false
+      },
+      {
+        "column_name": "EventType",
+        "data_type": "varchar",
+        "max_length": 10,
+        "is_mandatory": false
+      },
+      {
+        "column_name": "EventAt",
+        "data_type": "varchar",
+        "max_length": 30,
+        "is_mandatory": false
+      }
+    ]
+  },
+  {
+    "table_name": "Findings",
+    "columns": [
+      {
+        "column_name": "AuditId",
+        "data_type": "bigint",
+        "is_mandatory": false
+      },
+      {
+        "column_name": "TargetId",
+        "data_type": "bigint",
+        "is_mandatory": false
+      },
+      {
+        "column_name": "IssueId",
+        "data_type": "bigint",
+        "is_mandatory": false
+      },
+      {
+        "column_name": "CheckId",
+        "data_type": "varchar",
+        "max_length": 60,
+        "is_mandatory": false
+      },
+      {
+        "column_name": "IssueKey",
+        "data_type": "varchar",
+        "max_length": 255,
+        "is_mandatory": false
+      },
+      {
+        "column_name": "Severity",
+        "data_type": "varchar",
+        "max_length": 10,
+        "is_mandatory": false
+      },
+      {
+        "column_name": "Evidence",
+        "data_type": "text",
+        "is_mandatory": false
+      }
+    ]
+  },
+  {
+    "table_name": "Schedules",
+    "columns": [
+      {
+        "column_name": "TargetId",
+        "data_type": "bigint",
+        "is_mandatory": false
+      },
+      {
+        "column_name": "OwnerId",
+        "data_type": "bigint",
+        "is_mandatory": false
+      },
+      {
+        "column_name": "Frequency",
+        "data_type": "varchar",
+        "max_length": 10,
+        "is_mandatory": false
+      },
+      {
+        "column_name": "Recipients",
+        "data_type": "text",
+        "is_mandatory": false
+      },
+      {
+        "column_name": "Enabled",
+        "data_type": "boolean",
+        "is_mandatory": false
+      },
+      {
+        "column_name": "NextRunAt",
+        "data_type": "varchar",
+        "max_length": 30,
+        "is_mandatory": false
+      },
+      {
+        "column_name": "LastRunAt",
+        "data_type": "varchar",
+        "max_length": 30,
+        "is_mandatory": false
+      },
+      {
+        "column_name": "CreatedAt",
+        "data_type": "varchar",
+        "max_length": 30,
+        "is_mandatory": false
+      }
+    ]
+  },
+  {
+    "table_name": "EmailLog",
+    "columns": [
+      {
+        "column_name": "AuditId",
+        "data_type": "bigint",
+        "is_mandatory": false
+      },
+      {
+        "column_name": "Recipients",
+        "data_type": "text",
+        "is_mandatory": false
+      },
+      {
+        "column_name": "Subject",
+        "data_type": "varchar",
+        "max_length": 255,
+        "is_mandatory": false
+      },
+      {
+        "column_name": "Status",
+        "data_type": "varchar",
+        "max_length": 10,
+        "is_mandatory": false
+      },
+      {
+        "column_name": "ErrorMessage",
+        "data_type": "text",
+        "is_mandatory": false
+      },
+      {
+        "column_name": "SentAt",
+        "data_type": "varchar",
+        "max_length": 30,
+        "is_mandatory": false
+      }
+    ]
+  }
+]

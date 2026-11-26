@@ -1,0 +1,7 @@
+{
+  "functions": {
+    "targets": ["siteguard_api", "audit_runner", "audit_scheduler", "billing_webhook"],
+    "ignore": [],
+    "source": "functions"
+  }
+}
