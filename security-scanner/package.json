@@ -1,0 +1,19 @@
+{
+  "name": "siteguard-security-scanner",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Passive website security auditor with severity-ranked reports, scheduled audits, e-mail reports and an issue history log.",
+  "type": "commonjs",
+  "main": "src/server.js",
+  "engines": { "node": ">=22.13" },
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "BILLING_DEV_MODE=true node --watch src/server.js",
+    "scan": "node src/cli.js",
+    "test": "node --test test/*.test.js"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "nodemailer": "^7.0.0"
+  }
+}
